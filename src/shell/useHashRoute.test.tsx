@@ -62,7 +62,7 @@ describe('parseHash (FR-62, EC-22)', () => {
 
   it('titles follow FR-66', () => {
     expect(routeTitle('home')).toBe('wordgames');
-    expect(routeTitle('wordwright')).toBe('Wordwright · wordgames');
+    expect(routeTitle('wordwright')).toBe('WordWright · wordgames');
     expect(routeTitle('weaver')).toBe('WordWeaver · wordgames');
   });
 });
@@ -157,7 +157,7 @@ describe('useHashRoute', () => {
 
     setHash('#/wordwright');
     await waitFor(() => {
-      expect(document.title).toBe('Wordwright · wordgames');
+      expect(document.title).toBe('WordWright · wordgames');
     });
 
     setHash('#/weaver');

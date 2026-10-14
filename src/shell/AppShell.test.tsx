@@ -73,7 +73,7 @@ describe('suite shell', () => {
         '#/code',
         '#/shuffle',
       ]);
-      expect(screen.getByRole('link', { name: 'Play Wordwright' })).toHaveAccessibleDescription(
+      expect(screen.getByRole('link', { name: 'Play WordWright' })).toHaveAccessibleDescription(
         /six tries/,
       );
       expect(screen.getByRole('link', { name: 'Play WordWeaver' })).toHaveAccessibleDescription(
@@ -118,7 +118,7 @@ describe('suite shell', () => {
       render(<App />);
 
       expect(await screen.findByRole('grid', { name: 'Guess board' })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Wordwright');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordWright');
     });
 
     it.each(['#/foo', '#weaver'])(
@@ -169,7 +169,7 @@ describe('suite shell', () => {
 
       await navigate('#/wordwright');
       await waitFor(() => {
-        expect(document.title).toBe('Wordwright · wordgames');
+        expect(document.title).toBe('WordWright · wordgames');
       });
 
       await navigate('#/weaver');
@@ -183,7 +183,7 @@ describe('suite shell', () => {
       const user = userEvent.setup();
       render(<App />);
 
-      await user.click(screen.getByRole('link', { name: 'Play Wordwright' }));
+      await user.click(screen.getByRole('link', { name: 'Play WordWright' }));
 
       await waitFor(() => {
         expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
@@ -212,7 +212,7 @@ describe('suite shell', () => {
       goTo('#/');
       render(<App />);
 
-      await user.click(screen.getByRole('link', { name: 'Play Wordwright' }));
+      await user.click(screen.getByRole('link', { name: 'Play WordWright' }));
       await screen.findByRole('grid');
       await user.click(screen.getByRole('button', { name: 'Settings' }));
       expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
@@ -285,9 +285,9 @@ describe('suite shell', () => {
       await user.click(screen.getByRole('button', { name: /^C(,|$)/ }));
 
       await user.click(screen.getByRole('link', { name: 'All games' }));
-      await screen.findByRole('link', { name: 'Play Wordwright' });
+      await screen.findByRole('link', { name: 'Play WordWright' });
 
-      await user.click(screen.getByRole('link', { name: 'Play Wordwright' }));
+      await user.click(screen.getByRole('link', { name: 'Play WordWright' }));
       const grid = await screen.findByRole('grid', { name: 'Guess board' });
 
       const rows = within(grid).getAllByRole('row');

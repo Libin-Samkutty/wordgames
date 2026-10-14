@@ -57,6 +57,6 @@ describe('App landmarks (A11Y-12)', () => {
     const headings = await screen.findAllByRole('heading', { level: 1 });
 
     expect(headings).toHaveLength(1);
-    expect(headings[0]).toHaveTextContent('Wordwright');
+    expect(headings[0]).toHaveTextContent('WordWright');
   });
 });

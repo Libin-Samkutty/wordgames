@@ -43,7 +43,7 @@ function goTo(hash: string): void {
 describe('the real catalogue (FR-97, FR-98)', () => {
   it('lists the shipped games in release order: Wordwright, WordWeaver, WordStack, WordRange, WordCode, WordShuffle', () => {
     expect(GAMES.map((game) => game.name)).toEqual([
-      'Wordwright',
+      'WordWright',
       'WordWeaver',
       'WordStack',
       'WordRange',

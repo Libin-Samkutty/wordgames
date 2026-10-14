@@ -6,7 +6,7 @@ import { Header } from './Header';
 
 function renderHeader(overrides: Partial<Parameters<typeof Header>[0]> = {}) {
   const props = {
-    title: 'Wordwright',
+    title: 'WordWright',
     showAllGames: true,
     controlsRef: vi.fn(),
     onOpenSettings: vi.fn(),
@@ -19,7 +19,7 @@ describe('Header (FR-64, A11Y-15)', () => {
   it('has exactly one h1 that can take focus but is not a tab stop', () => {
     renderHeader();
 
-    const heading = screen.getByRole('heading', { level: 1, name: 'Wordwright' });
+    const heading = screen.getByRole('heading', { level: 1, name: 'WordWright' });
     expect(heading).toHaveAttribute('tabindex', '-1');
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });

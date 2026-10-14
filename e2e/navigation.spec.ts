@@ -24,7 +24,7 @@ test.describe('Home (AC-24)', () => {
     await page.goto('/');
 
     await expect(heading(page)).toHaveText('wordgames');
-    await expect(page.getByRole('link', { name: 'Play Wordwright' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Play WordWright' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Play WordWeaver' })).toBeVisible();
 
     // Give any stray lazy import time to start.
@@ -63,8 +63,8 @@ test.describe('hash navigation (AC-25, AC-26, EC-22)', () => {
   }) => {
     await openWordwright(page);
 
-    await expect(heading(page)).toHaveText('Wordwright');
-    await expect(page).toHaveTitle('Wordwright · wordgames');
+    await expect(heading(page)).toHaveText('WordWright');
+    await expect(page).toHaveTitle('WordWright · wordgames');
   });
 
   test('an unknown hash shows Home and is corrected without a new history entry (EC-22)', async ({
@@ -87,7 +87,7 @@ test.describe('hash navigation (AC-25, AC-26, EC-22)', () => {
 
     await page.getByRole('link', { name: 'All games' }).click();
     await expect(heading(page)).toHaveText('wordgames');
-    await page.getByRole('link', { name: 'Play Wordwright' }).click();
+    await page.getByRole('link', { name: 'Play WordWright' }).click();
 
     await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
     const rows = page.getByRole('row');
@@ -99,7 +99,7 @@ test.describe('hash navigation (AC-25, AC-26, EC-22)', () => {
 
   test('Back with Settings open closes it and focuses the new <h1> (EC-38)', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: 'Play Wordwright' }).click();
+    await page.getByRole('link', { name: 'Play WordWright' }).click();
     await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
     await page.getByRole('button', { name: 'Settings' }).click();
     await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
@@ -120,10 +120,10 @@ test.describe('keyboard only (AC-41, A11Y-15)', () => {
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Settings' })).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('link', { name: 'Play Wordwright' })).toBeFocused();
+    await expect(page.getByRole('link', { name: 'Play WordWright' })).toBeFocused();
 
     await page.keyboard.press('Enter');
-    await expect(heading(page)).toHaveText('Wordwright');
+    await expect(heading(page)).toHaveText('WordWright');
     await expect(heading(page)).toBeFocused();
     await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
 

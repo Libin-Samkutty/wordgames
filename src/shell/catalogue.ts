@@ -68,7 +68,7 @@ export function defineGame(
 export const GAMES: readonly CatalogueEntry[] = [
   defineGame({
     id: 'wordwright',
-    name: 'Wordwright',
+    name: 'WordWright',
     description: 'Guess the hidden word in six tries.',
     route: '#/wordwright',
     load: () => import('@/components/game/WordwrightView').then((m) => m.WordwrightView),

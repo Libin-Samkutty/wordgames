@@ -72,10 +72,10 @@ test.describe('keyboard only through Wordwright (AC-41)', () => {
     await page.goto('/');
 
     await page.keyboard.press('Tab'); // Settings
-    await page.keyboard.press('Tab'); // Play Wordwright
-    await expect(page.getByRole('link', { name: 'Play Wordwright' })).toBeFocused();
+    await page.keyboard.press('Tab'); // Play WordWright
+    await expect(page.getByRole('link', { name: 'Play WordWright' })).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(heading(page)).toHaveText('Wordwright');
+    await expect(heading(page)).toHaveText('WordWright');
     await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
 
     // Six valid guesses end the game whatever the answer is.

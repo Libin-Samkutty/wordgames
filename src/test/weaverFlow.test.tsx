@@ -695,7 +695,7 @@ describe('WordWeaver', () => {
       const { user } = await openWeaver();
       await play(user, 'CORD');
       await user.click(screen.getByRole('link', { name: 'All games' }));
-      await screen.findByRole('link', { name: 'Play Wordwright' });
+      await screen.findByRole('link', { name: 'Play WordWright' });
 
       expect(localStorage.getItem(gameKeys('weaver').session)).not.toBeNull();
       expect(localStorage.getItem(gameKeys('wordwright').session)).toBeNull();
