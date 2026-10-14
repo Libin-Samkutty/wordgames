@@ -34,13 +34,15 @@ export async function loadDictionary(wordLength: WordLength): Promise<Dictionary
   const load = (async (): Promise<Dictionary> => {
     try {
       const importLists = DICTIONARY_REGISTRY[wordLength];
-      const { answers, guesses } = await importLists();
+      const { answers, guesses, ladder } = await importLists();
 
       const dictionary: Dictionary = {
         wordLength,
         answers,
         // Built once, so every subsequent validation is O(1) (FR-17).
         guesses: new Set(guesses),
+        guessList: guesses,
+        ...(ladder ? { ladder } : {}),
       };
 
       cache.set(wordLength, dictionary);

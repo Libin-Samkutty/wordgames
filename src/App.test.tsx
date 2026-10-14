@@ -23,7 +23,7 @@ describe('App landmarks (A11Y-12)', () => {
     vi.restoreAllMocks();
   });
 
-  it('exposes banner, main and contentinfo landmarks', async () => {
+  it('exposes banner, main and contentinfo landmarks on Home', async () => {
     renderWithProviders(<App />);
 
     expect(await screen.findByRole('banner')).toBeInTheDocument();
@@ -31,7 +31,27 @@ describe('App landmarks (A11Y-12)', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
-  it('has exactly one level-one heading', async () => {
+  it('exposes the same landmarks in a game', async () => {
+    window.history.replaceState(null, '', '/#/wordwright');
+    renderWithProviders(<App />);
+
+    expect(await screen.findByRole('grid')).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+  });
+
+  it('has exactly one level-one heading, the suite name on Home', async () => {
+    renderWithProviders(<App />);
+
+    const headings = await screen.findAllByRole('heading', { level: 1 });
+
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveTextContent('wordgames');
+  });
+
+  it('has exactly one level-one heading in a game, the game name', async () => {
+    window.history.replaceState(null, '', '/#/wordwright');
     renderWithProviders(<App />);
 
     const headings = await screen.findAllByRole('heading', { level: 1 });

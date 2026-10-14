@@ -37,10 +37,13 @@ export default defineConfig({
           globals: true,
           environment: 'jsdom',
           setupFiles: ['./src/test/setup.ts'],
+          // The full-flow tests drive hundreds of user-event clicks. Under the
+          // parallel full run on a slow machine the 5 s default flaked.
+          testTimeout: 15_000,
           // `storage` lives here rather than in `unit`: the repository's
           // cross-tab subscription is a real `window` StorageEvent listener.
           include: [
-            'src/{components,hooks,state,storage,test}/**/*.test.{ts,tsx}',
+            'src/{components,hooks,shell,state,storage,test}/**/*.test.{ts,tsx}',
             'src/*.test.{ts,tsx}',
           ],
         },
@@ -61,6 +64,11 @@ export default defineConfig({
         // Type-only modules: erased at compile time, so there is nothing to
         // execute and v8 reports them as 0%/partial noise.
         'src/engine/types.ts',
+        'src/engine/weaver/types.ts',
+        'src/engine/stack/types.ts',
+        'src/engine/range/types.ts',
+        'src/engine/code/types.ts',
+        'src/engine/shuffle/types.ts',
         'src/**/*.d.ts',
       ],
       // NFR-8

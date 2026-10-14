@@ -3,11 +3,19 @@ import { createPortal } from 'react-dom';
 
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
+/**
+ * Ids of the open modals, oldest first. Only the topmost one reacts to Escape,
+ * so a confirmation opened over another dialog closes alone (FR-34, FR-47).
+ */
+const openModalIds: string[] = [];
+
 export interface ModalProps {
   readonly isOpen: boolean;
   readonly title: string;
   readonly children: ReactNode;
   readonly onClose: () => void;
+  /** `alertdialog` for confirmations that interrupt the player (FR-34, FR-47). */
+  readonly role?: 'dialog' | 'alertdialog';
 }
 
 /**
@@ -17,27 +25,45 @@ export interface ModalProps {
  * focus-trapped while open, dismissible with Escape or a backdrop click, and
  * labelled by its own heading.
  */
-export function Modal({ isOpen, title, children, onClose }: ModalProps): React.JSX.Element | null {
+export function Modal({
+  isOpen,
+  title,
+  children,
+  onClose,
+  role = 'dialog',
+}: ModalProps): React.JSX.Element | null {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
   useFocusTrap(panelRef, isOpen);
 
+  // Registered by open/close only, not by every render, so a parent
+  // re-rendering cannot move an older dialog above a newer one.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    openModalIds.push(titleId);
+    return () => {
+      openModalIds.splice(openModalIds.indexOf(titleId), 1);
+    };
+  }, [isOpen, titleId]);
+
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        event.stopPropagation();
-        onClose();
-      }
+      if (event.key !== 'Escape') return;
+      if (openModalIds[openModalIds.length - 1] !== titleId) return;
+
+      event.stopPropagation();
+      onClose();
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, titleId]);
 
   // Prevent the page behind from scrolling while the dialog is up.
   useEffect(() => {
@@ -68,7 +94,7 @@ export function Modal({ isOpen, title, children, onClose }: ModalProps): React.J
 
       <div
         ref={panelRef}
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={titleId}
         className="relative max-h-[85dvh] w-full max-w-md animate-fade-in overflow-y-auto rounded-lg bg-surface p-5 shadow-xl"

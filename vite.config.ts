@@ -5,8 +5,8 @@ import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Served from https://<user>.github.io/wordwright/, so assets need this prefix.
-  base: '/wordwright/',
+  // Served from https://<user>.github.io/wordgames/, so assets need this prefix.
+  base: '/wordgames/',
   // Tailwind runs through PostCSS (postcss.config.mjs), not the Vite plugin —
   // see ADR-018 for why.
   plugins: [react()],

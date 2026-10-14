@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { openWordwright } from './helpers';
+
 /**
  * Generates the README screenshots (T-48).
  *
@@ -8,10 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
  *   npx playwright test --project=desktop e2e/screenshots.spec.ts
  */
 
-async function ready(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
-}
+const ready = openWordwright;
 
 /** Plays two guesses so the board shows real colour feedback. */
 async function playSampleGuesses(page: Page): Promise<void> {

@@ -34,6 +34,15 @@ describe('loadDictionary', () => {
     expect(dictionary.guesses.has(dictionary.answers[0] as string)).toBe(true);
   });
 
+  it('exposes the sorted guess array itself, not a copy (ARCHITECTURE 8.5)', async () => {
+    const dictionary = await loadDictionary(5);
+    const lists = await DICTIONARY_REGISTRY[5]();
+
+    expect(dictionary.guessList).toBe(lists.guesses);
+    expect(dictionary.guessList).toEqual([...dictionary.guessList].sort());
+    expect(dictionary.guessList).toHaveLength(dictionary.guesses.size);
+  });
+
   it('returns the identical object on a second call, rather than rebuilding', async () => {
     const first = await loadDictionary(4);
     const second = await loadDictionary(4);

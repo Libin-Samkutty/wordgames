@@ -6,11 +6,11 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta
       name="description"
-      content="Wordwright — an offline word guessing game with 4, 5, and 6 letter modes. No accounts, no tracking, everything stays on your device."
+      content="wordgames — offline word games, starting with Wordwright and WordWeaver. No accounts, no tracking, everything stays on your device."
     />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121213" media="(prefers-color-scheme: dark)" />
-    <title>Wordwright — Word Guessing Game</title>
+    <title>wordgames — Offline Word Games</title>
     <script>
       /*
        * Applies the persisted theme before first paint so there is no flash of
@@ -19,7 +19,11 @@
        */
       (function () {
         try {
-          var raw = localStorage.getItem('wordwright:v1:settings');
+          // The legacy key is the fallback for the first load after the rename,
+          // before the import has copied the player's settings across (FR-70).
+          var raw =
+            localStorage.getItem('wordgames:v1:settings') ||
+            localStorage.getItem('wordwright:v1:settings');
           var settings = raw ? JSON.parse(raw) : null;
           var theme = (settings && settings.theme) || 'system';
           var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;

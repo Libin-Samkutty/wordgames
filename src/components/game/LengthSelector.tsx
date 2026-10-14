@@ -5,6 +5,8 @@ import { cn } from '@/lib/cn';
 
 export interface LengthSelectorProps {
   readonly value: WordLength;
+  /** The lengths on offer. Wordwright has 4, 5 and 6; WordWeaver has 4 and 5. */
+  readonly lengths?: readonly WordLength[];
   readonly disabled: boolean;
   readonly onChange: (length: WordLength) => void;
 }
@@ -20,6 +22,7 @@ export interface LengthSelectorProps {
  */
 export function LengthSelector({
   value,
+  lengths = WORD_LENGTHS,
   disabled,
   onChange,
 }: LengthSelectorProps): React.JSX.Element {
@@ -27,8 +30,8 @@ export function LengthSelector({
 
   /** Moves selection and focus together, as the radiogroup pattern requires. */
   const move = (delta: number): void => {
-    const index = WORD_LENGTHS.indexOf(value);
-    const next = WORD_LENGTHS[(index + delta + WORD_LENGTHS.length) % WORD_LENGTHS.length];
+    const index = lengths.indexOf(value);
+    const next = lengths[(index + delta + lengths.length) % lengths.length];
     if (next === undefined || next === value) return;
 
     onChange(next);
@@ -57,11 +60,11 @@ export function LengthSelector({
         break;
       case 'Home':
         event.preventDefault();
-        jumpTo(WORD_LENGTHS[0]);
+        jumpTo(lengths[0]);
         break;
       case 'End':
         event.preventDefault();
-        jumpTo(WORD_LENGTHS[WORD_LENGTHS.length - 1]);
+        jumpTo(lengths[lengths.length - 1]);
         break;
       default:
         break;
@@ -75,7 +78,7 @@ export function LengthSelector({
       aria-label="Word length"
       className="flex items-center gap-0.5 rounded-md bg-surface-sunken p-0.5"
     >
-      {WORD_LENGTHS.map((length) => {
+      {lengths.map((length) => {
         const isSelected = length === value;
 
         return (

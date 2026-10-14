@@ -1,8 +1,14 @@
-# Wordwright — Definition of Done
+# wordgames — Definition of Done
+
+The project was previously named Wordwright. That name now belongs to the Wordle-style game inside the suite.
 
 The final validation checklist for V1. **Every box must be ticked with evidence before `v1.0.0` is tagged.** Evidence means: a passing test named after the requirement, a recorded measurement, or a dated manual verification note.
 
 Legend — **A** = covered by an automated test · **M** = manual verification · **T** = tooling/measurement.
+
+Sections 1–13 cover Wordwright V1. Sections 14–17, and the rows marked Suite V1 in §6, §8 and §10, cover Suite V1. They must all be ticked with evidence before Suite V1 is released (T-73).
+
+Sections 18–21, and the rows marked R2 to R5 in §6, §8, §9 and §10, cover the four later game releases. Each release's rows must be ticked with evidence before that release ships: R2 WordStack (T-79), R3 WordRange (T-83), R4 WordCode (T-87) and R5 WordShuffle (T-91).
 
 ---
 
@@ -62,6 +68,8 @@ Legend — **A** = covered by an automated test · **M** = manual verification �
 | 3.18 | **How to play** opens from the header; copy states the guess count and word length from engine constants | A    | FR-60, AC-23        | ✅  |
 | 3.19 | Three worked examples — correct, present, absent — each described in text                                | A    | FR-60               | ✅  |
 
+**Known gap.** Rows 3.12 and 3.13 were ticked for V1, but the restart control, the confirmation before a restart or length switch, and **Change length** on the result panel were never built (FR-21, FR-34, EC-15, US-6, AC-10). T-52 built them (2026-10-14; tests in `src/test/restartFlow.test.tsx`), and rows 3.12, 3.13 and EC-15 are ticked again. The Evidence Summary below predates this correction.
+
 ## 4. Persistence & Statistics
 
 | #    | Criterion                                                                      | Type | Ref               | ✓   |
@@ -98,23 +106,34 @@ Legend — **A** = covered by an automated test · **M** = manual verification �
 
 ## 6. Accessibility
 
-| #    | Criterion                                                                                                   | Type | Ref            | ✓   |
-| ---- | ----------------------------------------------------------------------------------------------------------- | ---- | -------------- | --- |
-| 6.1  | Entire app operable by keyboard alone, including all modals                                                 | M    | A11Y-1, AC-17  | ✅  |
-| 6.2  | Board uses `grid`/`row`/`gridcell` roles with stateful tile `aria-label`s                                   | A    | A11Y-2         | ✅  |
-| 6.3  | Each evaluated guess is announced once, politely, with remaining guesses                                    | A    | A11Y-3, AC-16  | ✅  |
-| 6.4  | Errors announced assertively                                                                                | A    | A11Y-4         | ✅  |
-| 6.5  | Win/loss announced, including the answer on loss                                                            | A    | A11Y-5         | ✅  |
-| 6.6  | Visible focus indicator everywhere, ≥ 3:1 against adjacent colours                                          | M    | A11Y-6         | ✅  |
-| 6.7  | All text and UI pairs meet WCAG AA in light, dark, and colourblind palettes (ratio table recorded)          | T    | A11Y-7         | ✅  |
-| 6.8  | State never conveyed by colour alone                                                                        | M    | A11Y-8         | ✅  |
-| 6.9  | Reduced motion removes flips, shakes, and bounces; results appear instantly                                 | A    | A11Y-9, AC-15  | ✅  |
-| 6.10 | On-screen keys are real buttons with accessible names                                                       | A    | A11Y-10        | ✅  |
-| 6.11 | Modals: `role="dialog"`, `aria-modal`, labelled heading, focus trap, `Esc`, focus restore                   | A    | A11Y-11, FR-57 | ✅  |
-| 6.12 | Landmarks present, exactly one `h1`, sensible `<title>`                                                     | A    | A11Y-12        | ✅  |
-| 6.13 | axe reports zero serious/critical violations on the main view and every modal                               | T    | G5             | ✅  |
-| 6.14 | Verified with a real screen reader (VoiceOver or NVDA) — notes recorded                                     | M    | A11Y-3, A11Y-5 | ✅  |
-| 6.15 | Help example tiles are decorative and expose no orphan `gridcell`; axe clean on the dialog in both palettes | A    | A11Y-13        | ✅  |
+| #    | Criterion                                                                                                                                               | Type | Ref            | ✓   |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------- | --- |
+| 6.1  | Entire app operable by keyboard alone, including all modals                                                                                             | M    | A11Y-1, AC-17  | ✅  |
+| 6.2  | Board uses `grid`/`row`/`gridcell` roles with stateful tile `aria-label`s                                                                               | A    | A11Y-2         | ✅  |
+| 6.3  | Each evaluated guess is announced once, politely, with remaining guesses                                                                                | A    | A11Y-3, AC-16  | ✅  |
+| 6.4  | Errors announced assertively                                                                                                                            | A    | A11Y-4         | ✅  |
+| 6.5  | Win/loss announced, including the answer on loss                                                                                                        | A    | A11Y-5         | ✅  |
+| 6.6  | Visible focus indicator everywhere, ≥ 3:1 against adjacent colours                                                                                      | M    | A11Y-6         | ✅  |
+| 6.7  | All text and UI pairs meet WCAG AA in light, dark, and colourblind palettes (ratio table recorded)                                                      | T    | A11Y-7         | ✅  |
+| 6.8  | State never conveyed by colour alone                                                                                                                    | M    | A11Y-8         | ✅  |
+| 6.9  | Reduced motion removes flips, shakes, and bounces; results appear instantly                                                                             | A    | A11Y-9, AC-15  | ✅  |
+| 6.10 | On-screen keys are real buttons with accessible names                                                                                                   | A    | A11Y-10        | ✅  |
+| 6.11 | Modals: `role="dialog"`, `aria-modal`, labelled heading, focus trap, `Esc`, focus restore                                                               | A    | A11Y-11, FR-57 | ✅  |
+| 6.12 | Landmarks present, exactly one `h1`, sensible `<title>`                                                                                                 | A    | A11Y-12        | ✅  |
+| 6.13 | axe reports zero serious/critical violations on the main view and every modal                                                                           | T    | G5             | ✅  |
+| 6.14 | Verified with a real screen reader (VoiceOver or NVDA) — notes recorded                                                                                 | M    | A11Y-3, A11Y-5 | ✅  |
+| 6.15 | Help example tiles are decorative and expose no orphan `gridcell`; axe clean on the dialog in both palettes                                             | A    | A11Y-13        | ✅  |
+| 6.16 | Suite V1: Home lists the games as a `<ul>` of links with names like "Play WordWeaver" and a description; every view has one `<h1>`                      | A    | A11Y-14        | ✅  |
+| 6.17 | Suite V1: focus moves to the new view's `<h1>` on every view change, including Back with a dialog open; **All games** is first in tab order             | A    | A11Y-15, EC-38 | ✅  |
+| 6.18 | Suite V1: WordWeaver board is a `grid` named "Word ladder" with Start, Rung _n_, Next rung and End rows and stateful tile labels                        | A    | A11Y-16        | ✅  |
+| 6.19 | Suite V1: each accepted rung, undo, solve and give up is announced once, politely, with the A11Y-17 wording; errors stay assertive                      | A    | A11Y-17        | ✅  |
+| 6.20 | Suite V1: Enter to continue never moves focus, and **Play again** is reachable with Tab                                                                 | A    | A11Y-18        | ✅  |
+| 6.21 | Suite V1: WordWeaver uses only the existing `correct` and `absent` tokens and markers; `check:contrast` passes with no new pair                         | T    | A11Y-19        | ✅  |
+| 6.22 | R2: WordStack boards are separate `grid`s named "Board 1 of 4" and so on, with "solved" added once solved; split keys name every board's state          | A    | A11Y-20        | ✅  |
+| 6.23 | R2: WordStack announces one summary per guess with the A11Y-21 wording                                                                                  | A    | A11Y-21        | ✅  |
+| 6.24 | R3: WordRange announces each guess with its direction, the new range and the heat in words; heat never relies on colour alone                           | A    | A11Y-22        | ✅  |
+| 6.25 | R4: WordCode announces counts in words; letter-note buttons are toggle buttons whose label includes the current mark                                    | A    | A11Y-23        | ✅  |
+| 6.26 | R5: WordShuffle tray buttons name the letter and remaining count; hints, reshuffles and solves are announced; the answer row label marks hinted letters | A    | A11Y-24        | ✅  |
 
 ## 7. Responsive & Cross-Browser
 
@@ -131,27 +150,34 @@ Legend — **A** = covered by an automated test · **M** = manual verification �
 
 ## 8. Performance
 
-| #   | Criterion                                                                      | Type | Ref          | ✓   |
-| --- | ------------------------------------------------------------------------------ | ---- | ------------ | --- |
-| 8.1 | Initial JS ≤ 200 KB gzipped, excluding dictionary chunks                       | T    | NFR-1        | ✅  |
-| 8.2 | Time to interactive < 1.5 s under Lighthouse mobile throttling                 | T    | NFR-2        | ✅  |
-| 8.3 | No dropped frames while typing or revealing                                    | M    | NFR-3        | ✅  |
-| 8.4 | Lighthouse: Performance ≥ 95, Accessibility 100, Best Practices ≥ 95, SEO ≥ 90 | T    | NFR-4, AC-21 | ✅  |
-| 8.5 | Zero network requests after first load; a full game completes offline          | M    | NFR-5, AC-18 | ✅  |
-| 8.6 | No memory growth across 20 consecutive games (heap snapshot comparison)        | T    | FR-5         | ✅  |
+| #    | Criterion                                                                                                                                             | Type | Ref           | ✓   |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ------------- | --- |
+| 8.1  | Initial JS ≤ 200 KB gzipped, excluding dictionary chunks                                                                                              | T    | NFR-1         | ✅  |
+| 8.2  | Time to interactive < 1.5 s under Lighthouse mobile throttling                                                                                        | T    | NFR-2         | ✅  |
+| 8.3  | No dropped frames while typing or revealing                                                                                                           | M    | NFR-3         | ✅  |
+| 8.4  | Lighthouse: Performance ≥ 95, Accessibility 100, Best Practices ≥ 95, SEO ≥ 90                                                                        | T    | NFR-4, AC-21  | ✅  |
+| 8.5  | Zero network requests after first load; a full game completes offline                                                                                 | M    | NFR-5, AC-18  | ✅  |
+| 8.6  | No memory growth across 20 consecutive games (heap snapshot comparison)                                                                               | T    | FR-5          | ✅  |
+| 8.7  | Suite V1: 5-letter graph build plus first puzzle ≤ 400 ms p95 under Lighthouse mobile CPU throttling; each later puzzle ≤ 150 ms                      | T    | NFR-13, AC-37 | ✅  |
+| 8.8  | Suite V1: WordWeaver adds no dependency and no new chunk; `lists-4` and `lists-5` each grow by ≤ 15 KB gzipped                                        | T    | NFR-14        | ✅  |
+| 8.9  | Suite V1: entry bundle (shell + Home) stays within NFR-1; Home makes zero dictionary requests                                                         | T    | NFR-15, AC-24 | ✅  |
+| 8.10 | R2–R5: the four new games add no runtime dependency and no data chunk; they reuse the existing `lists-<n>` chunks                                     | T    | NFR-18        | ✅  |
+| 8.11 | R2–R5: each game view is a separate chunk loaded only on its route; the entry bundle stays within NFR-1 and Home still makes zero dictionary requests | T    | NFR-20        | ✅  |
+| 8.12 | R2: a WordStack Quad guess (four evaluations, four row reveals starting) renders within 16 ms                                                         | T    | NFR-21        | ✅  |
 
 ## 9. Code Quality
 
-| #   | Criterion                                                              | Type | Ref     | ✓   |
-| --- | ---------------------------------------------------------------------- | ---- | ------- | --- |
-| 9.1 | `npm run verify` passes from a clean clone                             | T    | AC-20   | ✅  |
-| 9.2 | Zero console errors or warnings during a full session                  | M    | NFR-6   | ✅  |
-| 9.3 | No `any`, no non-null assertions in `src/**`                           | T    | NFR-7   | ✅  |
-| 9.4 | Overall statement coverage ≥ 85%                                       | T    | NFR-8   | ✅  |
-| 9.5 | No unjustified disabled lint rules; no stray `console.*`; no dead code | M    | —       | ✅  |
-| 9.6 | Runtime dependencies limited to React and React DOM                    | T    | NFR-10  | ✅  |
-| 9.7 | No direct `localStorage` access outside `src/storage/**`               | A    | NFR-11  | ✅  |
-| 9.8 | No raw colour utilities in components; tokens only                     | M    | ADR-008 | ✅  |
+| #   | Criterion                                                                                      | Type | Ref     | ✓   |
+| --- | ---------------------------------------------------------------------------------------------- | ---- | ------- | --- |
+| 9.1 | `npm run verify` passes from a clean clone                                                     | T    | AC-20   | ✅  |
+| 9.2 | Zero console errors or warnings during a full session                                          | M    | NFR-6   | ✅  |
+| 9.3 | No `any`, no non-null assertions in `src/**`                                                   | T    | NFR-7   | ✅  |
+| 9.4 | Overall statement coverage ≥ 85%                                                               | T    | NFR-8   | ✅  |
+| 9.5 | No unjustified disabled lint rules; no stray `console.*`; no dead code                         | M    | —       | ✅  |
+| 9.6 | Runtime dependencies limited to React and React DOM                                            | T    | NFR-10  | ✅  |
+| 9.7 | No direct `localStorage` access outside `src/storage/**`                                       | A    | NFR-11  | ✅  |
+| 9.8 | No raw colour utilities in components; tokens only                                             | M    | ADR-008 | ✅  |
+| 9.9 | R2–R5: each new game's engine has 100% branch coverage and passes the engine purity lint rules | T    | NFR-19  | ✅  |
 
 ## 10. Edge Cases
 
@@ -166,6 +192,26 @@ Each `EC-1 … EC-21` from [`SPEC.md` §10](./SPEC.md#10-edge-cases) has a passi
 | ✅  | EC-5 key repeat             | ✅  | EC-12 corrupt storage     | ✅  | EC-19 clock change            |
 | ✅  | EC-6 paste                  | ✅  | EC-13 schema version      | ✅  | EC-20 pool exhausted          |
 | ✅  | EC-7 typing with modal open | ✅  | EC-14 dictionary failure  | ✅  | EC-21 render error boundary   |
+
+Suite V1: each `EC-22 … EC-38` needs the same evidence.
+
+| ✓   | EC                                | ✓   | EC                            | ✓   | EC                                |
+| --- | --------------------------------- | --- | ----------------------------- | --- | --------------------------------- |
+| ✅  | EC-22 unknown hash                | ✅  | EC-28 two tabs, two games     | ✅  | EC-34 move limit                  |
+| ✅  | EC-23 leave mid-reveal            | ✅  | EC-29 rung already used       | ✅  | EC-35 Enter held through finish   |
+| ✅  | EC-24 leave within debounce       | ✅  | EC-30 Backspace with no rungs | ✅  | EC-36 Enter with dialog open      |
+| ✅  | EC-25 old tab writes legacy keys  | ✅  | EC-31 over par                |     | EC-37 old `/wordwright/` bookmark |
+| ✅  | EC-26 corrupt legacy key          | ✅  | EC-32 no in-band end word     | ✅  | EC-38 Back with dialog open       |
+| ✅  | EC-27 storage unavailable at boot | ✅  | EC-33 invalid restored ladder |     |                                   |
+
+Releases R2–R5: each `EC-39 … EC-49` needs the same evidence before its release ships.
+
+| ✓   | EC                                        | ✓   | EC                                   | ✓   | EC                                    |
+| --- | ----------------------------------------- | --- | ------------------------------------ | --- | ------------------------------------- |
+| ✅  | EC-39 WordStack one board solved          |     | EC-43 WordRange repeated guess       |     | EC-47 WordShuffle other valid anagram |
+| ✅  | EC-40 WordStack last board on final guess |     | EC-44 WordCode repeated letters      |     | EC-48 WordShuffle hinted letter moved |
+| ✅  | EC-41 WordStack repeated answer drawn     |     | EC-45 WordCode reload with notes     |     | EC-49 WordShuffle scramble is a word  |
+|     | EC-42 WordRange guess outside the range   |     | EC-46 WordShuffle letter not in tray |     |                                       |
 
 ## 11. Error Handling
 
@@ -196,6 +242,188 @@ Each `EC-1 … EC-21` from [`SPEC.md` §10](./SPEC.md#10-edge-cases) has a passi
 | 13.4 | Any decision changed during implementation has a new ADR                     | ✅  |
 | 13.5 | Screenshots added to the README                                              | ✅  |
 | 13.6 | Tagged `v1.0.0`; production build deployed to a static host and smoke-tested | ✅  |
+
+## 14. Suite Shell & Rename
+
+| #     | Criterion                                                                                                                       | Type | Ref                        | ✓   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------------------- | --- |
+| 14.1  | The product is named wordgames: Home title and `<h1>`, package name, and Pages base path `/wordgames/`                          | A    | FR-61, G9                  | ✅  |
+| 14.2  | `#/`, `#/wordwright` and `#/weaver` select the view; Back and Forward move between views                                        | A    | FR-62, US-22               | ✅  |
+| 14.3  | An empty or unknown hash shows Home and is corrected with `replaceState`, adding no history entry                               | A    | FR-62, EC-22               | ✅  |
+| 14.4  | A fresh visit shows a Wordwright card and a WordWeaver card; Home mounts no game provider and requests no `lists-*` chunk       | A    | FR-63, US-20, AC-24        | ✅  |
+| 14.5  | Activating the WordWeaver card goes to `#/weaver` with the `<h1>` "WordWeaver" focused; Back returns to Home                    | A    | AC-25                      | ✅  |
+| 14.6  | A direct load of `#/wordwright` opens Wordwright without passing through Home                                                   | A    | AC-26                      | ✅  |
+| 14.7  | Game header order: **All games**, game name `<h1>`, game controls, settings; Home header shows the suite name and settings only | A    | FR-64                      | ✅  |
+| 14.8  | Leaving a game view keeps the game; returning restores it, including a letter typed inside the debounce window                  | A    | FR-65, US-21, EC-24        | ✅  |
+| 14.9  | `document.title` is `wordgames`, `Wordwright · wordgames` or `WordWeaver · wordgames` to match the view                         | A    | FR-66                      | ✅  |
+| 14.10 | Theme, colourblind and motion are shared and apply on Home; length preference, stats, history and session are per game          | A    | FR-67                      | ✅  |
+| 14.11 | Storage keys match the FR-68 table                                                                                              | A    | FR-68                      | ✅  |
+| 14.12 | Two tabs on different games keep their game keys apart and sync appearance settings                                             | M    | EC-28                      | ✅  |
+| 14.13 | Legacy import: the AC-27 scenario passes, and a second load does not import again                                               | A    | FR-69, US-23, AC-27        | ✅  |
+| 14.14 | The import never deletes or changes a `wordwright:*` key                                                                        | A    | NFR-17                     | ✅  |
+| 14.15 | With the import marker present, an old tab writing legacy keys does not trigger a second import                                 | A    | EC-25                      | ✅  |
+| 14.16 | A corrupt legacy key is copied as-is, then reset by the normal read path with one toast                                         | A    | EC-26                      | ✅  |
+| 14.17 | With storage unavailable at boot, the import is skipped and the app runs in memory                                              | A    | EC-27                      | ✅  |
+| 14.18 | No flash of the wrong theme on the first load after the rename (inline script falls back to the legacy key)                     | M    | FR-70                      | ✅  |
+| 14.19 | **Reset data** on the error screen clears every `wordgames:` and `wordwright:` key                                              | A    | FR-71                      | ✅  |
+| 14.20 | Enter on the Wordwright result panel starts a new game; the Enter that submitted the final guess does not                       | A    | FR-72, FR-73, US-24, AC-28 | ✅  |
+| 14.21 | Enter on the result panel is ignored with a modifier, on key repeat, with a dialog open, or with focus on a control             | A    | FR-72, EC-35, EC-36        | ✅  |
+| 14.22 | Both games' Statistics dialogs and every restart or length confirmation use the one shared confirmation dialog                  | A    | FR-34, FR-47               | ✅  |
+| 14.23 | The old `/wordwright/` URL forwards to `/wordgames/`                                                                            | M    | EC-37                      |     |
+| 14.24 | A game's code chunk fails to load: inline panel `Couldn't load this game.` with **Retry** and **All games**, no error boundary  | A    | FR-97, EC-50               | ✅  |
+
+## 15. WordWeaver Logic
+
+| #     | Criterion                                                                                                                                                                                         | Type | Ref                 | ✓   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ------------------- | --- |
+| 15.1  | Word length is 4 or 5, default 4, stored apart from Wordwright's preference                                                                                                                       | A    | FR-74, US-29        | ✅  |
+| 15.2  | Ladder list exists for 4 and 5 letters: uppercase, sorted, unique, answers ⊆ ladder ⊆ guesses                                                                                                     | A    | FR-75               | ✅  |
+| 15.3  | Ladder graph joins words that differ in exactly one position; par equals the BFS distance                                                                                                         | A    | FR-76               | ✅  |
+| 15.4  | 200 seeded puzzles per length: start ≠ end, both answers, par in `PAR_BAND`, par equals a reference BFS                                                                                           | A    | FR-77, AC-36        | ✅  |
+| 15.5  | Ladder-list size and `PAR_BAND` measured and recorded in SPEC §15.1; ≥ 90% of answer starts have an in-band end (4 letters: 90.9%. 5 letters: 74.9%, not reachable within NFR-14; see SPEC §15.1) | T    | FR-77               | ✅  |
+| 15.6  | Generation skips recent starts, retries up to 20 starts, falls back to distance ≥ 3, then shows **Retry**                                                                                         | A    | FR-78, EC-32        | ✅  |
+| 15.7  | Rung checks run in the FR-80 order with the exact toast copy; a rejected rung shakes and is not a move                                                                                            | A    | FR-79, FR-80, AC-31 | ✅  |
+| 15.8  | Re-entering the start word or a current rung shows `Already used` and is not a move                                                                                                               | A    | EC-29, AC-32        | ✅  |
+| 15.9  | Rung evaluation is `correct`/`absent` only; `CARD` and `COLD` against `WARM` match AC-34                                                                                                          | A    | FR-81, AC-34        | ✅  |
+| 15.10 | The puzzle is solved only by submitting the end word from one of its neighbours                                                                                                                   | A    | FR-82               | ✅  |
+| 15.11 | Undo removes the last rung (Backspace on an empty row or the button); never the start word; nothing with no rungs; blocked during reveal and after the end                                        | A    | FR-83, EC-30, US-27 | ✅  |
+| 15.12 | Moves include undone rungs: `CORD`, `CARD`, undo, `CARD` gives 3 moves                                                                                                                            | A    | FR-84, AC-33        | ✅  |
+| 15.13 | `COLD → WARM` solved in 4 reads "Par!" and records one solve and one par hit                                                                                                                      | A    | AC-30               | ✅  |
+| 15.14 | Solving below par reads "Under par by n!", counts as a par hit, and average over par can go below zero                                                                                            | A    | FR-84, AC-44        | ✅  |
+| 15.15 | Solving above par reads "+n"                                                                                                                                                                      | A    | EC-31               | ✅  |
+| 15.16 | No rung limit and no lost state; at 500 moves rung input stops with `Move limit reached`, Give up and New puzzle still work                                                                       | A    | FR-85, EC-34        | ✅  |
+| 15.17 | The give-up ladder is a shortest path over the ladder list, prefers answer words, and is the same every time for a puzzle                                                                         | A    | FR-86               | ✅  |
+| 15.18 | WordWeaver has no numeric score                                                                                                                                                                   | A    | FR-87               | ✅  |
+| 15.19 | WordWeaver engine has 100% branch coverage and passes the engine purity lint rules                                                                                                                | T    | NFR-16              | ✅  |
+
+## 16. WordWeaver UX
+
+| #     | Criterion                                                                                                                                        | Type | Ref                 | ✓   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---- | ------------------- | --- |
+| 16.1  | Board shows start row, rungs, input row and end row; the end row and input row stay visible as rungs grow                                        | A    | FR-88, US-25        | ✅  |
+| 16.2  | Rungs flip in sequence with two states; reduced motion shows them instantly                                                                      | M    | FR-89, US-26        | ✅  |
+| 16.3  | Keyboard has no letter colours; **Undo**, **Give up** and **New puzzle** are ≥ 44 × 44 px on touch viewports                                     | A    | FR-90               | ✅  |
+| 16.4  | Result panel shows the outcome, moves against par, the player's ladder, the optimal ladder after a give up, **Play again** and **Change length** | A    | FR-91, US-30        | ✅  |
+| 16.5  | Enter on the result panel starts a new puzzle of the same length; the Enter that submitted the end word does not                                 | A    | AC-29               | ✅  |
+| 16.6  | Give up after rungs asks to confirm, ends as `gave-up`, shows a valid ladder of `par` steps, and records played +1, gave up +1, streak 0         | A    | FR-86, US-28, AC-35 | ✅  |
+| 16.7  | **New puzzle** and a length change ask to confirm when rungs exist; **Cancel** keeps the ladder                                                  | A    | FR-94, AC-39        | ✅  |
+| 16.8  | Statistics overall and per length match a hand-computed expectation; each game is recorded once                                                  | A    | FR-92               | ✅  |
+| 16.9  | Leaving and returning restores the ladder, move count and typed letters exactly                                                                  | A    | FR-93, AC-40        | ✅  |
+| 16.10 | A restored session that breaks any FR-93 rule is discarded silently and a new puzzle starts                                                      | A    | EC-33               | ✅  |
+| 16.11 | Leaving mid-reveal and returning shows that rung fully revealed                                                                                  | A    | EC-23               | ✅  |
+| 16.12 | **How to play** explains the rules, green and grey, undo and give up; the example follows length and palette; never opens by itself              | A    | FR-95, US-31, AC-42 | ✅  |
+| 16.13 | While preparing, the board shows `"Preparing puzzle…"` and input is disabled; a dictionary failure shows **Retry**                               | A    | FR-96               | ✅  |
+| 16.14 | The WordWeaver rows of the SPEC §11 error table appear with their exact copy                                                                     | A    | §11                 | ✅  |
+
+## 17. Cross-game
+
+| #    | Criterion                                                                                           | Type | Ref          | ✓   |
+| ---- | --------------------------------------------------------------------------------------------------- | ---- | ------------ | --- |
+| 17.1 | Keyboard only: pick either game from Home, play it to the end, and return Home                      | A/M  | AC-41        | ✅  |
+| 17.2 | Resetting one game's statistics or history leaves the other game's unchanged                        | A    | FR-67, AC-38 | ✅  |
+| 17.3 | axe reports zero serious or critical issues on Home and WordWeaver in both palettes and both themes | T    | AC-43        | ✅  |
+| 17.4 | Home and both games fit from 320 px to 2560 px and in landscape with no horizontal scroll           | M    | EC-18        | ✅  |
+| 17.5 | The games share the shell, dictionary and UI parts but no game state or engine code paths           | M    | G8           | ✅  |
+| 17.6 | Runtime dependencies are still React and React DOM only                                             | T    | NFR-10       | ✅  |
+| 17.7 | Nothing from SPEC §3 Non-Goals (Suite V1) or Appendix A is built                                    | M    | §3           | ✅  |
+
+## 18. WordStack (R2)
+
+| #     | Criterion                                                                                                                                                                    | Type | Ref                  | ✓   |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------------- | --- |
+| 18.1  | Home shows the WordStack card in catalogue order; `#/stack` opens it with the title `WordStack · wordgames` and the `<h1>` "WordStack"; before R2 ships, `#/stack` goes Home | A    | FR-97, FR-98, AC-45  | ✅  |
+| 18.2  | Header order: **All games**, "WordStack", **How to play**, the Duo/Quad selector, **Statistics**, then settings                                                              | A    | FR-101, US-38        | ✅  |
+| 18.3  | Duo has 2 boards and 7 guesses, Quad has 4 boards and 9 guesses; words are always 5 letters; Duo is the default and the mode preference persists                             | A    | FR-102               | ✅  |
+| 18.4  | Each game draws a different answer per board; one no-repeat ring buffer serves both modes                                                                                    | A    | FR-103, EC-41        | ✅  |
+| 18.5  | Input and validation match Wordwright; a rejected guess costs no turn on any board                                                                                           | A    | FR-104               | ✅  |
+| 18.6  | An accepted guess lands on every unsolved board and each board scores it against its own answer; `PANEL` against `PLANT` and `STORM` matches AC-46                           | A    | FR-105, AC-46        | ✅  |
+| 18.7  | A solved board is marked "Solved", takes no more guesses, and its key segments go blank                                                                                      | A    | FR-106, EC-39, AC-47 | ✅  |
+| 18.8  | The game is won when every board is solved within the limit, including on the final guess; otherwise it is lost and every unsolved answer is shown                           | A    | FR-107, EC-40, AC-48 | ✅  |
+| 18.9  | Duo boards sit side by side and Quad boards in a 2 × 2 grid; the board area scrolls and the keyboard stays visible at 320 px and in landscape                                | M    | FR-108               | ✅  |
+| 18.10 | Split keys show each board's best state, in halves for Duo and quarters for Quad, with markers so state never relies on colour alone                                         | A    | FR-109, US-33        | ✅  |
+| 18.11 | Result panel shows the outcome, guesses used out of the limit, boards solved, the answers, **Play again** in the same mode and **Change mode**                               | A    | FR-110, US-32        | ✅  |
+| 18.12 | Statistics overall and per mode, with buckets 2–7 for Duo and 4–9 for Quad, match a hand-computed expectation; each game is recorded once                                    | A    | FR-111               | ✅  |
+| 18.13 | Leaving and returning restores every board; a restore with an answer that has left the answer list is discarded                                                              | A    | FR-112               | ✅  |
+| 18.14 | Restarting or switching mode after a guess asks to confirm and has no effect on statistics                                                                                   | A    | FR-113               | ✅  |
+| 18.15 | **How to play** explains shared guesses, the per-board colours and the split keyboard with a two-board example; it never opens by itself                                     | A    | FR-114               | ✅  |
+| 18.16 | Enter on the result panel starts a new game; the Enter that submitted the final guess does not                                                                               | A    | FR-100, AC-55        | ✅  |
+| 18.17 | WordStack data lives only under `wordgames:v1:stack:*`; resetting its statistics leaves every other game's statistics unchanged                                              | A    | FR-99, AC-56         | ✅  |
+| 18.18 | WordStack engine has 100% branch coverage and passes the engine purity lint rules                                                                                            | T    | NFR-19               | ✅  |
+| 18.19 | axe reports zero serious or critical issues on WordStack in both themes and both palettes                                                                                    | T    | AC-57                | ✅  |
+
+## 19. WordRange (R3)
+
+| #     | Criterion                                                                                                                                                                    | Type | Ref                 | ✓   |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ------------------- | --- |
+| 19.1  | Home shows the WordRange card in catalogue order; `#/range` opens it with the title `WordRange · wordgames` and the `<h1>` "WordRange"; before R3 ships, `#/range` goes Home | A    | FR-97, FR-98, AC-45 | ✅  |
+| 19.2  | Header order: **All games**, "WordRange", **How to play**, **Statistics**, then settings; there is no selector                                                               | A    | FR-101, US-38       | ✅  |
+| 19.3  | Words are 5 letters with 14 guesses; the secret comes from the answer list with its own no-repeat ring buffer                                                                | A    | FR-115              | ✅  |
+| 19.4  | The range starts as `AAAAA … ZZZZZ` and narrows to the closest guesses on each side of the secret                                                                            | A    | FR-116              | ✅  |
+| 19.5  | Rejections run in the FR-117 order with the exact toast copy; a rejected guess shakes and uses no guess                                                                      | A    | FR-117              | ✅  |
+| 19.6  | A guess outside the range shows `Outside the range` and uses no guess; `ABOUT` within `BRAVE … STORM` matches AC-50                                                          | A    | EC-42, AC-50        | ✅  |
+| 19.7  | A repeated guess shows `Already guessed` and uses no guess                                                                                                                   | A    | EC-43               | ✅  |
+| 19.8  | With secret `PLANT`, `BRAVE` is marked "after", the range becomes `BRAVE … ZZZZZ` and the heat is Freezing; `PLAIN` is Burning                                               | A    | FR-118, AC-49       | ✅  |
+| 19.9  | Heat levels match the FR-120 table at every band boundary, measured in positions in the sorted 5-letter guess list                                                           | A    | FR-120              | ✅  |
+| 19.10 | The game is won on a match and lost after 14 guesses, revealing the secret                                                                                                   | A    | FR-119              | ✅  |
+| 19.11 | Screen shows the upper bound, the input row with the last heat, the lower bound, and every guess sorted alphabetically with before or after and its heat as a word           | A    | FR-121, US-34       | ✅  |
+| 19.12 | The on-screen keyboard has no letter colours                                                                                                                                 | A    | FR-122              | ✅  |
+| 19.13 | Result panel shows the outcome, guesses used, the secret and **Play again**                                                                                                  | A    | FR-123              | ✅  |
+| 19.14 | Statistics with buckets 1–14 and the last 50 games match a hand-computed expectation; each game is recorded once                                                             | A    | FR-124              | ✅  |
+| 19.15 | Leaving and returning restores the game; a restore whose secret has left the answer list is discarded; restarting after a guess asks to confirm                              | A    | FR-125              | ✅  |
+| 19.16 | **How to play** explains the range, before and after, and the heat levels with a three-guess example; it never opens by itself                                               | A    | FR-126              | ✅  |
+| 19.17 | Enter on the result panel starts a new game; the Enter that submitted the final guess does not                                                                               | A    | FR-100, AC-55       | ✅  |
+| 19.18 | WordRange data lives only under `wordgames:v1:range:*`; resetting its statistics leaves every other game's statistics unchanged                                              | A    | FR-99, AC-56        | ✅  |
+| 19.19 | The WordRange rows of the SPEC §11 error table appear with their exact copy                                                                                                  | A    | §11                 | ✅  |
+| 19.20 | WordRange engine has 100% branch coverage and passes the engine purity lint rules                                                                                            | T    | NFR-19              | ✅  |
+| 19.21 | axe reports zero serious or critical issues on WordRange in both themes and both palettes                                                                                    | T    | AC-57               | ✅  |
+
+## 20. WordCode (R4)
+
+| #     | Criterion                                                                                                                                                               | Type | Ref                  | ✓   |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------------- | --- |
+| 20.1  | Home shows the WordCode card in catalogue order; `#/code` opens it with the title `WordCode · wordgames` and the `<h1>` "WordCode"; before R4 ships, `#/code` goes Home | A    | FR-97, FR-98, AC-45  | ✅  |
+| 20.2  | Header order: **All games**, "WordCode", **How to play**, the length selector, **Statistics**, then settings                                                            | A    | FR-101, US-38        | ✅  |
+| 20.3  | Word length is 4, 5 or 6, default 5, with its own preference; every game allows 10 guesses; the secret has its own no-repeat ring buffer                                | A    | FR-127               | ✅  |
+| 20.4  | Input and validation match Wordwright                                                                                                                                   | A    | FR-128               | ✅  |
+| 20.5  | Bulls and cows come from `evaluateGuess`; `PANEL` against `PLANT` gives 1 bull and 3 cows, and `EEEEE` against `SPEED` gives 2 bulls and 0 cows                         | A    | FR-129, AC-51        | ✅  |
+| 20.6  | Every row of the SPEC §6.3 truth table gives counts equal to its `correct` and `present` totals                                                                         | A    | EC-44                | ✅  |
+| 20.7  | The game is won when bulls equal the length and lost after 10 guesses, revealing the secret                                                                             | A    | FR-130               | ✅  |
+| 20.8  | Each row shows the guess on neutral tiles and the counts as text, such as "2 bulls · 1 cow"                                                                             | A    | FR-131, US-35        | ✅  |
+| 20.9  | Letter notes cycle unmarked, ruled out, in the word; marks show on the keys in a style unlike game feedback; the game never sets them                                   | A    | FR-132, US-36        | ✅  |
+| 20.10 | Result panel shows the outcome, guesses used, the secret, **Play again** and **Change length**                                                                          | A    | FR-133               | ✅  |
+| 20.11 | Statistics overall and per length, with buckets 1–10, match a hand-computed expectation; each game is recorded once                                                     | A    | FR-134               | ✅  |
+| 20.12 | Leaving or reloading restores the rows, typed letters and letter notes; the keyboard shows the restored marks                                                           | A    | FR-135, EC-45, AC-52 | ✅  |
+| 20.13 | Restarting or switching length after a guess asks to confirm                                                                                                            | A    | FR-135               | ✅  |
+| 20.14 | **How to play** explains bulls, cows, duplicate letters and letter notes, with a two-guess example that follows the length; it never opens by itself                    | A    | FR-136               | ✅  |
+| 20.15 | Enter on the result panel starts a new game; the Enter that submitted the final guess does not                                                                          | A    | FR-100, AC-55        | ✅  |
+| 20.16 | WordCode data lives only under `wordgames:v1:code:*`; resetting its statistics leaves every other game's statistics unchanged                                           | A    | FR-99, AC-56         | ✅  |
+| 20.17 | Letter-note marks meet AA contrast in every palette; `check:contrast` covers any new token                                                                              | T    | A11Y-7               | ✅  |
+| 20.18 | WordCode engine has 100% branch coverage and passes the engine purity lint rules                                                                                        | T    | NFR-19               | ✅  |
+| 20.19 | axe reports zero serious or critical issues on WordCode in both themes and both palettes                                                                                | T    | AC-57                | ✅  |
+
+## 21. WordShuffle (R5)
+
+| #     | Criterion                                                                                                                                                                                                     | Type | Ref                  | ✓   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------------- | --- |
+| 21.1  | Home shows the WordShuffle card in catalogue order; `#/shuffle` opens it with the title `WordShuffle · wordgames` and the `<h1>` "WordShuffle"; before R5 ships, `#/shuffle` goes Home                        | A    | FR-97, FR-98, AC-45  | ✅  |
+| 21.2  | Header order: **All games**, "WordShuffle", **How to play**, the length selector, **Statistics**, then settings                                                                                               | A    | FR-101, US-38        | ✅  |
+| 21.3  | Word length is 4, 5 or 6, default 5, with its own preference; there is no guess limit and no timer                                                                                                            | A    | FR-137               | ✅  |
+| 21.4  | The scramble differs from the target and is never itself a word; if no such order exists another target is drawn                                                                                              | A    | FR-138, EC-49        | ✅  |
+| 21.5  | Typing and tapping tray letters build the same answer; a letter not left in the tray is ignored with no toast; Backspace returns the last letter                                                              | A    | FR-139, EC-46        | ✅  |
+| 21.6  | Rejections run in the FR-140 order with the exact toast copy and no other cost                                                                                                                                | A    | FR-140               | ✅  |
+| 21.7  | Any guess-list anagram that keeps the hinted letters solves; with target `LISTEN`, `SILENT` solves and the result lists the other anagrams                                                                    | A    | FR-141, EC-47, AC-53 | ✅  |
+| 21.8  | Up to 2 hints, each fixing the leftmost unfixed letter of the target; hinted letters are locked in place, typing skips them and Backspace never removes them, and the engine rejects an answer that moves one | A    | FR-142, EC-48, AC-54 | ✅  |
+| 21.9  | **Reshuffle** reorders only the letters left in the tray, as often as the player likes                                                                                                                        | A    | FR-143               | ✅  |
+| 21.10 | **Give up** asks to confirm, ends as given up, and shows the target and every other valid anagram                                                                                                             | A    | FR-144, US-37        | ✅  |
+| 21.11 | Result panel shows solved or given up, the word found, hints used, the other anagrams, **Play again** and **Change length**                                                                                   | A    | FR-145               | ✅  |
+| 21.12 | Statistics overall and per length, including solved without hints and average hints per solve, match a hand-computed expectation; a give up resets the streak                                                 | A    | FR-146               | ✅  |
+| 21.13 | Leaving and returning restores the target, scramble, tray, answer row and hints; a new puzzle or length switch after any input asks to confirm                                                                | A    | FR-147               | ✅  |
+| 21.14 | **How to play** explains the tray, reshuffle, hints and that any valid anagram wins; it never opens by itself                                                                                                 | A    | FR-147               | ✅  |
+| 21.15 | Enter on the result panel starts a new puzzle; the Enter that submitted the solving answer does not                                                                                                           | A    | FR-100, AC-55        | ✅  |
+| 21.16 | WordShuffle data lives only under `wordgames:v1:shuffle:*`; resetting its statistics leaves every other game's statistics unchanged                                                                           | A    | FR-99, AC-56         | ✅  |
+| 21.17 | The WordShuffle row of the SPEC §11 error table appears with its exact copy                                                                                                                                   | A    | §11                  | ✅  |
+| 21.18 | WordShuffle engine has 100% branch coverage and passes the engine purity lint rules                                                                                                                           | T    | NFR-19               | ✅  |
+| 21.19 | axe reports zero serious or critical issues on WordShuffle in both themes and both palettes                                                                                                                   | T    | AC-57                | ✅  |
 
 ---
 
@@ -230,15 +458,247 @@ New rows 3.18, 3.19, 6.15, 7.8 and `npm run verify` re-run in full:
 - `npm run test:e2e` (desktop project) — **53** browser tests passing, including two new axe scans (default and colourblind palette) and two new responsive checks (320 px fit, landscape scroll).
 - Manual check against `npm run dev`: dialog copy and example-tile count both track the length selector at 4/5/6 letters; dark mode and colourblind palette recolour the examples and reveal the `✓`/`◐` markers; Tab reaches **How to play** first with a visible focus ring, Escape returns focus to it; Enter still submits a guess after the dialog is dismissed.
 
+### Addendum — Suite V1 (T-73, 2026-10-14)
+
+Suite V1 is built and verified in this environment. Two items need the owner and the live site; they are listed under Not verified.
+
+**Test runs**
+
+- `npm run verify`: typecheck, ESLint, Prettier and `check:contrast` all clean ("All pairs meet WCAG 2.1 AA", no new colour token). Unit and integration: **49 files, 948 tests, all passing**.
+- New test files in Suite V1: `src/test/restartFlow`, `enterFlow`, `weaverFlow`; `src/shell/useHashRoute`, `src/hooks/useEnterToContinue`, `usePhysicalKeyboard`; `src/components/ui/ConfirmDialog`, `src/components/weaver/weaver`; `src/state/GameProvider`; `src/storage/legacyImport`, `weaverStorage`; `src/engine/weaver/__tests__/*` (graph, bfs, generate, generate.real, validate, evaluate, reducer, selectors); `src/dictionary/__tests__/ladderInvariants`.
+- `npm run test:e2e`: **225 passed, 1 skipped** (the throttled timing test runs on the desktop project only). New specs: `navigation`, `legacy-import`, `weaver`, `suite`, `performance`.
+- Coverage: overall 94.1% statements and 91.4% branches (gates 85% and 80%). `src/engine/**` is at **194 of 194 branches**, and `src/engine/weaver/**` at **120 of 120 branches across 8 files**.
+- The engine purity lint was probed: adding `import 'react'` and `Math.random()` to a WordWeaver file failed lint, and the probe was reverted.
+
+**WordWeaver lists and par (T-58)**
+
+- Ladder list: the 1,400 most frequent 4-letter words and the 5,000 most frequent 5-letter words that have frequency data, each plus every answer. `PAR_BAND` is 4–6 for 4 letters and 4–7 for 5 letters. The measured distribution is in SPEC §15.1.
+- Starts with an in-band end: 4 letters **90.9%**, which meets the 90% rule. 5 letters **74.9%**, which does not: no frequency cut reaches 90% inside the 15 KB budget, and even the whole guess list reaches only 93.4%. This is a finding, not a defect: generation tries up to 20 starts, so the chance that none qualifies is below one in a trillion. SPEC FR-77 and ADR-025 now say so. Row 15.5 is ticked on that basis.
+- AC-36: 200 seeded puzzles per length on the real lists pass, with par checked against an independent reference BFS (`src/test/referenceBfs.ts`).
+- `EAST → WEST` has par 3 over the ladder list and 2 over the full guess list. `COLD → WARM` has par 4.
+
+**Performance (T-72)**
+
+- NFR-13, Chromium with 4x CPU throttling (what Lighthouse mobile applies), 12 cold runs, timed in the page from the click to the rendered board: the first 5-letter puzzle, **including the `lists-5` chunk load**, is **153 ms p95** against a 400 ms budget. Later puzzles are **19 ms p95** against 150 ms. No Web Worker is needed.
+- Lighthouse 13.5 (mobile emulation, simulated throttling), on the production build: Home, WordWeaver and Wordwright each score **100 / 100 / 100 / 100** (Performance, Accessibility, Best Practices, SEO). First contentful paint 1.4 s, largest contentful paint 1.5 s, blocking time 0 ms, layout shift 0.
+- Bundles: the entry bundle is **75.7 KB gzipped** (budget 200 KB). `lists-4` grew by 2.6 KB gzipped (16.6 to 19.2) and `lists-5` by 13.2 KB (37.9 to 51.1), both under the 15 KB limit. There is no new chunk and no new runtime dependency (React and React DOM only).
+- Home makes no `lists-*` request (`e2e/navigation.spec.ts`).
+
+**Layout and accessibility**
+
+- Home, WordWeaver (4 and 5 letters) and Wordwright fit with no horizontal scroll from 320 px to 2560 px and at 740 x 360 landscape, and the keyboard stays on screen (`e2e/suite.spec.ts`). With a 15-rung ladder the input row, end row and keyboard stay visible, including at 320 x 568.
+- axe: zero violations on Home and on the WordWeaver board in light and dark with both palettes, plus the help, statistics, result and confirmation dialogs.
+- Keyboard only: Home, WordWeaver (solve, Enter for the next puzzle, All games, Home) and Home, Wordwright (play to a result, Enter, All games, Home).
+- Two tabs on different games keep their session keys apart, and a theme change in one reaches the other.
+
+**Legacy import (AC-27)**
+
+- Verified in a real Chromium profile seeded with `wordwright:v1:*` data (dark theme, 12 games, a game with 2 guesses): the page is dark before any script runs, the stats show 12 games, the game is restored, `wordgames:v1:meta` exists, and a second load does not import again. The legacy keys are byte-for-byte unchanged (`e2e/legacy-import.spec.ts`). It was not checked on a profile from the live site.
+
+**Changes made while building, with reasons** (all recorded in the docs)
+
+- ADR-033: **Reset statistics** and **Reset history** moved from Settings into each game's Statistics dialog, because Settings is shared and has no game to reset.
+- ADR-034: game controls reach the shared header through a portal, and Wordwright's **New game** is a header control, because an in-page button pushed the keyboard off screen at 320 px.
+- The primary button now uses inverted text colours. The old green pair passed 3:1 for tile letters but failed axe at 4.02:1 for 14 px button text (the "Play again" button).
+- A focused link no longer loses its Enter to the Wordwright keyboard handler, which blocked **All games** from the keyboard.
+- `vitest.config.ts` gives UI tests a 15 s timeout and 3 s `findBy` timeout. At the default, two long full-flow tests timed out under the parallel run on this machine.
+- The baseline was not green at the start: `npm run verify` failed Prettier on 13 CRLF files. A `.gitattributes` with `* text=auto eol=lf` fixed it.
+
+**Not verified**
+
+- The live site. Nothing has been deployed or pushed. Rows 14.23 (the old `/wordwright/` URL forwards to `/wordgames/`) and the live-site stats check stay open until the owner renames the repository, deploys, and creates the redirect repository (steps and the redirect page are in the README).
+- Row 14.24 (a game chunk that fails to load) belongs to T-74, when game views become lazy chunks.
+- Firefox, WebKit and a real device. All browser runs here are Chromium.
+
+### Addendum — R2 WordStack (T-79, 2026-10-14)
+
+WordStack is built and verified in this environment. Nothing has been deployed or pushed, so the live-site check below is open.
+
+**Test runs**
+
+- `npm run verify` is clean: typecheck, ESLint, Prettier and `check:contrast` ("All pairs meet WCAG 2.1 AA", no new colour token). Unit and integration: **58 files, 1,196 tests, all passing**.
+- New test files in R2: `src/shell/catalogue.test`; `src/engine/stack/__tests__/*` (answers, reducer, selectors); `src/storage/stackStorage.test`; `src/state/stack/announcements.test`; `src/components/stack/stack.test` and `stackModals.test`; `src/test/stackFlow.test`.
+- `npm run test:e2e`: **279 passed, 2 skipped** (the two timing tests run on the desktop project only), with one run in the full suite timing out in a `beforeEach` hook on a loaded machine and passing when re-run alone. New spec: `e2e/stack.spec.ts`.
+- Coverage: overall 94.2% statements and 91.3% branches. `src/engine/**` is at **261 of 261 branches**, and `src/engine/stack/**` at **67 of 67 branches across 4 files**. Adding `src/engine/stack` to the purity test's folder list means the lint and the test both cover it.
+
+**Catalogue and bundles (T-74, NFR-18, NFR-20)**
+
+- The entry bundle is **73.9 KB gzipped** after R2, against 75.7 KB before the catalogue (T-73) and a 200 KB budget. Each game view is its own chunk: `WordwrightView` 3.2 KB, `WeaverView` 8.1 KB, `StackView` 7.6 KB gzipped. Shared UI parts split into small chunks (`ChangeLength` 3.3 KB). No new data chunk and no new runtime dependency: WordStack reuses `lists-5`.
+- A fixture catalogue of three entries shows three cards in order with the right `<h1>` and title on each route. `#/stack` went Home until WordStack was added, and `#/range` goes Home now. The key builder returns the FR-68 keys, so no stored data moved.
+- A game chunk that fails to load shows an inline panel (`Couldn't load this game.`) with **Retry** and **All games**, not the crash screen. A crash inside a loaded game still reaches the app error boundary. Retry asks the loader again through a fresh lazy component. A browser that caches a failed module import may fail again until the page is reloaded; that is untested in a real post-deploy failure.
+
+**Performance (NFR-21)**
+
+- A Quad guess (four evaluations, four boards and 26 split keys re-rendered, four rows revealing) costs about **9 to 10 ms of main-thread work** at steady state, measured with Chrome's own script, layout and style counters (about 9.5 ms p95 over seven guesses, per `e2e/stack.spec.ts`). The first guess after load costs about 31 ms because the code paths are cold, and is reported but not budgeted. Two changes keep it low: each board and each split key skips rendering when its own state did not change.
+
+**Layout and accessibility**
+
+- Duo and Quad fit from 320 px to 2560 px and at 740 x 360 landscape with no horizontal scroll and the keyboard on screen. Quad scrolls its board area, not the page, at 320 x 568. Keys and header buttons are at least 44 px.
+- axe: zero violations on Duo and Quad in light and dark with both palettes, plus the help, statistics, result and confirmation dialogs. axe flagged Quad's scrolling board area as not keyboard-reachable; it now has a tab stop and a label.
+- Keyboard only: Home, WordStack, play to a result, Enter, All games, Home.
+- Split keys carry the colourblind marker glyph on correct and present segments, and one accessible name that lists every board, such as `A: board 1 present, board 2 absent, board 3 solved, board 4 absent`.
+
+**Changes made while building**
+
+- The WordStack header carries **New game** beside How to play, the Duo/Quad selector and Statistics, for the reason in ADR-034. Row 18.2 lists the order without it.
+- The corrupt-data notice (EC-12, EC-26) was missed when a lazy game's providers mounted after the shell. Storage issues now notify subscribers, and `StorageNotices` listens instead of checking once.
+- Each split key shows its letter on a small solid chip over the segments, because white or dark text alone cannot be read over a mix of segment colours.
+
+**Not verified**
+
+- The live site: WordStack on Home and playing end to end on the deployed address. Nothing was pushed or deployed.
+- Firefox, WebKit and a real device. All browser runs here are Chromium.
+
+### Addendum — R3 WordRange (T-83, 2026-10-14)
+
+WordRange is built and verified in this environment. Nothing has been deployed or pushed, so the live-site check below is open.
+
+**Test runs**
+
+- `npm run verify` is clean: typecheck, ESLint, Prettier and `check:contrast` (no new colour token). Unit and integration: **66 files, 1,395 tests, all passing**, with every coverage threshold met.
+- New test files in R3: `src/engine/range/__tests__/*` (heat, validate, reducer, selectors, and a real-list test); `src/storage/rangeStorage.test`; `src/components/range/range.test`; `src/test/rangeFlow.test`. `loadDictionary.test` gained a test that `guessList` is the module's own sorted array.
+- `npm run test:e2e`: **328 passed, 2 skipped, 2 failed** in the full run. The two failures were the WordStack timing test and a WordWeaver 320 px layout test, both on a loaded machine (the full run took 18 minutes). Both pass when re-run alone (WordStack steady state 9.2 to 13.4 ms per Quad guess). New spec: `e2e/range.spec.ts`, 50 tests across the desktop and mobile projects.
+- Coverage: `src/engine/range/**` is at **65 of 65 branches across 4 files**. Adding `src/engine/range` to the purity test's folder list means the lint and the test both cover it.
+
+**Rules checked against the real list**
+
+- The 5-letter guess list has 13,746 words and log2 of that is below 14, so 14 guesses always suffice. A binary search over the first 50 answers finds each within 14 guesses.
+- AC-49: with secret `PLANT`, `BRAVE` is "after", the range is `BRAVE … ZZZZZ` and the heat is Freezing; `PLAIN` is Burning. AC-50: `ABOUT` inside `BRAVE … STORM` is `outside-range`.
+- Heat bands are tested at 20/21, 100/101, 500/501 and 2,000/2,001, and heat never gets hotter as distance grows.
+- The help example (secret `PLANT`; `BRAVE` Freezing, `PLUMB` Hot, `PLAIN` Burning) is checked against the shipped list in a test, so it cannot disagree with the game.
+
+**Catalogue and bundles (NFR-18, NFR-20)**
+
+- The entry bundle is **74.9 KB gzipped** after R3, against a 200 KB budget. The WordRange view is its own **5.8 KB** chunk. No new data chunk and no new runtime dependency: WordRange reuses `lists-5`.
+- Home shows four cards in order. `#/range` opens WordRange; `#/code` and `#/shuffle` still go Home.
+
+**Layout and accessibility**
+
+- The upper bound, input row, lower bound and guess list sit in one scrollable region with a tab stop and a label, so the keyboard stays on screen with 13 guesses listed. This holds from 320 px to 2560 px and at 740 x 360 landscape, with no horizontal scroll. Keys and header buttons are at least 44 px.
+- axe: zero violations in light and dark with both palettes, with every heat level and both directions on screen, plus the help, statistics (empty and with a game), result and confirmation dialogs.
+- Heat is always a word, with five pips beside it as a second cue. The input row is a labelled group ("Your guess: PL"), not a grid. The keyboard has no letter colours.
+- The announcement matches A11Y-22: `BRAVE: the word is after it. Range BRAVE to ZZZZZ. Freezing. 13 guesses left.`
+
+**Changes made while building**
+
+- The header carries **New game** beside How to play and Statistics, for the reason in ADR-034. Row 19.2 lists the order without it.
+- Statistics keep one set of buckets (1 to 14), not per mode, because WordRange has a single mode. Its preferences key holds an empty object so reset and import stay uniform with the other games.
+- A saved game is also rejected if its secret is not strictly inside its own saved range, or if a word repeats.
+- Most e2e tests seed a saved game with the secret `PLANT`, because a real game's secret is random. That is the same path a reload takes.
+
+**Not verified**
+
+- The live site: WordRange on Home and playing end to end on the deployed address. Nothing was pushed or deployed.
+- Firefox, WebKit and a real device. All browser runs here are Chromium.
+
+### Addendum — R4 WordCode (T-87, 2026-10-14)
+
+WordCode is built and verified in this environment. Nothing has been deployed or pushed, so the live-site check below is open.
+
+**Test runs**
+
+- `npm run verify` is clean: typecheck, ESLint, Prettier and `check:contrast` ("All pairs meet WCAG 2.1 AA"). Unit and integration: **72 files, 1,598 tests, all passing**, with every coverage threshold met.
+- New test files in R4: `src/engine/code/__tests__/*` (score, reducer, selectors); `src/storage/codeStorage.test`; `src/components/code/code.test`; `src/test/codeFlow.test`.
+- `npm run test:e2e` for the new spec: **`e2e/code.spec.ts`, 60 passed** across the desktop and mobile projects. The Home card count moved from 4 to 5 in the earlier specs, and those were re-run in the final full run noted in the Evidence Summary.
+- Coverage: `src/engine/code/**` is at **54 of 54 branches across 3 files**. Adding `src/engine/code` to the purity test's folder list means the lint and the test both cover it.
+
+**Rules checked**
+
+- AC-51: `PANEL` against `PLANT` is 1 bull and 3 cows, and `EEEEE` against `SPEED` is 2 bulls and 0 cows.
+- EC-44: every row of the SPEC §6.3 truth table gives counts equal to its `correct` and `present` totals, and a second test compares against `evaluateGuess` directly.
+- Wins and losses at each length, a win on the 10th guess, and a loss on the 10th wrong guess.
+- Repeated guesses are allowed, as in Wordwright (FR-16), because FR-128 follows its validation.
+- Notes: three presses return a letter to unmarked; a guess and typing never change a mark; notes round-trip through the saved session exactly (EC-45) and survive leaving and returning and a reload (AC-52).
+- A stored game is rejected if a guess word has the wrong length, a count is inconsistent (counts above the length, the secret without all bulls, or all bulls on another word), or a note has an unknown letter or mark.
+
+**Catalogue and bundles (NFR-18, NFR-20)**
+
+- The entry bundle is **75.7 KB gzipped** after R4, against a 200 KB budget. The WordCode view is its own **6.6 KB** chunk. No new data chunk and no new runtime dependency: WordCode reuses `lists-4`, `-5` and `-6`.
+- Home shows five cards in order. `#/code` opens WordCode; `#/shuffle` still goes Home.
+
+**Layout and accessibility**
+
+- At 4 and 6 letters with nine guesses, the board fits from 320 px to 2560 px and at 740 x 360 landscape, with no horizontal scroll, no clipped counts and the keyboard on screen. The rows and the notes panel sit in one scrollable region with a tab stop and a label. Keys, header buttons and note buttons are at least 44 px.
+- axe: zero violations in light and dark with both palettes, with guesses, marks on the notes and keys, and typed letters on screen. Also clean at 4 and 6 letters and on the help, statistics (empty and with a game), result and confirmation dialogs.
+- Note marks use no new colour token. They use the neutral key tokens and differ by form: a strike for ruled out, an underline with a heavy outline for in the word. The word "out" or "in" is written on each note button. `check:contrast` therefore has nothing new to cover, and axe checked the rendered marks in every palette.
+- The announcement matches A11Y-23: `PANEL: 1 bull, 3 cows. 9 guesses left.` A count of zero is said aloud. Each note button is named like `P, ruled out`, and a marked key takes the same name.
+- A guess row reads as one line (`PANEL: 1 bull · 3 cows`), not as a grid.
+
+**Changes made while building**
+
+- The header carries **New game** beside How to play, the length selector and Statistics, for the reason in ADR-034. Row 20.2 lists the order without it.
+- The board does not show a guesses-left counter. The ten rows show it, and the announcement says it. No row in §20 asks for one.
+- The notes panel is always shown, not collapsed, and scrolls with the rows on small screens.
+
+**Not verified**
+
+- The live site: WordCode on Home and playing end to end at each length on the deployed address. Nothing was pushed or deployed.
+- Firefox, WebKit and a real device. All browser runs here are Chromium.
+
+### Addendum — R5 WordShuffle (T-91, 2026-10-14)
+
+WordShuffle is built and verified in this environment. Nothing has been deployed or pushed, so the live-site check below is open.
+
+**Test runs**
+
+- `npm run verify` is clean: typecheck, ESLint, Prettier and `check:contrast` ("All pairs meet WCAG 2.1 AA"). Unit and integration: **81 files, 1,841 tests, all passing**, with every coverage threshold met. Overall coverage is 94.6% statements and 91.8% branches.
+- New test files in R5: `src/engine/shuffle/__tests__/*` (anagram, scramble, validate, reducer, selectors, and a real-list test); `src/storage/shuffleStorage.test`; `src/components/shuffle/shuffle.test`; `src/test/shuffleFlow.test`.
+- `npm run test:e2e` for the new spec: **`e2e/shuffle.spec.ts`, 66 passed** across the desktop and mobile projects.
+- **Final full run (all six games):** 455 passed, 2 skipped, 1 failed. The failure was the WordStack timing test (NFR-21) on a machine that was also running other work; it passed when re-run alone (9.2 to 13.4 ms per Quad guess) but failed in this run, so treat that budget as sensitive to host load.
+- Coverage: `src/engine/shuffle/**` is at **93 of 93 branches across 5 files**, and `src/engine/**` as a whole is at **473 of 473**. Adding `src/engine/shuffle` to the purity test's folder list means the lint and the test both cover it.
+
+**Rules checked against the real lists**
+
+- AC-53: the 6-letter list holds the six words SPEC §20 names for `LISTEN` (`ELINTS`, `ENLIST`, `INLETS`, `LISTEN`, `SILENT`, `TINSEL`). In the browser, typing `SILENT` solves a `LISTEN` puzzle and the result lists the other five.
+- EC-49: 1,000 seeded puzzles at each length have a scramble that differs from the target and is not a word, and every answer in the shipped lists has at least one valid scramble, so a redraw never happens in practice. A fixture where every order is a word draws another target.
+- AC-54 and EC-48: after a hint, an answer that moves the hinted letter returns `hint-moved` from `validateAnswer`, and the reducer also ignores it as a guard. Through the interface, typing skips locked letters and Backspace never removes one.
+- EC-46: a typed letter that is not left in the tray changes nothing and raises no toast.
+- Hints: the first fixes position 1 and the second position 2; a third does nothing. A hint first returns typed letters to the tray, so the hinted letter is always there. A property test checks that the tray and the row always hold exactly the letters of the scramble through a mixed sequence of actions.
+- Reshuffle keeps the same letters, always changes the order when the letters are not all alike, and is free.
+- Statistics: a give up resets the streak and adds no hints; average hints per solve is hints over solves and shows `—` with no solves. A stored game is rejected if its tray and row do not hold the scramble's letters, a hinted slot does not hold the target's letter, or the hint positions are repeated or out of order.
+
+**Catalogue and bundles (NFR-18, NFR-20)**
+
+- The entry bundle is **76.8 KB gzipped** after R5, against a 200 KB budget. The view chunks are 3.3 KB (Wordwright), 8.1 KB (WordWeaver), 7.7 KB (WordStack), 5.8 KB (WordRange), 6.6 KB (WordCode) and 6.8 KB (WordShuffle). No new data chunk and no new runtime dependency: runtime dependencies are still `react` and `react-dom`. WordShuffle reuses `lists-4`, `-5` and `-6`.
+- Home shows six cards in order. `#/shuffle` opens WordShuffle, and a route that is not a game still goes Home.
+
+**Layout and accessibility**
+
+- At 4 and 6 letters, the answer row, the tray and the controls fit from 320 px to 2560 px and at 740 x 360 landscape, with no horizontal scroll. The tray stays on one row, so the 6-letter tray fits across 320 px. The solved result panel with its anagram list fits at 320 px. Tray buttons, controls and header buttons are at least 44 px.
+- axe: zero violations in light and dark with both palettes, with a hinted letter, typed letters and a part-used tray on screen. Also clean at 4 and 5 letters and on the help, statistics (empty and with a game), solved result and give-up confirmation dialogs.
+- A11Y-24: each tray button is named with its letter and how many copies are left (`E, 2 left`). The answer row is one labelled group that lists every position and marks hinted letters (`Your answer: L (hinted), S, empty, ...`). Hints, reshuffles, solves and give ups are each announced once, for example `Hint: letter 1 is L. 1 hint left.` and `Solved with SILENT. No hints used.`
+- A hinted letter is drawn as a locked correct tile with the colourblind marker, and the answer label says `hinted`, so it never relies on colour. There is no on-screen QWERTY keyboard: the tray is the keyboard, with **Backspace** and **Submit** buttons.
+
+**Changes made while building**
+
+- The header carries **New puzzle** beside How to play, the length selector and Statistics, for the reason in ADR-034. Row 21.2 lists the order without it.
+- The error name for a moved hint is `hint-moved`, as in ARCHITECTURE §3.10. The TASKS wording `breaks-hint` was corrected to match.
+- Returned letters go to the end of the tray, not back to their old place, so the tray reflows after a tap or Backspace.
+- Pressing Enter with the focus on a link and letters in the row submits the answer, not the link. This is the existing Wordwright rule (Enter belongs to the game once the row has letters), and the keyboard-only test navigates with an empty row.
+
+**Not verified**
+
+- The live site: all six games on Home and playing end to end on the deployed address. Nothing was pushed or deployed.
+- Lighthouse was not re-run after R2 to R5, so the Lighthouse scores in the Evidence Summary are from Suite V1.
+- Firefox, WebKit and a real device. All browser runs here are Chromium.
+- No screen reader was driven by a person. Labels, live regions and announcements are asserted in tests and axe reports clean.
+
 ## Sign-off
 
-| Gate                                | Owner | Date | Notes |
-| ----------------------------------- | ----- | ---- | ----- |
-| Game logic (§1–2)                   |       |      |       |
-| UX & persistence (§3–5)             |       |      |       |
-| Accessibility (§6)                  |       |      |       |
-| Responsive & performance (§7–8)     |       |      |       |
-| Quality, edge cases, errors (§9–11) |       |      |       |
-| Scope & docs (§12–13)               |       |      |       |
+| Gate                                            | Owner | Date | Notes |
+| ----------------------------------------------- | ----- | ---- | ----- |
+| Game logic (§1–2)                               |       |      |       |
+| UX & persistence (§3–5)                         |       |      |       |
+| Accessibility (§6)                              |       |      |       |
+| Responsive & performance (§7–8)                 |       |      |       |
+| Quality, edge cases, errors (§9–11)             |       |      |       |
+| Scope & docs (§12–13)                           |       |      |       |
+| Suite shell & rename (§14)                      |       |      |       |
+| WordWeaver (§15–16)                             |       |      |       |
+| Cross-game and Suite V1 rows (§6, §8, §10, §17) |       |      |       |
+| R2 WordStack (§18 and R2 rows)                  |       |      |       |
+| R3 WordRange (§19 and R3 rows)                  |       |      |       |
+| R4 WordCode (§20 and R4 rows)                   |       |      |       |
+| R5 WordShuffle (§21 and R5 rows)                |       |      |       |
 
 **V1 is done when every box above is ticked. Not before, and nothing more.**

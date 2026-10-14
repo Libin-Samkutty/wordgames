@@ -69,7 +69,9 @@ export function usePhysicalKeyboard({
          * focused control only wins when the row is empty; once letters are on
          * the board, Enter belongs to the game.
          */
-        const controlFocused = target instanceof HTMLElement && target.tagName === 'BUTTON';
+        const controlFocused =
+          target instanceof HTMLElement &&
+          (target.tagName === 'BUTTON' || target.closest('a[href]') !== null);
         if (controlFocused && handlers.current.isRowEmpty()) return;
 
         event.preventDefault();

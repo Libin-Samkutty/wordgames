@@ -1,4 +1,4 @@
-# Code Review Prompt — Wordwright V1
+# Code Review Prompt — wordgames (Wordwright V1)
 
 > Paste this into your coding assistant **after** an implementation phase (or before release) to audit the code. Run it as a review pass, not an implementation pass.
 

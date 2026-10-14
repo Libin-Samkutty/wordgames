@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
 
 import { resetSafeStorage } from '@/storage/safeStorage';
@@ -12,6 +12,9 @@ import { resetSafeStorage } from '@/storage/safeStorage';
  * model, and both are load-bearing for us (theme resolution, reduced motion,
  * persistence). Mocking them here keeps every component test deterministic.
  */
+
+// Same reason as `testTimeout` in vitest.config.ts: `findBy*` defaults to 1 s.
+configure({ asyncUtilTimeout: 3000 });
 
 /** Mutable media-query state so tests can simulate OS preference changes (EC-17). */
 const mediaState = new Map<string, boolean>();
@@ -95,6 +98,7 @@ beforeEach(() => {
   installStorage();
   // safeStorage memoises its backend; drop it so it re-probes the fresh mock.
   resetSafeStorage();
+  window.history.replaceState(null, '', '/');
   document.documentElement.className = '';
   document.documentElement.removeAttribute('data-palette');
   document.documentElement.removeAttribute('data-motion');

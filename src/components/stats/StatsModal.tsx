@@ -4,15 +4,8 @@ import { useStats } from '@/state';
 import { averageGuesses, averageSolveMs, winPercentage, type StatsBucket } from '@/storage';
 
 import { Modal } from '../ui/Modal';
-
-function StatTile({ label, value }: { label: string; value: string }): React.JSX.Element {
-  return (
-    <div className="flex flex-col items-center">
-      <dt className="order-2 text-center text-[0.65rem] leading-tight text-text-muted">{label}</dt>
-      <dd className="order-1 text-2xl font-bold tabular-nums">{value}</dd>
-    </div>
-  );
-}
+import { ResetStatsSection } from './ResetStatsSection';
+import { StatTile } from './StatTile';
 
 function GuessDistribution({ bucket }: { bucket: StatsBucket }): React.JSX.Element {
   const max = Math.max(1, ...bucket.distribution);
@@ -49,7 +42,7 @@ export function StatsModal({
   isOpen: boolean;
   onClose: () => void;
 }): React.JSX.Element {
-  const { stats } = useStats();
+  const { stats, resetStatistics, resetHistory } = useStats();
   const bucket = stats.overall;
   const hasGames = bucket.gamesPlayed > 0;
 
@@ -99,6 +92,17 @@ export function StatsModal({
           No games yet. Finish a game and your statistics will appear here.
         </p>
       )}
+
+      {/* Offered whenever there is something to delete, including a kept history after a stats reset. */}
+      {hasGames || stats.recentGames.length > 0 ? (
+        <div className="mt-6">
+          <ResetStatsSection
+            statisticsDescription="games played, streaks, distribution and scores"
+            onResetStatistics={resetStatistics}
+            onResetHistory={resetHistory}
+          />
+        </div>
+      ) : null}
     </Modal>
   );
 }

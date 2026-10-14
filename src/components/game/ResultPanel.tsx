@@ -1,6 +1,9 @@
+import { WORD_LENGTHS, type WordLength } from '@/engine';
+import { useEnterToContinue } from '@/hooks/useEnterToContinue';
 import { formatDuration, formatNumber } from '@/lib/format';
 
 import { Button } from '../ui/Button';
+import { ChangeLength } from './ChangeLength';
 
 export interface ResultPanelProps {
   readonly won: boolean;
@@ -8,7 +11,9 @@ export interface ResultPanelProps {
   readonly guessesUsed: number;
   readonly solveMs: number;
   readonly score: number;
+  readonly wordLength: WordLength;
   readonly onPlayAgain: () => void;
+  readonly onChangeLength: (length: WordLength) => void;
 }
 
 /**
@@ -23,8 +28,13 @@ export function ResultPanel({
   guessesUsed,
   solveMs,
   score,
+  wordLength,
   onPlayAgain,
+  onChangeLength,
 }: ResultPanelProps): React.JSX.Element {
+  // Physical Enter does what Play again does (FR-72, ADR-027).
+  useEnterToContinue(onPlayAgain);
+
   return (
     <section
       aria-labelledby="result-heading"
@@ -56,7 +66,10 @@ export function ResultPanel({
         </div>
       </dl>
 
-      <Button onClick={onPlayAgain}>Play again</Button>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Button onClick={onPlayAgain}>Play again</Button>
+        <ChangeLength lengths={WORD_LENGTHS} current={wordLength} onChange={onChangeLength} />
+      </div>
     </section>
   );
 }

@@ -11,6 +11,7 @@ import {
   validateSession,
   validateSettings,
   validateStats,
+  validateWordwrightPrefs,
 } from './schemas';
 
 /**
@@ -33,10 +34,27 @@ describe('validateSettings', () => {
     ['an unknown theme', { ...DEFAULT_SETTINGS, theme: 'sepia' }],
     ['a non-boolean colorblind flag', { ...DEFAULT_SETTINGS, colorblind: 'yes' }],
     ['an unknown motion mode', { ...DEFAULT_SETTINGS, motion: 'fast' }],
-    ['an unsupported word length', { ...DEFAULT_SETTINGS, defaultWordLength: 7 }],
     ['a missing field', { theme: 'dark' }],
   ])('rejects %s', (_label, value) => {
     expect(validateSettings(value)).toBeNull();
+  });
+});
+
+describe('validateWordwrightPrefs (FR-67)', () => {
+  it('accepts each supported length', () => {
+    for (const defaultWordLength of [4, 5, 6]) {
+      expect(validateWordwrightPrefs({ defaultWordLength })).toEqual({ defaultWordLength });
+    }
+  });
+
+  it.each([
+    ['null', null],
+    ['an array', []],
+    ['an unsupported word length', { defaultWordLength: 7 }],
+    ['a string length', { defaultWordLength: '5' }],
+    ['a missing field', {}],
+  ])('rejects %s', (_label, value) => {
+    expect(validateWordwrightPrefs(value)).toBeNull();
   });
 });
 

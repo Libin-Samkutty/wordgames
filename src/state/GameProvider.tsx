@@ -30,12 +30,13 @@ import { describeEvaluation } from '@/lib/format';
 import {
   createMetaRepository,
   createSessionRepository,
+  createWordwrightPrefsRepository,
   isSessionUsable,
   rememberAnswer,
 } from '@/storage';
 
 import { reportStorageIssue } from './storageIssues';
-import { useSettings, useStats, useToast } from './contexts';
+import { useStats, useToast } from './contexts';
 import { GameContext } from './gameContexts';
 
 /** Status of the dictionary load, distinct from the game's own status. */
@@ -92,14 +93,15 @@ function isPersistable(state: GameState): boolean {
 }
 
 export function GameProvider({ children }: { children: ReactNode }): React.JSX.Element {
-  const { settings, setDefaultWordLength } = useSettings();
   const { show } = useToast();
   const { recordGame } = useStats();
 
-  const sessionRepo = useRef(createSessionRepository(reportStorageIssue));
-  const metaRepo = useRef(createMetaRepository(reportStorageIssue));
+  // Per-game repositories (FR-67, FR-68), created once per provider instance.
+  const [sessionRepo] = useState(() => createSessionRepository('wordwright', reportStorageIssue));
+  const [metaRepo] = useState(() => createMetaRepository('wordwright', reportStorageIssue));
+  const [prefsRepo] = useState(() => createWordwrightPrefsRepository(reportStorageIssue));
 
-  const [wordLength, setLength] = useState<WordLength>(settings.defaultWordLength);
+  const [wordLength, setLength] = useState<WordLength>(() => prefsRepo.read().defaultWordLength);
   const [dictionaryStatus, setDictionaryStatus] = useState<DictionaryStatus>('loading');
   const [dictionary, setDictionary] = useState<Dictionary | null>(null);
   const [announcement, setAnnouncement] = useState('');
@@ -109,16 +111,19 @@ export function GameProvider({ children }: { children: ReactNode }): React.JSX.E
   const [loadToken, setLoadToken] = useState(0);
 
   /** Starts a fresh game for the given length, remembering the answer (FR-4). */
-  const startFreshGame = useCallback((dict: Dictionary): void => {
-    const meta = metaRepo.current.read();
-    const answer = pickAnswer(dict.answers, meta.recentAnswers[dict.wordLength], systemRandom);
+  const startFreshGame = useCallback(
+    (dict: Dictionary): void => {
+      const meta = metaRepo.read();
+      const answer = pickAnswer(dict.answers, meta.recentAnswers[dict.wordLength], systemRandom);
 
-    metaRepo.current.write(rememberAnswer(meta, dict.wordLength, answer));
-    dispatch({
-      type: 'START_GAME',
-      game: createGame({ id: crypto.randomUUID(), wordLength: dict.wordLength, answer }),
-    });
-  }, []);
+      metaRepo.write(rememberAnswer(meta, dict.wordLength, answer));
+      dispatch({
+        type: 'START_GAME',
+        game: createGame({ id: crypto.randomUUID(), wordLength: dict.wordLength, answer }),
+      });
+    },
+    [metaRepo],
+  );
 
   // Load the dictionary for the active length, then restore or start a game.
   useEffect(() => {
@@ -136,7 +141,7 @@ export function GameProvider({ children }: { children: ReactNode }): React.JSX.E
         setDictionaryStatus('ready');
 
         const answers = new Set(dict.answers);
-        const saved = sessionRepo.current.read();
+        const saved = sessionRepo.read();
 
         if (isSessionUsable(saved, wordLength, (word) => answers.has(word))) {
           dispatch({ type: 'START_GAME', game: saved });
@@ -153,7 +158,7 @@ export function GameProvider({ children }: { children: ReactNode }): React.JSX.E
     return () => {
       cancelled = true;
     };
-  }, [wordLength, loadToken, startFreshGame]);
+  }, [wordLength, loadToken, startFreshGame, sessionRepo]);
 
   /*
    * Persist the session (FR-32).
@@ -166,7 +171,7 @@ export function GameProvider({ children }: { children: ReactNode }): React.JSX.E
     if (!isPersistable(state)) return;
 
     const write = (): void => {
-      sessionRepo.current.write(state);
+      sessionRepo.write(state);
     };
 
     const timer = setTimeout(write, SESSION_WRITE_DEBOUNCE_MS);
@@ -178,7 +183,27 @@ export function GameProvider({ children }: { children: ReactNode }): React.JSX.E
       window.removeEventListener('pagehide', write);
       document.removeEventListener('visibilitychange', write);
     };
+  }, [state, sessionRepo]);
+
+  /*
+   * Leaving the game view must not lose the last keystroke (FR-65, EC-24).
+   *
+   * The effect above clears its debounce timer on cleanup without writing,
+   * which is right while the game stays mounted but loses up to 150 ms of
+   * input when it unmounts. So the latest state is mirrored into a ref and
+   * written once, synchronously, on unmount.
+   */
+  const latestStateRef = useRef(state);
+  useEffect(() => {
+    latestStateRef.current = state;
   }, [state]);
+
+  useEffect(
+    () => () => {
+      if (isPersistable(latestStateRef.current)) sessionRepo.write(latestStateRef.current);
+    },
+    [sessionRepo],
+  );
 
   // Record a completed game exactly once (FR-20).
   const recordedRef = useRef<string | null>(null);
@@ -296,12 +321,12 @@ export function GameProvider({ children }: { children: ReactNode }): React.JSX.E
     (length: WordLength): void => {
       // Discard the old session immediately so a mid-load refresh cannot
       // restore a game for the length we just left.
-      sessionRepo.current.clear();
+      sessionRepo.clear();
       setLength(length);
       // Persist the choice so the next visit opens on it (FR-46).
-      setDefaultWordLength(length);
+      prefsRepo.write({ defaultWordLength: length });
     },
-    [setDefaultWordLength],
+    [sessionRepo, prefsRepo],
   );
 
   const retryDictionary = useCallback((): void => {

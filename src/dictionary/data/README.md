@@ -11,20 +11,22 @@ The generator is the only part of this repository that touches the network, and 
 
 ## Sources
 
-| Source                                                                                                                         | Used for                                     | Licence                                                                                               |
-| ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| [ENABLE1](https://github.com/dolph/dictionary/blob/master/enable1.txt) (Enhanced North American Benchmark Lexicon, Alan Beale) | Guess list for each length                   | **Public domain**, explicitly released by the author                                                  |
+| Source                                                                                                                         | Used for                                      | Licence                                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| [ENABLE1](https://github.com/dolph/dictionary/blob/master/enable1.txt) (Enhanced North American Benchmark Lexicon, Alan Beale) | Guess list for each length                    | **Public domain**, explicitly released by the author                                                  |
 | [`unix-words`](https://github.com/dolph/dictionary/blob/master/unix-words) (the traditional `/usr/share/dict/words`)           | Supplementary guess list, merged with ENABLE1 | Public domain; mirrored in the same repo as ENABLE1                                                   |
-| [`popular.txt`](https://github.com/dolph/dictionary/blob/master/popular.txt) (dolph/dictionary)                                | Familiarity filter for answer candidates     | Public domain, derived from ENABLE1                                                                   |
-| [`count_1w.txt`](https://norvig.com/ngrams/) (Peter Norvig, from the Google Web Trillion Word Corpus)                          | Frequency ranking to order answer candidates | Data published freely for research and teaching; word/frequency pairs are facts and not copyrightable |
+| [`popular.txt`](https://github.com/dolph/dictionary/blob/master/popular.txt) (dolph/dictionary)                                | Familiarity filter for answer candidates      | Public domain, derived from ENABLE1                                                                   |
+| [`count_1w.txt`](https://norvig.com/ngrams/) (Peter Norvig, from the Google Web Trillion Word Corpus)                          | Frequency ranking to order answer candidates  | Data published freely for research and teaching; word/frequency pairs are facts and not copyrightable |
 
 ENABLE1 is the standard free word list used by word games; it contains no capitalised proper nouns, no hyphenated forms, and no abbreviations with punctuation. Sources are cached in `scripts/.cache/` (gitignored) so repeat runs are offline and deterministic.
 
-## How the two lists differ (ADR-004)
+## How the lists differ (ADR-004, ADR-025)
 
 **`guesses`** — every ENABLE1 word of the given length. Permissive by design, so a player who types a real word is almost never told it isn't one.
 
 **`answers`** — the 700 most frequent words of that length that also pass a fairness screen. Small and curated, so every solution is deducible.
+
+**`ladder`** (4 and 5 letters only) — the words WordWeaver builds ladders from: the most frequent ENABLE1 words of that length that have corpus frequency data, minus the blocklisted, name-like and clipped words, plus every answer. 1,400 words for 4 letters and 5,000 for 5. The plural rule for answers is not applied, because `CARS` is a fine rung. The sizes come from `scripts/measure-par.mjs` (SPEC §15.1) and are set by `LADDER_POOL_SIZE` in the generator.
 
 ## Answer fairness filters
 
@@ -40,11 +42,11 @@ Applied to the answer pool only. Every filtered word remains a **valid guess** �
 
 ## Current output
 
-| Length | Answers | Guesses |
-| ------ | ------- | ------- |
-| 4      | 700     | 6,142   |
-| 5      | 700     | 13,746  |
-| 6      | 700     | 24,637  |
+| Length | Answers | Guesses | Ladder |
+| ------ | ------- | ------- | ------ |
+| 4      | 700     | 6,142   | 1,400  |
+| 5      | 700     | 13,746  | 5,000  |
+| 6      | 700     | 24,637  | none   |
 
 Comfortably above the SPEC minimums of 300 answers and 1,500 guesses (FR-30). At 700 answers per length, the no-repeat ring buffer (FR-4) suppresses the 50 most recent solutions, so a player sees no repeat for at least 50 games.
 
@@ -68,4 +70,5 @@ Enforced twice — by the generator (which throws rather than emit a bad file) a
 - Uppercase `/^[A-Z]+$/`, exactly the declared length (FR-27)
 - Unique and sorted ascending (FR-27)
 - `answers ⊆ guesses` (FR-26)
+- For 4 and 5 letters, `answers ⊆ ladder ⊆ guesses` (FR-75)
 - `answers.length ≥ 300`, `guesses.length ≥ 1500` (FR-30)

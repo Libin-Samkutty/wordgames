@@ -4,6 +4,12 @@ import type { WordLength } from '@/engine/types';
 export interface RawLists {
   readonly answers: readonly string[];
   readonly guesses: readonly string[];
+  /**
+   * Common words WordWeaver builds ladders from (FR-75). Present only in the
+   * modules for the lengths it plays, 4 and 5. A superset of `answers`, a
+   * subset of `guesses`.
+   */
+  readonly ladder?: readonly string[];
 }
 
 /**
@@ -16,6 +22,15 @@ export interface Dictionary {
   readonly wordLength: WordLength;
   readonly answers: readonly string[];
   readonly guesses: ReadonlySet<string>;
+  /**
+   * The guess list as a sorted array, the same array the module exports, not a
+   * copy. WordRange measures list distance with it (FR-120) and WordShuffle
+   * builds its anagram index from it. Uppercase, unique and sorted, so string
+   * order is list order (ARCHITECTURE §8.3, §8.5).
+   */
+  readonly guessList: readonly string[];
+  /** The ladder list, for the lengths that have one (FR-75). */
+  readonly ladder?: readonly string[];
 }
 
 /** Raised when a dictionary chunk cannot be loaded, so the UI can offer Retry (EC-14). */

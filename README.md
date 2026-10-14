@@ -1,8 +1,8 @@
-# Wordwright
+# wordgames
 
-An offline, production-quality Wordle experience for **4-, 5-, and 6-letter** words. No backend, no accounts, no network calls — everything runs in the browser and persists to LocalStorage.
+An offline suite of word games. **Wordwright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
 
-> **Status:** V1 complete — all 48 tasks done. 415 unit/integration tests and 98 browser tests pass; Lighthouse scores 100 for Performance, Accessibility and Best Practices; every WCAG AA contrast pair is verified in CI. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
+> **Status:** All six games are built, 91 of 91 tasks: Wordwright, WordWeaver, WordStack, WordRange, WordCode and WordShuffle. 1,841 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. Nothing has been deployed from this branch yet. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
 
 ---
 
@@ -22,7 +22,7 @@ An offline, production-quality Wordle experience for **4-, 5-, and 6-letter** wo
 
 ## Overview
 
-Wordwright is a single-page web app that recreates the Wordle game loop with three word lengths, unlimited replays, and a full statistics suite. It is deliberately **local-first**: the dictionaries ship with the bundle, game state and stats live in LocalStorage, and the app is fully playable with the network disabled.
+wordgames is a single-page web app with a Home screen and one view per game, chosen by the URL hash (`#/`, `#/wordwright`, `#/weaver`, `#/stack`, `#/range`, `#/code`, `#/shuffle`). Wordwright recreates the Wordle game loop with three word lengths, unlimited replays, and a full statistics suite. WordWeaver generates an unlimited supply of ladder puzzles on the device, scored against par. Each game keeps its own statistics, preferences and saved game. The suite is deliberately **local-first**: the dictionaries ship with the bundle, game state and stats live in LocalStorage, and the app is fully playable with the network disabled.
 
 **Design principles**
 
@@ -51,7 +51,52 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 
 ## Features
 
-### Gameplay
+### Home and navigation
+
+- A Home screen with one card per game, and an **All games** link in every game
+- Hash routes with working Back, Forward and bookmarks; the page title and focus follow the view
+- Leaving a game keeps it: coming back restores the board, the typed letters and the move count
+- **Enter** on a result screen starts the next game, in every game
+- Returning Wordwright players keep their statistics, streaks, settings and game in progress: the app copies the old `wordwright:v1:*` data across once and never deletes it
+
+### WordWeaver
+
+- Get from a start word to an end word, one letter per rung; every rung must be a real word
+- Letters that already match the end word turn green; there is no yellow
+- 4 or 5 letters (default 4), unlimited puzzles generated on the device, no daily or shared puzzles
+- **Par** is the shortest ladder made of everyday words. A rarer word can finish **under par**
+- **Undo** (or Backspace on an empty row), **Give up** (shows one shortest ladder) and **New puzzle**
+- Statistics overall and per length: solved, gave up, par hits, average over par and streaks
+
+### WordStack
+
+- Solve 2 boards (**Duo**, 7 guesses) or 4 boards (**Quad**, 9 guesses) at the same time; every guess plays on every open board
+- Each board has its own hidden word and its own colours; a solved board freezes
+- A split keyboard: each key shows one segment per board, with markers so colour is never the only cue
+- Statistics overall and per mode, with a guess distribution for each
+
+### WordRange
+
+- Find a hidden 5-letter word in 14 guesses. Each guess tells you whether the word comes **before** or **after** it in the dictionary
+- The **range** shows the two words you have narrowed it to, and only words inside it are allowed
+- **Heat** (Burning, Hot, Warm, Cold, Freezing) says how near a guess is, always written as a word
+- Statistics with a guess distribution for 1 to 14
+
+### WordCode
+
+- Find the hidden word from counts only: **bulls** are letters in the right place, **cows** are letters in the word but misplaced
+- 4, 5 or 6 letters, 10 guesses, and no tile colours
+- **Letter notes**: 26 buttons that cycle a letter through unmarked, ruled out and in the word. Marks show on the keyboard and are saved with the game
+- Statistics overall and per length
+
+### WordShuffle
+
+- The letters of a word arrive shuffled in a tray. Type or tap them into order
+- **Any real word** that uses exactly those letters wins, not only the drawn one
+- Up to 2 **hints** lock the next letter of the drawn word in place; **Reshuffle** is free; **Give up** shows every valid anagram
+- 4, 5 or 6 letters, no clock and no guess limit. Statistics count hints, not time
+
+### Wordwright
 
 - 4, 5, and 6 letter modes — 6 guesses in every mode
 - Unlimited games with random answer selection (no repeats until the pool cycles)
@@ -66,7 +111,7 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 - Physical keyboard **and** on-screen keyboard, kept in sync
 - Tile flip reveal, key press/state animations, shake on invalid input, win bounce
 - Loading states for dictionary chunks, non-blocking error toasts
-- Restart at any time; switch word length at any time
+- **New game** at any time, and switch word length at any time, each with a confirmation once a guess has been made
 
 ### Statistics (LocalStorage)
 
@@ -74,7 +119,7 @@ Games played · games won · win % · current streak · best streak · average g
 
 ### Settings
 
-Light / Dark / System theme · colorblind-friendly palette · reduced motion override · reset statistics · reset history
+Light / Dark / System theme · colorblind-friendly palette · reduced motion override. These apply to every game. Each game's Statistics dialog has its own **Reset statistics** and **Reset history**.
 
 ### Accessibility
 
@@ -111,8 +156,8 @@ No backend. No authentication. No APIs. No database.
 ### Install & run
 
 ```bash
-git clone <repo-url> wordwright
-cd wordwright
+git clone <repo-url> wordgames
+cd wordgames
 npm install
 npm run dev        # http://localhost:5173
 ```
@@ -130,20 +175,22 @@ To verify the offline promise: run `npm run preview`, load the page, then disabl
 
 ## Development Workflow
 
-| Command                 | Purpose                                    |
-| ----------------------- | ------------------------------------------ |
-| `npm run dev`           | Vite dev server with HMR                   |
-| `npm run build`         | `tsc -b` then `vite build`                 |
-| `npm run preview`       | Serve the production build                 |
-| `npm run test`          | Vitest in watch mode                       |
-| `npm run test:run`      | Single CI-style test pass                  |
-| `npm run test:coverage` | Coverage report (thresholds enforced)      |
-| `npm run lint`          | ESLint over `src/`                         |
-| `npm run lint:fix`      | ESLint with `--fix`                        |
-| `npm run format`        | Prettier write                             |
-| `npm run format:check`  | Prettier check (CI)                        |
-| `npm run typecheck`     | `tsc --noEmit`                             |
-| `npm run verify`        | typecheck + lint + format:check + test:run |
+| Command                      | Purpose                                                         |
+| ---------------------------- | --------------------------------------------------------------- |
+| `npm run dev`                | Vite dev server with HMR                                        |
+| `npm run build`              | `tsc -b` then `vite build`                                      |
+| `npm run preview`            | Serve the production build                                      |
+| `npm run test`               | Vitest in watch mode                                            |
+| `npm run test:run`           | Single CI-style test pass                                       |
+| `npm run test:coverage`      | Coverage report (thresholds enforced)                           |
+| `npm run test:e2e`           | Playwright browser tests (axe, layout)                          |
+| `npm run build:dictionaries` | Regenerate the word lists (offline once the sources are cached) |
+| `npm run lint`               | ESLint over `src/`                                              |
+| `npm run lint:fix`           | ESLint with `--fix`                                             |
+| `npm run format`             | Prettier write                                                  |
+| `npm run format:check`       | Prettier check (CI)                                             |
+| `npm run typecheck`          | `tsc --noEmit`                                                  |
+| `npm run verify`             | typecheck + lint + format:check + test:run                      |
 
 **Loop:** write a failing test → implement → `npm run verify` → commit with a [Conventional Commit](./docs/CONTRIBUTING.md#commit-conventions) message.
 
@@ -164,15 +211,21 @@ Engine work is test-first. UI work is spec-first. See [`docs/TASKS.md`](./docs/T
 ## Project Structure
 
 ```
-wordwright/
+wordgames/
 ├── docs/                  # Specification set (source of truth)
 ├── prompts/               # Prompts for AI coding assistants
 ├── public/                # Static assets served as-is
 ├── src/
 │   ├── engine/            # Pure game rules — no React, no DOM
-│   ├── dictionary/        # Word lists + lazy loading registry
-│   ├── storage/           # LocalStorage repositories + migrations
-│   ├── state/             # React providers wrapping the engine
+│   │   ├── weaver/        # WordWeaver: ladder graph, shortest paths, generation, reducer
+│   │   ├── stack/         # WordStack: boards, per-board scoring, answers
+│   │   ├── range/         # WordRange: range, heat by list distance
+│   │   ├── code/          # WordCode: bulls and cows, letter notes
+│   │   └── shuffle/       # WordShuffle: anagram index, scramble, tray and hints
+│   ├── dictionary/        # Word lists (answers, guesses, ladder) + lazy loading registry
+│   ├── shell/             # Home, hash routing, the frame around every view
+│   ├── storage/           # LocalStorage repositories, legacy import
+│   ├── state/             # React providers wrapping the engines (one folder per game, such as state/stack/)
 │   ├── components/        # Presentational + container components
 │   ├── hooks/             # Reusable React hooks
 │   ├── lib/               # Small shared utilities
@@ -204,8 +257,8 @@ Read `SPEC.md` first. When code and docs disagree, the docs win — or the docs 
 
 ## Roadmap
 
-**V1 — MVP (in scope now)**
-Core 4/5/6-letter gameplay, dictionaries, full UX, statistics, settings, accessibility, tests, tooling.
+**Suite V1 and releases R2 to R5 (built on the `suite-v1` branch)**
+Home and navigation, Wordwright, WordWeaver, the rename to wordgames with no loss of saved data, then WordStack, WordRange, WordCode and WordShuffle. Nothing else is planned: Appendix A of the SPEC lists game ideas that are deliberately not built.
 
 **V2 — Gameplay expansion (not implemented; architecture must not block it)**
 Daily challenge · hard mode · practice mode · timed mode · survival mode · custom & seeded games · shareable links · calendar heatmap · long-term trends · per-length analytics · win history charts · sound effects · richer animations · themes · confetti · achievements · installable PWA with offline caching.
@@ -220,3 +273,30 @@ The V2 and V3 lists exist to steer architecture — see the _Extension Points_ s
 ## License
 
 MIT. Word lists are derived from public-domain and permissively licensed sources; see `src/dictionary/data/README.md` for provenance.
+
+---
+
+## Moving from the old address
+
+The project was renamed from Wordwright to wordgames, and the site now lives at `/wordgames/`. These steps are for the repository owner and are not part of any code change:
+
+1. Rename the GitHub repository to `wordgames`, and update the Pages settings if the source changed.
+2. Update the local remote: `git remote set-url origin <new-url>`.
+3. Keep old bookmarks working: create a small repository named `wordwright` whose Pages site redirects to the new address. Its whole content is one `index.html`:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content="0; url=/wordgames/" />
+    <link rel="canonical" href="/wordgames/" />
+    <title>Moved to wordgames</title>
+  </head>
+  <body>
+    <p>This game has moved. <a href="/wordgames/">Go to wordgames</a>.</p>
+  </body>
+</html>
+```
+
+Returning players lose nothing. On GitHub Pages the old and new addresses share one origin (`username.github.io`), so LocalStorage is shared, and the first load of the new address copies the saved data across (SPEC FR-69).

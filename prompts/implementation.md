@@ -1,4 +1,4 @@
-# Implementation Prompt — Wordwright V1
+# Implementation Prompt — wordgames (Wordwright V1)
 
 > Paste this into your coding assistant at the start of an implementation session. It is the assistant's engineering manager: it defines the stack, the standards, the boundaries, and the bar for "done."
 

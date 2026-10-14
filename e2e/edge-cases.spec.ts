@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { WORDWRIGHT_URL, openWordwright } from './helpers';
+
 /**
  * Edge cases that need a real browser (T-45).
  *
@@ -8,10 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
  * genuine storage failures, and OS-level preferences.
  */
 
-async function ready(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
-}
+const ready = openWordwright;
 
 /**
  * Starts from a clean slate.
@@ -21,7 +20,7 @@ async function ready(page: Page): Promise<void> {
  * assertions about a fresh board fail intermittently.
  */
 async function freshGame(page: Page): Promise<void> {
-  await page.goto('/');
+  await page.goto(WORDWRIGHT_URL);
   await page.evaluate(() => {
     localStorage.clear();
   });
@@ -118,11 +117,11 @@ test.describe('persistence across reloads (EC-9, AC-9)', () => {
 
 test.describe('corrupt and unavailable storage (EC-11, EC-12)', () => {
   test('recovers from corrupt saved data without crashing', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(WORDWRIGHT_URL);
     await page.evaluate(() => {
-      localStorage.setItem('wordwright:v1:session', '{ not valid json');
-      localStorage.setItem('wordwright:v1:stats', '"a string, not an object"');
-      localStorage.setItem('wordwright:v1:settings', '[]');
+      localStorage.setItem('wordgames:v1:wordwright:session', '{ not valid json');
+      localStorage.setItem('wordgames:v1:wordwright:stats', '"a string, not an object"');
+      localStorage.setItem('wordgames:v1:settings', '[]');
     });
 
     await page.reload();
@@ -143,7 +142,7 @@ test.describe('corrupt and unavailable storage (EC-11, EC-12)', () => {
       });
     });
 
-    await page.goto('/');
+    await page.goto(WORDWRIGHT_URL);
     await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
 
     await page.keyboard.type('crane');
@@ -225,7 +224,7 @@ test.describe('storage warnings (SPEC §11, EC-11, EC-12)', () => {
         },
       });
     });
-    await page.goto('/');
+    await page.goto(WORDWRIGHT_URL);
     await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
 
     // Appears twice by design: the visible toast and the polite live region.
@@ -241,9 +240,9 @@ test.describe('storage warnings (SPEC §11, EC-11, EC-12)', () => {
   });
 
   test('warns when saved data was corrupt (EC-12, SPEC §11)', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(WORDWRIGHT_URL);
     await page.evaluate(() => {
-      localStorage.setItem('wordwright:v1:stats', '{ not json');
+      localStorage.setItem('wordgames:v1:wordwright:stats', '{ not json');
     });
     await page.reload();
     await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
@@ -252,7 +251,7 @@ test.describe('storage warnings (SPEC §11, EC-11, EC-12)', () => {
   });
 
   test('no spurious warning on a healthy first load', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(WORDWRIGHT_URL);
     await page.evaluate(() => {
       localStorage.clear();
     });

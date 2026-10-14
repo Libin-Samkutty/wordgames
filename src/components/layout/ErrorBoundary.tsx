@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
-import { ALL_STORAGE_KEYS, safeStorage } from '@/storage';
+import { resetAllData } from '@/storage';
 
 interface ErrorBoundaryProps {
   readonly children: ReactNode;
@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
     // No telemetry (ADR-001); the console is the only sink available offline.
-    console.error('Wordwright crashed:', error, info.componentStack);
+    console.error('wordgames crashed:', error, info.componentStack);
   }
 
   private readonly handleReload = (): void => {
@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   };
 
   private readonly handleResetData = (): void => {
-    for (const key of ALL_STORAGE_KEYS) safeStorage.removeItem(key);
+    resetAllData();
     window.location.reload();
   };
 

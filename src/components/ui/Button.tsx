@@ -10,7 +10,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  primary: 'bg-tile-correct text-tile-text-revealed hover:opacity-90',
+  // Inverted text colours, not the green tile pair: that pair clears 3:1 for the
+  // large bold tile letters but not 4.5:1 for 14px button text (axe, T-71).
+  primary: 'bg-text text-surface hover:opacity-90',
   secondary: 'border-2 border-border-strong bg-transparent text-text hover:bg-surface-raised',
   danger: 'bg-danger text-danger-text hover:opacity-90',
 };

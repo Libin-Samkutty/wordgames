@@ -37,6 +37,7 @@ export function GameView(): React.JSX.Element {
     submitGuess,
     completeReveal,
     restart,
+    setWordLength,
     retryDictionary,
   } = useGame();
   const { prefersReducedMotion } = useSettings();
@@ -136,7 +137,9 @@ export function GameView(): React.JSX.Element {
               wordLength,
               solveMs,
             })}
+            wordLength={wordLength}
             onPlayAgain={restart}
+            onChangeLength={setWordLength}
           />
         ) : null}
       </div>

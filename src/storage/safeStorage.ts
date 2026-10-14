@@ -20,7 +20,7 @@ export interface SafeStorage {
 
 /** Writes, reads back and deletes a sentinel to prove storage actually works. */
 function probe(storage: Storage): boolean {
-  const sentinel = '__wordwright_probe__';
+  const sentinel = '__wordgames_probe__';
 
   try {
     storage.setItem(sentinel, '1');
@@ -75,7 +75,11 @@ function createBrowserStorage(storage: Storage): SafeStorage {
     },
     keys: () => {
       try {
-        return Object.keys(storage);
+        // `length`/`key(i)` rather than `Object.keys`, which also lists the
+        // Storage methods on some implementations.
+        return Array.from({ length: storage.length }, (_unused, index) =>
+          storage.key(index),
+        ).filter((key): key is string => key !== null);
       } catch {
         return [];
       }

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import type { WordLength } from '@/engine/types';
 import {
   createSettingsRepository,
   DEFAULT_SETTINGS,
@@ -18,7 +17,6 @@ export interface SettingsContextValue {
   readonly setTheme: (theme: Theme) => void;
   readonly setColorblind: (enabled: boolean) => void;
   readonly setMotion: (motion: MotionPreference) => void;
-  readonly setDefaultWordLength: (length: WordLength) => void;
   /** True when the OS asks for reduced motion or the player has (A11Y-9). */
   readonly prefersReducedMotion: boolean;
   /** The theme actually applied, with `system` already resolved. */
@@ -115,9 +113,6 @@ export function SettingsProvider({ children }: { children: ReactNode }): React.J
       },
       setMotion: (motion) => {
         update({ motion });
-      },
-      setDefaultWordLength: (defaultWordLength) => {
-        update({ defaultWordLength });
       },
       prefersReducedMotion,
       resolvedTheme,

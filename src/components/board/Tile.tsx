@@ -16,6 +16,11 @@ export interface TileProps {
   /** Position in the reveal stagger; drives the animation delay. */
   readonly revealDelayMs: number;
   readonly reducedMotion: boolean;
+  /**
+   * Replaces the default `Row n, letter m: …` label. WordWeaver names its rows
+   * `Start`, `Rung n` and so on, and says `matches end word` (A11Y-16).
+   */
+  readonly ariaLabel?: string;
 }
 
 const STATE_LABEL: Record<TileState, string> = {
@@ -40,6 +45,7 @@ export const Tile = memo(function Tile({
   isRevealing,
   revealDelayMs,
   reducedMotion,
+  ariaLabel,
 }: TileProps): React.JSX.Element {
   const isRevealed = state === 'correct' || state === 'present' || state === 'absent';
   const marker = TILE_STATE_MARKER[state];
@@ -47,7 +53,10 @@ export const Tile = memo(function Tile({
   return (
     <div
       role="gridcell"
-      aria-label={`Row ${String(row)}, letter ${String(column)}: ${letter || 'empty'}, ${STATE_LABEL[state]}`}
+      aria-label={
+        ariaLabel ??
+        `Row ${String(row)}, letter ${String(column)}: ${letter || 'empty'}, ${STATE_LABEL[state]}`
+      }
       className={cn(
         'relative flex items-center justify-center border-2 font-bold uppercase select-none',
         'size-(--size-tile) text-[calc(var(--size-tile)*0.5)]',

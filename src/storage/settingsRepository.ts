@@ -2,6 +2,7 @@ import { createRepository, type Repository, type StorageIssue } from './createRe
 import { STORAGE_KEYS } from './keys';
 import { DEFAULT_SETTINGS, validateSettings, type Settings } from './schemas';
 
+/** Appearance settings shared by every game (FR-67). */
 export function createSettingsRepository(
   onIssue?: (issue: StorageIssue, key: string) => void,
 ): Repository<Settings> {

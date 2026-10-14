@@ -14,6 +14,8 @@ export interface BoardProps {
   /** Row index to shake after an invalid submission, or null. */
   readonly shakeRow: number | null;
   readonly reducedMotion: boolean;
+  /** The grid's accessible name. WordStack names each board "Board 1 of 2" (A11Y-20). */
+  readonly label?: string;
 }
 
 export const Board = memo(function Board({
@@ -21,11 +23,12 @@ export const Board = memo(function Board({
   wordLength,
   shakeRow,
   reducedMotion,
+  label = 'Guess board',
 }: BoardProps): React.JSX.Element {
   return (
     <div
       role="grid"
-      aria-label="Guess board"
+      aria-label={label}
       aria-rowcount={rows.length}
       aria-colcount={wordLength}
       className="grid gap-1.5"

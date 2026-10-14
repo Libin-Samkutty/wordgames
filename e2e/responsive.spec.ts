@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { openWordwright } from './helpers';
+
 /**
  * Layout and device checks (T-46, FR-58, FR-59, EC-18, AC-22).
  *
@@ -7,10 +9,7 @@ import { expect, test, type Page } from '@playwright/test';
  * "does it fit at 320px" is unanswerable there.
  */
 
-async function ready(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
-}
+const ready = openWordwright;
 
 const VIEWPORTS = [
   { name: '320px (smallest phone)', width: 320, height: 568 },

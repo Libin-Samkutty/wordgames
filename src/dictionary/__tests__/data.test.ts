@@ -3,8 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { WORD_LENGTHS } from '@/engine/constants';
 import type { WordLength } from '@/engine/types';
 
+import { referenceDistance } from '@/test/referenceBfs';
+
 import { DICTIONARY_REGISTRY } from '../registry';
 import type { RawLists } from '../types';
+import { listProblems } from './listInvariants';
 
 /**
  * Invariants for the generated word lists (FR-26, FR-27, FR-30).
@@ -99,6 +102,61 @@ describe.each(WORD_LENGTHS)('lists-%i', (length: WordLength) => {
     const sample = length === 4 ? 'DAMN' : length === 5 ? 'NASTY' : 'MURDER';
 
     expect(guesses.has(sample)).toBe(true);
+  });
+});
+
+describe.each([4, 5] as const)('ladder list, %i letters (FR-75, T-58)', (length) => {
+  let lists: RawLists;
+
+  beforeAll(async () => {
+    lists = await DICTIONARY_REGISTRY[length]();
+  });
+
+  it('exists', () => {
+    expect(lists.ladder).toBeDefined();
+  });
+
+  it('holds every list invariant, including answers ⊆ ladder ⊆ guesses', () => {
+    expect(listProblems(lists, length)).toEqual([]);
+  });
+
+  it('is larger than the answer list and smaller than the guess list', () => {
+    expect(lists.ladder?.length).toBeGreaterThan(lists.answers.length);
+    expect(lists.ladder?.length).toBeLessThan(lists.guesses.length);
+  });
+
+  it('keeps offensive words off ladders, which Give up shows to the player', () => {
+    const banned = ['DAMN', 'CRAP', 'SEXY', 'NAKED', 'MURDER', 'CANCER', 'CORPSE', 'PORN'];
+    const ladder = new Set(lists.ladder);
+
+    expect(banned.filter((word) => ladder.has(word))).toEqual([]);
+  });
+});
+
+describe('the 6-letter module has no ladder list (FR-74)', () => {
+  it('exports only answers and guesses', async () => {
+    const lists = await DICTIONARY_REGISTRY[6]();
+
+    expect(lists.ladder).toBeUndefined();
+  });
+});
+
+describe('the EAST → WEST example (FR-76)', () => {
+  it('has par 3 over the ladder list, where the full guess list allows 2', async () => {
+    const lists = await DICTIONARY_REGISTRY[4]();
+    const ladder = lists.ladder ?? [];
+
+    // Over the full guess list, `WAST` makes it 2. Over common words it is 3,
+    // for example EAST, VAST, VEST, WEST or EAST, PAST, PEST, WEST.
+    expect(ladder).not.toContain('WAST');
+    expect(referenceDistance(lists.guesses, 'EAST', 'WEST')).toBe(2);
+    expect(referenceDistance(ladder, 'EAST', 'WEST')).toBe(3);
+  });
+
+  it('matches the COLD → WARM fixture used by AC-30', async () => {
+    const lists = await DICTIONARY_REGISTRY[4]();
+
+    expect(referenceDistance(lists.ladder ?? [], 'COLD', 'WARM')).toBe(4);
   });
 });
 

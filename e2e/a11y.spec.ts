@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
+import { openWordwright } from './helpers';
+
 /**
  * Real-browser accessibility audit (T-41, T-43).
  *
@@ -10,10 +12,7 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 /** Waits for the dictionary chunk to resolve and the board to appear. */
-async function ready(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
-}
+const ready = openWordwright;
 
 async function scan(page: Page) {
   return new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();

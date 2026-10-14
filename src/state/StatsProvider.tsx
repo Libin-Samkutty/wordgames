@@ -21,8 +21,8 @@ export interface StatsContextValue {
   readonly resetHistory: () => void;
 }
 
-/** Stateless view over the stats key; see the note in SettingsProvider. */
-const repository = createStatsRepository(reportStorageIssue);
+/** Stateless view over Wordwright's stats key; see the note in SettingsProvider. */
+const repository = createStatsRepository('wordwright', reportStorageIssue);
 
 export function StatsProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const [stats, setStats] = useState<StatsState>(() => repository.read());

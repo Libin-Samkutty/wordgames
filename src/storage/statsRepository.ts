@@ -2,7 +2,7 @@ import { RECENT_GAMES_LIMIT } from '@/engine/constants';
 import type { GameRecord } from '@/engine/types';
 
 import { createRepository, type Repository, type StorageIssue } from './createRepository';
-import { STORAGE_KEYS } from './keys';
+import { gameKeys, type GameId } from './keys';
 import {
   defaultStats,
   emptyBucket,
@@ -108,10 +108,11 @@ export function averageSolveMs(bucket: StatsBucket): number | null {
 }
 
 export function createStatsRepository(
+  gameId: GameId,
   onIssue?: (issue: StorageIssue, key: string) => void,
 ): Repository<StatsState> {
   return createRepository<StatsState>({
-    key: STORAGE_KEYS.stats,
+    key: gameKeys(gameId).stats,
     defaults: defaultStats,
     validate: validateStats,
     ...(onIssue ? { onIssue } : {}),

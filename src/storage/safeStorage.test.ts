@@ -90,7 +90,7 @@ describe('createSafeStorage', () => {
       makeStorage({
         getItem: (key) => {
           if (failing) throw new Error('revoked');
-          return key === '__wordwright_probe__' ? '1' : null;
+          return key === '__wordgames_probe__' ? '1' : null;
         },
       }),
     );
@@ -138,6 +138,6 @@ describe('createSafeStorage', () => {
     const backend = makeStorage();
     createSafeStorage(backend);
 
-    expect(backend.getItem('__wordwright_probe__')).toBeNull();
+    expect(backend.getItem('__wordgames_probe__')).toBeNull();
   });
 });

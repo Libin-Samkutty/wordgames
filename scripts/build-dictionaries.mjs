@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -33,7 +33,14 @@ const OUT_DIR = join(ROOT, 'src', 'dictionary', 'data');
 const WORD_LENGTHS = [4, 5, 6];
 
 /** Target answer-pool size per length. SPEC FR-30 requires >= 300. */
-const ANSWER_TARGET = 700;
+export const ANSWER_TARGET = 700;
+
+/**
+ * How many of the most frequent pool words join the ladder list, per length
+ * (FR-75, FR-77). Only the lengths WordWeaver plays have one. Fixed by
+ * `scripts/measure-par.mjs`; re-measure whenever the lists are regenerated.
+ */
+export const LADDER_POOL_SIZE = { 4: 1400, 5: 5000 };
 
 const SOURCES = {
   /** ENABLE1 — public domain word list (Alan Beale). Excludes proper nouns. */
@@ -200,7 +207,12 @@ function isFairAnswer(word, allWords) {
   return true;
 }
 
-async function main() {
+/**
+ * Reads and merges every source. Cached on disk, so offline after the first run.
+ *
+ * @returns {Promise<{ enable: Set<string>, allWords: Set<string>, popular: Set<string>, ranks: Map<string, number>, summary: string }>}
+ */
+export async function loadSources() {
   process.stdout.write('Fetching sources…\n');
   const [enableText, popularText, frequencyText, unixWordsText] = await Promise.all([
     fetchCached('enable', SOURCES.enable),
@@ -221,30 +233,85 @@ async function main() {
   // way.
   const allWords = new Set([...enable, ...unixWords]);
 
-  process.stdout.write(
-    `\nSources: enable=${enable.size} unixWords=${unixWords.size} merged=${allWords.size} ` +
-      `popular=${popular.size} frequency=${ranks.size}\n\n`,
-  );
+  return {
+    enable,
+    allWords,
+    popular,
+    ranks,
+    summary:
+      `Sources: enable=${enable.size} unixWords=${unixWords.size} merged=${allWords.size} ` +
+      `popular=${popular.size} frequency=${ranks.size}`,
+  };
+}
+
+/**
+ * The guess list and answer list for one length (ADR-004).
+ *
+ * @returns {{ guesses: string[], answers: string[] }}
+ */
+export function buildLists(length, { allWords, popular, ranks }) {
+  // Guess list: every word of this length from the merged sources (FR-25).
+  const guesses = [...allWords].filter((w) => w.length === length).sort();
+
+  // Answer candidates: familiar words, ranked by corpus frequency.
+  // `popular` keeps out technical/archaic entries that are frequent in web
+  // text but unknown to most players; the rank sort then puts the most
+  // everyday words first. Words that exist only in the supplementary
+  // `unixWords` source are never in `popular`, so they fall out of the
+  // answer pool automatically — no extra filter needed.
+  const candidates = guesses
+    .filter((word) => popular.has(word) && ranks.has(word))
+    .filter((word) => isFairAnswer(word, allWords))
+    .sort((a, b) => ranks.get(a) - ranks.get(b));
+
+  const answers = candidates.slice(0, ANSWER_TARGET).sort();
+  return { guesses, answers };
+}
+
+/**
+ * Words that may appear on a WordWeaver ladder, most common first (FR-75).
+ *
+ * Any ENABLE1 word with corpus frequency data, ranked by that frequency. It
+ * does not require `popular`, which holds under 3,000 words per length and is
+ * too sparse for 5-letter ladders to connect (T-58 measured this). It drops the
+ * answer-only fairness rule on plurals, because `CARS` is a fine rung. Anything
+ * vulgar, distressing or name-like stays out, because a ladder is shown to the
+ * player on Give up.
+ */
+export function ladderPool(length, { enable, ranks }) {
+  return [...enable]
+    .filter((word) => word.length === length)
+    .filter((word) => ranks.has(word))
+    .filter(
+      (word) => !ANSWER_BLOCKLIST.has(word) && !READS_AS_NAME.has(word) && !CLIPPED_FORMS.has(word),
+    )
+    .sort((a, b) => ranks.get(a) - ranks.get(b) || (a < b ? -1 : 1));
+}
+
+/**
+ * The ladder list: the `size` most frequent pool words, plus every answer, so
+ * answers ⊆ ladder ⊆ guesses holds by construction (FR-75).
+ */
+export function buildLadder(pool, answers, size) {
+  return [...new Set([...pool.slice(0, size), ...answers])].sort();
+}
+
+async function main() {
+  const sources = await loadSources();
+  process.stdout.write(`\n${sources.summary}\n\n`);
 
   await mkdir(OUT_DIR, { recursive: true });
   const summary = [];
 
   for (const length of WORD_LENGTHS) {
-    // Guess list: every word of this length from the merged sources (FR-25).
-    const guesses = [...allWords].filter((w) => w.length === length).sort();
+    const { guesses, answers } = buildLists(length, sources);
 
-    // Answer candidates: familiar words, ranked by corpus frequency.
-    // `popular` keeps out technical/archaic entries that are frequent in web
-    // text but unknown to most players; the rank sort then puts the most
-    // everyday words first. Words that exist only in the supplementary
-    // `unixWords` source are never in `popular`, so they fall out of the
-    // answer pool automatically — no extra filter needed.
-    const candidates = guesses
-      .filter((word) => popular.has(word) && ranks.has(word))
-      .filter((word) => isFairAnswer(word, allWords))
-      .sort((a, b) => ranks.get(a) - ranks.get(b));
-
-    const answers = candidates.slice(0, ANSWER_TARGET).sort();
+    // The ladder list exists only for the lengths WordWeaver plays (FR-74).
+    const ladderSize = LADDER_POOL_SIZE[length];
+    const ladder =
+      ladderSize === undefined
+        ? undefined
+        : buildLadder(ladderPool(length, sources), answers, ladderSize);
 
     // Invariants asserted here as well as in the test suite (FR-26, FR-27),
     // so a bad generation never reaches the repository.
@@ -252,7 +319,16 @@ async function main() {
     for (const word of answers) {
       if (!guessSet.has(word)) throw new Error(`Answer ${word} missing from guesses`);
     }
-    for (const word of [...answers, ...guesses]) {
+    if (ladder) {
+      const ladderSet = new Set(ladder);
+      for (const word of answers) {
+        if (!ladderSet.has(word)) throw new Error(`Answer ${word} missing from ladder`);
+      }
+      for (const word of ladder) {
+        if (!guessSet.has(word)) throw new Error(`Ladder word ${word} missing from guesses`);
+      }
+    }
+    for (const word of [...answers, ...guesses, ...(ladder ?? [])]) {
       if (!/^[A-Z]+$/.test(word) || word.length !== length) {
         throw new Error(`Invalid entry: ${word}`);
       }
@@ -263,16 +339,17 @@ async function main() {
       throw new Error(`Only ${guesses.length} guesses for length ${length}`);
 
     const checksum = createHash('sha256')
-      .update(`${answers.join(',')}|${guesses.join(',')}`)
+      .update(`${answers.join(',')}|${guesses.join(',')}${ladder ? `|${ladder.join(',')}` : ''}`)
       .digest('hex')
       .slice(0, 12);
 
     const file = join(OUT_DIR, `lists-${length}.ts`);
-    await writeFile(file, renderModule({ length, answers, guesses, checksum }), 'utf8');
+    await writeFile(file, renderModule({ length, answers, guesses, ladder, checksum }), 'utf8');
 
     summary.push({ length, answers: answers.length, guesses: guesses.length, checksum });
     process.stdout.write(
-      `lists-${length}.ts  answers=${answers.length}  guesses=${guesses.length}  sha=${checksum}\n`,
+      `lists-${length}.ts  answers=${answers.length}  guesses=${guesses.length}` +
+        `${ladder ? `  ladder=${ladder.length}` : ''}  sha=${checksum}\n`,
     );
   }
 
@@ -280,7 +357,7 @@ async function main() {
   return summary;
 }
 
-function renderModule({ length, answers, guesses, checksum }) {
+function renderModule({ length, answers, guesses, ladder, checksum }) {
   const format = (words) =>
     words
       .map((w) => `  '${w}',`)
@@ -288,7 +365,7 @@ function renderModule({ length, answers, guesses, checksum }) {
       .trimStart();
 
   return `// @generated by scripts/build-dictionaries.mjs — do not edit by hand.
-// Word length: ${length} · answers: ${answers.length} · guesses: ${guesses.length} · sha256: ${checksum}
+// Word length: ${length} · answers: ${answers.length} · guesses: ${guesses.length}${ladder ? ` · ladder: ${ladder.length}` : ''} · sha256: ${checksum}
 //
 // Sources (see src/dictionary/data/README.md for provenance and licensing):
 //   ENABLE1 and the Unix /usr/share/dict/words list (both public domain, via
@@ -323,10 +400,25 @@ export const answers: readonly string[] = [
 export const guesses: readonly string[] = [
   ${format(guesses)}
 ];
-`;
+${
+  ladder
+    ? `
+/**
+ * Common words WordWeaver builds ladders from: a superset of \`answers\` and a
+ * subset of \`guesses\` (FR-75). Par and the Give up ladder use only these.
+ */
+export const ladder: readonly string[] = [
+  ${format(ladder)}
+];
+`
+    : ''
+}`;
 }
 
-main().catch((error) => {
-  process.stderr.write(`${String(error?.stack ?? error)}\n`);
-  process.exit(1);
-});
+// Run only when executed directly, so `scripts/measure-par.mjs` can import the helpers.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    process.stderr.write(`${String(error?.stack ?? error)}\n`);
+    process.exit(1);
+  });
+}

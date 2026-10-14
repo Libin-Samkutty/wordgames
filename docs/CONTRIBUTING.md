@@ -1,4 +1,4 @@
-# Contributing to Wordwright
+# Contributing to wordgames
 
 Working agreements for humans and AI assistants. Read [`SPEC.md`](./SPEC.md) and [`ARCHITECTURE.md`](./ARCHITECTURE.md) first — this document covers _how we work_, not _what we build_.
 

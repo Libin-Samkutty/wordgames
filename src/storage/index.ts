@@ -4,17 +4,28 @@ export {
   type RepositoryOptions,
   type StorageIssue,
 } from './createRepository';
-export { ALL_STORAGE_KEYS, CURRENT_SCHEMA_VERSION, STORAGE_KEYS, isOwnedKey } from './keys';
+export {
+  CURRENT_SCHEMA_VERSION,
+  LEGACY_STORAGE_KEYS,
+  STORAGE_KEYS,
+  gameKeys,
+  isOwnedKey,
+  type GameId,
+  type GameKeys,
+} from './keys';
+export { importLegacyData, type LegacyImportResult } from './legacyImport';
 export { MIGRATIONS, migrate, type Migration } from './migrations';
 export { createSafeStorage, resetSafeStorage, safeStorage, type SafeStorage } from './safeStorage';
 export {
   DEFAULT_SETTINGS,
+  DEFAULT_WORDWRIGHT_PREFS,
   defaultMeta,
   defaultStats,
   emptyBucket,
   validateMeta,
   validateSession,
   validateSettings,
+  validateWordwrightPrefs,
   validateStats,
   type MotionPreference,
   type Settings,
@@ -22,6 +33,7 @@ export {
   type StatsState,
   type StorageMeta,
   type Theme,
+  type WordwrightPrefs,
 } from './schemas';
 export {
   createMetaRepository,
@@ -30,6 +42,8 @@ export {
   rememberAnswer,
 } from './sessionRepository';
 export { createSettingsRepository } from './settingsRepository';
+export { createWordwrightPrefsRepository } from './prefsRepository';
+export { resetAllData } from './resetData';
 export {
   averageGuesses,
   averageSolveMs,
@@ -39,3 +53,138 @@ export {
   resetStatistics,
   winPercentage,
 } from './statsRepository';
+export {
+  DEFAULT_WEAVER_PREFS,
+  defaultWeaverMeta,
+  defaultWeaverStats,
+  emptyWeaverBucket,
+  isWeaverSessionUsable,
+  validateWeaverMeta,
+  validateWeaverPrefs,
+  validateWeaverSession,
+  validateWeaverStats,
+  type WeaverMeta,
+  type WeaverPrefs,
+  type WeaverStatsBucket,
+  type WeaverStatsState,
+} from './weaverSchemas';
+export {
+  averageOverPar,
+  createWeaverMetaRepository,
+  createWeaverPrefsRepository,
+  createWeaverSessionRepository,
+  createWeaverStatsRepository,
+  recordWeaverGame,
+  rememberStart,
+  resetWeaverHistory,
+  resetWeaverStatistics,
+  weaverGaveUp,
+  weaverSolvePercentage,
+} from './weaverRepositories';
+export {
+  DEFAULT_STACK_PREFS,
+  STACK_MIN_WIN_GUESSES,
+  defaultStackMeta,
+  defaultStackStats,
+  distributionLength,
+  emptyStackModeStats,
+  isStackSessionUsable,
+  validateStackMeta,
+  validateStackPrefs,
+  validateStackSession,
+  validateStackStats,
+  type StackMeta,
+  type StackModeStats,
+  type StackPrefs,
+  type StackStatsBucket,
+  type StackStatsState,
+} from './stackSchemas';
+export {
+  createStackMetaRepository,
+  createStackPrefsRepository,
+  createStackSessionRepository,
+  createStackStatsRepository,
+  recordStackGame,
+  rememberStackAnswers,
+  resetStackHistory,
+  resetStackStatistics,
+  stackWinPercentage,
+} from './stackRepositories';
+export {
+  DEFAULT_RANGE_PREFS,
+  defaultRangeMeta,
+  defaultRangeStats,
+  isRangeSessionUsable,
+  validateRangeMeta,
+  validateRangePrefs,
+  validateRangeSession,
+  validateRangeStats,
+  type RangeMeta,
+  type RangePrefs,
+  type RangeStatsState,
+} from './rangeSchemas';
+export {
+  createRangeMetaRepository,
+  createRangePrefsRepository,
+  createRangeSessionRepository,
+  createRangeStatsRepository,
+  rangeWinPercentage,
+  recordRangeGame,
+  rememberRangeAnswer,
+  resetRangeHistory,
+  resetRangeStatistics,
+} from './rangeRepositories';
+export {
+  DEFAULT_CODE_PREFS,
+  defaultCodeMeta,
+  defaultCodeStats,
+  emptyCodeBucket,
+  isCodeSessionUsable,
+  validateCodeMeta,
+  validateCodePrefs,
+  validateCodeSession,
+  validateCodeStats,
+  type CodeMeta,
+  type CodePrefs,
+  type CodeStatsBucket,
+  type CodeStatsState,
+} from './codeSchemas';
+export {
+  codeWinPercentage,
+  createCodeMetaRepository,
+  createCodePrefsRepository,
+  createCodeSessionRepository,
+  createCodeStatsRepository,
+  recordCodeGame,
+  rememberCodeAnswer,
+  resetCodeHistory,
+  resetCodeStatistics,
+} from './codeRepositories';
+export {
+  DEFAULT_SHUFFLE_PREFS,
+  defaultShuffleMeta,
+  defaultShuffleStats,
+  emptyShuffleBucket,
+  isShuffleSessionUsable,
+  validateShuffleMeta,
+  validateShufflePrefs,
+  validateShuffleSession,
+  validateShuffleStats,
+  type ShuffleMeta,
+  type ShufflePrefs,
+  type ShuffleStatsBucket,
+  type ShuffleStatsState,
+} from './shuffleSchemas';
+export {
+  createShuffleMetaRepository,
+  createShufflePrefsRepository,
+  createShuffleSessionRepository,
+  createShuffleStatsRepository,
+  recordShuffleGame,
+  rememberShuffleAnswer,
+  resetShuffleHistory,
+  resetShuffleStatistics,
+  shuffleAverageHints,
+  shuffleGaveUp,
+  shuffleSolvePercentage,
+} from './shuffleRepositories';

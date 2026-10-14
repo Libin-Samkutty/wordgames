@@ -17,9 +17,11 @@ import { renderWithProviders } from './renderWithProviders';
  */
 
 function useReducedMotion(): void {
+  // These flows are Wordwright's: open its view rather than Home.
+  window.history.replaceState(null, '', '/#/wordwright');
   localStorage.setItem(
-    'wordwright:v1:settings',
-    JSON.stringify({ theme: 'system', colorblind: false, motion: 'reduced', defaultWordLength: 5 }),
+    'wordgames:v1:settings',
+    JSON.stringify({ theme: 'system', colorblind: false, motion: 'reduced' }),
   );
 }
 

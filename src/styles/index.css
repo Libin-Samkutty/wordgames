@@ -74,6 +74,8 @@
 }
 
 .dark {
+  /* Native parts such as scrollbars follow the theme. */
+  color-scheme: dark;
   --color-surface: #121213;
   --color-surface-raised: #1a1a1b;
   --color-surface-sunken: #0c0c0d;

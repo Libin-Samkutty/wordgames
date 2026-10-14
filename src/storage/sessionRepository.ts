@@ -2,7 +2,7 @@ import { RECENT_ANSWER_WINDOW } from '@/engine/constants';
 import type { GameState, WordLength } from '@/engine/types';
 
 import { createRepository, type Repository, type StorageIssue } from './createRepository';
-import { STORAGE_KEYS } from './keys';
+import { gameKeys, type GameId } from './keys';
 import { defaultMeta, validateMeta, validateSession, type StorageMeta } from './schemas';
 
 /**
@@ -15,10 +15,11 @@ import { defaultMeta, validateMeta, validateSession, type StorageMeta } from './
  * (EC-10).
  */
 export function createSessionRepository(
+  gameId: GameId,
   onIssue?: (issue: StorageIssue, key: string) => void,
 ): Repository<GameState | null> {
   return createRepository<GameState | null>({
-    key: STORAGE_KEYS.session,
+    key: gameKeys(gameId).session,
     defaults: () => null,
     validate: (value) => {
       if (value === null) return null;
@@ -67,10 +68,11 @@ export function isSessionUsable(
  * ------------------------------------------------------------------ */
 
 export function createMetaRepository(
+  gameId: GameId,
   onIssue?: (issue: StorageIssue, key: string) => void,
 ): Repository<StorageMeta> {
   return createRepository<StorageMeta>({
-    key: STORAGE_KEYS.meta,
+    key: gameKeys(gameId).meta,
     defaults: defaultMeta,
     validate: validateMeta,
     ...(onIssue ? { onIssue } : {}),

@@ -12,10 +12,15 @@ import type { GameRecord, GameState, Guess, LetterState, WordLength } from '@/en
 export type Theme = 'light' | 'dark' | 'system';
 export type MotionPreference = 'system' | 'reduced' | 'full';
 
+/** Appearance settings, shared by the whole suite (FR-67). */
 export interface Settings {
   readonly theme: Theme;
   readonly colorblind: boolean;
   readonly motion: MotionPreference;
+}
+
+/** Wordwright's own preferences, stored apart from the shared settings (FR-67). */
+export interface WordwrightPrefs {
   readonly defaultWordLength: WordLength;
 }
 
@@ -80,8 +85,9 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   colorblind: false,
   motion: 'system',
-  defaultWordLength: 5,
 };
+
+export const DEFAULT_WORDWRIGHT_PREFS: WordwrightPrefs = { defaultWordLength: 5 };
 
 export function emptyBucket(): StatsBucket {
   return {
@@ -120,14 +126,20 @@ export function defaultMeta(): StorageMeta {
 export function validateSettings(value: unknown): Settings | null {
   if (!isObject(value)) return null;
 
-  const { theme, colorblind, motion, defaultWordLength } = value;
+  const { theme, colorblind, motion } = value;
 
   if (theme !== 'light' && theme !== 'dark' && theme !== 'system') return null;
   if (typeof colorblind !== 'boolean') return null;
   if (motion !== 'system' && motion !== 'reduced' && motion !== 'full') return null;
-  if (!isWordLength(defaultWordLength)) return null;
 
-  return { theme, colorblind, motion, defaultWordLength };
+  return { theme, colorblind, motion };
+}
+
+export function validateWordwrightPrefs(value: unknown): WordwrightPrefs | null {
+  if (!isObject(value)) return null;
+  if (!isWordLength(value.defaultWordLength)) return null;
+
+  return { defaultWordLength: value.defaultWordLength };
 }
 
 function validateBucket(value: unknown): StatsBucket | null {
