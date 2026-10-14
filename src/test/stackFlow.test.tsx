@@ -126,7 +126,7 @@ describe('WordStack', () => {
       await openStack();
 
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordStack');
-      expect(document.title).toBe('WordStack · wordgames');
+      expect(document.title).toBe('WordStack · WordGames');
     });
 
     it('shows typed letters in the active row of every open board', async () => {

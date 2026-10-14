@@ -13,7 +13,7 @@ export type RouteView = 'home' | GameId;
 
 export const HOME_HASH = '#/';
 
-export const SUITE_NAME = 'wordgames';
+export const SUITE_NAME = 'WordGames';
 
 /** The catalogue entry for a view, or undefined for Home. */
 export function entryFor(
@@ -27,7 +27,7 @@ export function routeHash(view: RouteView, games: readonly CatalogueEntry[] = GA
   return entryFor(view, games)?.route ?? HOME_HASH;
 }
 
-/** `wordgames` on Home, `WordWright · wordgames` in a game (FR-66). */
+/** `WordGames` on Home, `WordWright · WordGames` in a game (FR-66). */
 export function routeTitle(view: RouteView, games: readonly CatalogueEntry[] = GAMES): string {
   const entry = entryFor(view, games);
   return entry ? `${entry.name} · ${SUITE_NAME}` : SUITE_NAME;

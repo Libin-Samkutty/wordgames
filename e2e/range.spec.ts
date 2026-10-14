@@ -88,13 +88,13 @@ test.describe('opening and navigating (AC-45)', () => {
     await expect(page).toHaveURL(/#\/range$/);
     await expect(heading(page)).toHaveText('WordRange');
     await expect(heading(page)).toBeFocused();
-    await expect(page).toHaveTitle('WordRange · wordgames');
+    await expect(page).toHaveTitle('WordRange · WordGames');
   });
 
   test('a game that has not shipped goes Home', async ({ page }) => {
     await page.goto('/#/hangman');
 
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
     await expect(page).toHaveURL(/#\/$/);
   });
 });
@@ -211,7 +211,7 @@ test.describe('playing (FR-117, FR-118, FR-121, AC-49, AC-50)', () => {
     await page.getByRole('link', { name: 'All games' }).focus();
     await page.keyboard.press('Enter');
 
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
   });
 });
 

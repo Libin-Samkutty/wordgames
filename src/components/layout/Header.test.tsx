@@ -41,9 +41,9 @@ describe('Header (FR-64, A11Y-15)', () => {
   });
 
   it('shows the suite name and Settings only on Home (FR-64)', () => {
-    renderHeader({ title: 'wordgames', showAllGames: false });
+    renderHeader({ title: 'WordGames', showAllGames: false });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'wordgames' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'WordGames' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'All games' })).not.toBeInTheDocument();
     expect(screen.getAllByRole('button')).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();

@@ -61,9 +61,9 @@ describe('parseHash (FR-62, EC-22)', () => {
   });
 
   it('titles follow FR-66', () => {
-    expect(routeTitle('home')).toBe('wordgames');
-    expect(routeTitle('wordwright')).toBe('WordWright · wordgames');
-    expect(routeTitle('weaver')).toBe('WordWeaver · wordgames');
+    expect(routeTitle('home')).toBe('WordGames');
+    expect(routeTitle('wordwright')).toBe('WordWright · WordGames');
+    expect(routeTitle('weaver')).toBe('WordWeaver · WordGames');
   });
 });
 
@@ -153,16 +153,16 @@ describe('useHashRoute', () => {
 
   it('sets document.title for each view (FR-66)', async () => {
     render(<Harness />);
-    expect(document.title).toBe('wordgames');
+    expect(document.title).toBe('WordGames');
 
     setHash('#/wordwright');
     await waitFor(() => {
-      expect(document.title).toBe('WordWright · wordgames');
+      expect(document.title).toBe('WordWright · WordGames');
     });
 
     setHash('#/weaver');
     await waitFor(() => {
-      expect(document.title).toBe('WordWeaver · wordgames');
+      expect(document.title).toBe('WordWeaver · WordGames');
     });
   });
 

@@ -23,7 +23,7 @@ test.describe('Home (AC-24)', () => {
 
     await page.goto('/');
 
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
     await expect(page.getByRole('link', { name: 'Play WordWright' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Play WordWeaver' })).toBeVisible();
 
@@ -35,7 +35,7 @@ test.describe('Home (AC-24)', () => {
   test('the page title is the suite name', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page).toHaveTitle('wordgames');
+    await expect(page).toHaveTitle('WordGames');
   });
 });
 
@@ -50,12 +50,12 @@ test.describe('hash navigation (AC-25, AC-26, EC-22)', () => {
     await expect(page).toHaveURL(/#\/weaver$/);
     await expect(heading(page)).toHaveText('WordWeaver');
     await expect(heading(page)).toBeFocused();
-    await expect(page).toHaveTitle('WordWeaver · wordgames');
+    await expect(page).toHaveTitle('WordWeaver · WordGames');
 
     await page.goBack();
 
-    await expect(heading(page)).toHaveText('wordgames');
-    await expect(page).toHaveTitle('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
+    await expect(page).toHaveTitle('WordGames');
   });
 
   test('a direct load of #/wordwright opens the game without passing through Home (AC-26)', async ({
@@ -64,7 +64,7 @@ test.describe('hash navigation (AC-25, AC-26, EC-22)', () => {
     await openWordwright(page);
 
     await expect(heading(page)).toHaveText('WordWright');
-    await expect(page).toHaveTitle('WordWright · wordgames');
+    await expect(page).toHaveTitle('WordWright · WordGames');
   });
 
   test('an unknown hash shows Home and is corrected without a new history entry (EC-22)', async ({
@@ -73,7 +73,7 @@ test.describe('hash navigation (AC-25, AC-26, EC-22)', () => {
     await page.goto('/#/nope');
     const lengthBefore = await page.evaluate(() => history.length);
 
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
     await expect(page).toHaveURL(/#\/$/);
     expect(await page.evaluate(() => history.length)).toBe(lengthBefore);
   });
@@ -86,7 +86,7 @@ test.describe('hash navigation (AC-25, AC-26, EC-22)', () => {
     await page.keyboard.type('s');
 
     await page.getByRole('link', { name: 'All games' }).click();
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
     await page.getByRole('link', { name: 'Play WordWright' }).click();
 
     await expect(page.getByRole('grid', { name: 'Guess board' })).toBeVisible();
@@ -107,7 +107,7 @@ test.describe('hash navigation (AC-25, AC-26, EC-22)', () => {
     await page.goBack();
 
     await expect(page.getByRole('dialog')).toBeHidden();
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
     await expect(heading(page)).toBeFocused();
   });
 });
@@ -132,7 +132,7 @@ test.describe('keyboard only (AC-41, A11Y-15)', () => {
     await expect(page.getByRole('link', { name: 'All games' })).toBeFocused();
     await page.keyboard.press('Enter');
 
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
     await expect(heading(page)).toBeFocused();
   });
 

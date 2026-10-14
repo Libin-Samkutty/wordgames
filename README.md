@@ -1,4 +1,4 @@
-# wordgames
+# WordGames
 
 An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
 
@@ -22,7 +22,7 @@ An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 a
 
 ## Overview
 
-wordgames is a single-page web app with a Home screen and one view per game, chosen by the URL hash (`#/`, `#/wordwright`, `#/weaver`, `#/stack`, `#/range`, `#/code`, `#/shuffle`). Wordwright recreates the Wordle game loop with three word lengths, unlimited replays, and a full statistics suite. WordWeaver generates an unlimited supply of ladder puzzles on the device, scored against par. Each game keeps its own statistics, preferences and saved game. The suite is deliberately **local-first**: the dictionaries ship with the bundle, game state and stats live in LocalStorage, and the app is fully playable with the network disabled.
+WordGames is a single-page web app with a Home screen and one view per game, chosen by the URL hash (`#/`, `#/wordwright`, `#/weaver`, `#/stack`, `#/range`, `#/code`, `#/shuffle`). Wordwright recreates the Wordle game loop with three word lengths, unlimited replays, and a full statistics suite. WordWeaver generates an unlimited supply of ladder puzzles on the device, scored against par. Each game keeps its own statistics, preferences and saved game. The suite is deliberately **local-first**: the dictionaries ship with the bundle, game state and stats live in LocalStorage, and the app is fully playable with the network disabled.
 
 **Design principles**
 

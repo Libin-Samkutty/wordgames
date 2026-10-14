@@ -93,7 +93,7 @@ describe('suite shell', () => {
       spyOnRegistry();
       render(<App />);
 
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('wordgames');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordGames');
       expect(screen.queryByRole('link', { name: 'All games' })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'How to play' })).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe('suite shell', () => {
 
         render(<App />);
 
-        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('wordgames');
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordGames');
         expect(window.location.hash).toBe('#/');
         expect(window.history.length).toBe(before);
       },
@@ -153,7 +153,7 @@ describe('suite shell', () => {
 
       window.history.back();
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('wordgames');
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordGames');
       });
 
       window.history.forward();
@@ -165,16 +165,16 @@ describe('suite shell', () => {
     it('sets the page title for each view (FR-66)', async () => {
       spyOnRegistry();
       render(<App />);
-      expect(document.title).toBe('wordgames');
+      expect(document.title).toBe('WordGames');
 
       await navigate('#/wordwright');
       await waitFor(() => {
-        expect(document.title).toBe('WordWright · wordgames');
+        expect(document.title).toBe('WordWright · WordGames');
       });
 
       await navigate('#/weaver');
       await waitFor(() => {
-        expect(document.title).toBe('WordWeaver · wordgames');
+        expect(document.title).toBe('WordWeaver · WordGames');
       });
     });
 
@@ -225,7 +225,7 @@ describe('suite shell', () => {
       await waitFor(() => {
         expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
       });
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('wordgames');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordGames');
     });
 
     it('does not reopen Settings when returning to a view it was opened on', async () => {

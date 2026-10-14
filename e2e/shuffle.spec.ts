@@ -115,7 +115,7 @@ test.describe('opening and navigating (AC-45)', () => {
     await expect(page).toHaveURL(/#\/shuffle$/);
     await expect(heading(page)).toHaveText('WordShuffle');
     await expect(heading(page)).toBeFocused();
-    await expect(page).toHaveTitle('WordShuffle · wordgames');
+    await expect(page).toHaveTitle('WordShuffle · WordGames');
   });
 });
 
@@ -282,7 +282,7 @@ test.describe('playing (FR-139, FR-141, AC-53)', () => {
     await page.getByRole('link', { name: 'All games' }).focus();
     await page.keyboard.press('Enter');
 
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
   });
 });
 

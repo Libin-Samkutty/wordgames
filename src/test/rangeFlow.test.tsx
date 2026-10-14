@@ -69,7 +69,7 @@ describe('WordRange', () => {
       await openRange();
 
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordRange');
-      expect(document.title).toBe('WordRange · wordgames');
+      expect(document.title).toBe('WordRange · WordGames');
       expect(boundWords()).toEqual({ upper: 'ZZZZZ', lower: 'AAAAA' });
       expect(screen.getByText('14 guesses left')).toBeInTheDocument();
     });

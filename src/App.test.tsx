@@ -47,7 +47,7 @@ describe('App landmarks (A11Y-12)', () => {
     const headings = await screen.findAllByRole('heading', { level: 1 });
 
     expect(headings).toHaveLength(1);
-    expect(headings[0]).toHaveTextContent('wordgames');
+    expect(headings[0]).toHaveTextContent('WordGames');
   });
 
   it('has exactly one level-one heading in a game, the game name', async () => {

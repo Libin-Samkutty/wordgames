@@ -75,7 +75,7 @@ describe('WordCode', () => {
       await openCode();
 
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordCode');
-      expect(document.title).toBe('WordCode · wordgames');
+      expect(document.title).toBe('WordCode · WordGames');
       expect(rows()).toHaveLength(10);
       expect(screen.queryByRole('region', { name: 'Letter notes' })).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Type' })).toHaveAttribute('aria-pressed', 'true');

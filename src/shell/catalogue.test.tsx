@@ -113,10 +113,10 @@ describe('routing over a fixture catalogue (AC-45)', () => {
   it('round-trips routes and titles through the catalogue', () => {
     for (const entry of THREE) {
       expect(routeHash(entry.id, THREE)).toBe(entry.route);
-      expect(routeTitle(entry.id, THREE)).toBe(`${entry.name} · wordgames`);
+      expect(routeTitle(entry.id, THREE)).toBe(`${entry.name} · WordGames`);
     }
     expect(routeHash('home', THREE)).toBe('#/');
-    expect(routeTitle('home', THREE)).toBe('wordgames');
+    expect(routeTitle('home', THREE)).toBe('WordGames');
   });
 });
 
@@ -159,7 +159,7 @@ describe('the shell over a fixture catalogue', () => {
 
     expect(await screen.findByText(`${name} view`)).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(name);
-    expect(document.title).toBe(`${name} · wordgames`);
+    expect(document.title).toBe(`${name} · WordGames`);
     expect(screen.getByRole('link', { name: 'All games' })).toBeInTheDocument();
   });
 
@@ -169,7 +169,7 @@ describe('the shell over a fixture catalogue', () => {
 
     render(<App games={THREE} />);
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('wordgames');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordGames');
     expect(window.location.hash).toBe('#/');
     expect(window.history.length).toBe(before);
   });
@@ -179,7 +179,7 @@ describe('the shell over a fixture catalogue', () => {
 
     render(<App />);
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('wordgames');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordGames');
     expect(screen.getAllByRole('listitem')).toHaveLength(GAMES.length);
   });
 
@@ -197,7 +197,7 @@ describe('the shell over a fixture catalogue', () => {
 
     // The <h1> and title come from the catalogue, so they exist before the chunk does.
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Slow');
-    expect(document.title).toBe('Slow · wordgames');
+    expect(document.title).toBe('Slow · WordGames');
     expect(screen.getByText('Loading…')).toBeInTheDocument();
 
     finish(() => <Placeholder text="Slow view" />);
@@ -295,7 +295,7 @@ describe('a game chunk that fails to load (EC-50)', () => {
     await user.click(within(panel).getByRole('link', { name: 'All games' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('wordgames');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordGames');
     });
   });
 

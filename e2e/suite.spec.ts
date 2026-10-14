@@ -96,7 +96,7 @@ test.describe('keyboard only through Wordwright (AC-41)', () => {
     await page.keyboard.press('Shift+Tab');
     await expect(page.getByRole('link', { name: 'All games' })).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
   });
 });
 

@@ -66,13 +66,13 @@ test.describe('opening and navigating (AC-45)', () => {
     await expect(page).toHaveURL(/#\/stack$/);
     await expect(heading(page)).toHaveText('WordStack');
     await expect(heading(page)).toBeFocused();
-    await expect(page).toHaveTitle('WordStack · wordgames');
+    await expect(page).toHaveTitle('WordStack · WordGames');
   });
 
   test('a game that has not shipped goes Home', async ({ page }) => {
     await page.goto('/#/hangman');
 
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
     await expect(page).toHaveURL(/#\/$/);
   });
 
@@ -99,7 +99,7 @@ test.describe('opening and navigating (AC-45)', () => {
     await page.keyboard.press('Shift+Tab');
     await expect(page.getByRole('link', { name: 'All games' })).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(heading(page)).toHaveText('wordgames');
+    await expect(heading(page)).toHaveText('WordGames');
   });
 });
 

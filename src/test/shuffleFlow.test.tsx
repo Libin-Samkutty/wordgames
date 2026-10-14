@@ -66,7 +66,7 @@ describe('WordShuffle', () => {
       await openShuffle();
 
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordShuffle');
-      expect(document.title).toBe('WordShuffle · wordgames');
+      expect(document.title).toBe('WordShuffle · WordGames');
       expect(answerText()).toBe('Your answer: empty, empty, empty, empty, empty');
       expect(trayLetters().join('')).toBe(FIRST_SCRAMBLE[5]);
     });

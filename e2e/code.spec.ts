@@ -97,7 +97,7 @@ test.describe('opening and navigating (AC-45)', () => {
     await expect(page).toHaveURL(/#\/code$/);
     await expect(heading(page)).toHaveText('WordCode');
     await expect(heading(page)).toBeFocused();
-    await expect(page).toHaveTitle('WordCode · wordgames');
+    await expect(page).toHaveTitle('WordCode · WordGames');
   });
 });
 
