@@ -24,9 +24,11 @@ const SEGMENT_CLASS: Record<LetterState, string> = {
  * A letter key split into one segment per board (FR-109, A11Y-20).
  *
  * Left and right halves for Duo, a 2 x 2 grid of quarters for Quad. Each
- * segment shows that board's best state for the letter. A solved board's
- * segment is blank. The letter sits on a small solid chip, so it stays legible
- * over any mix of segment colours.
+ * segment shows that board's best state for the letter. A solved board is
+ * frozen and tells the player nothing more, so it drops out of the drawing: the
+ * key splits only across the boards still open, and is one plain key once a
+ * single board is left. The accessible name still lists every board. The letter
+ * sits on a small solid chip where the segments differ, so it stays legible.
  *
  * State never relies on colour alone: a segment that is correct or present
  * carries the same marker glyph as a tile, shown in the colourblind palette
@@ -55,11 +57,14 @@ export const SplitKey = memo(function SplitKey({
   disabled,
   onPress,
 }: SplitKeyProps): React.JSX.Element {
-  const isQuad = segments.length > 2;
+  // Solved boards are left out of the drawing. If every board is solved, the key is one blank segment.
+  const open = segments.filter((state) => state !== null);
+  const drawn = open.length > 0 ? open : [undefined];
+  const isQuad = drawn.length > 2;
   // The chip is only for a key whose segments differ, where no single text colour reads
   // on every part. A key that is one state all over needs no chip.
-  const first = segments[0];
-  const isUniform = segments.every((state) => state === first);
+  const first = drawn[0];
+  const isUniform = drawn.every((state) => state === first);
   const needsChip = !isUniform;
 
   return (
@@ -78,19 +83,16 @@ export const SplitKey = memo(function SplitKey({
     >
       <span
         aria-hidden="true"
-        className={cn('absolute inset-0 grid', isQuad ? 'grid-cols-2 grid-rows-2' : 'grid-cols-2')}
+        className={cn(
+          'absolute inset-0 grid',
+          isQuad ? 'grid-cols-2 grid-rows-2' : drawn.length === 2 ? 'grid-cols-2' : 'grid-cols-1',
+        )}
       >
-        {segments.map((state, index) => {
+        {drawn.map((state, index) => {
           const marker = state ? TILE_STATE_MARKER[state] : undefined;
 
           return (
-            <span
-              key={index}
-              className={cn(
-                'relative',
-                state ? SEGMENT_CLASS[state] : state === null ? 'bg-surface-sunken' : 'bg-key',
-              )}
-            >
+            <span key={index} className={cn('relative', state ? SEGMENT_CLASS[state] : 'bg-key')}>
               {marker ? (
                 <span className="absolute top-0 left-0.5 text-[0.55rem] leading-none text-key-text-revealed opacity-0 in-data-[palette=cb]:opacity-100">
                   {marker}

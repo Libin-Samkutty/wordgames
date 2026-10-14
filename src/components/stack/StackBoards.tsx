@@ -34,7 +34,11 @@ const BoardPanel = memo(
     const total = STACK_MODES[state.mode].boards;
     const solved = boardStatus(state, index) === 'solved';
     const name = `Board ${String(index + 1)} of ${String(total)}${solved ? ', solved' : ''}`;
-    const rows = useMemo(() => boardRows(state, index), [state, index]);
+    // A solved board is finished, so it keeps only the rows it used instead of a grid of blanks.
+    const rows = useMemo(() => {
+      const all = boardRows(state, index);
+      return solved ? all.slice(0, state.boards[index]?.guesses.length ?? all.length) : all;
+    }, [state, index, solved]);
 
     return (
       <div className="flex flex-col items-center gap-1">

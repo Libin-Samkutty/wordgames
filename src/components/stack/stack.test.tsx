@@ -68,7 +68,7 @@ describe('SplitKey', () => {
     expect(segmentsOf(container)).toHaveLength(4);
   });
 
-  it('colours each segment by its own board state and leaves a solved board blank', () => {
+  it('colours each open segment by its own board state and drops a solved board', () => {
     const { container } = render(
       <SplitKey
         letter="A"
@@ -79,11 +79,30 @@ describe('SplitKey', () => {
     );
 
     const classes = segmentsOf(container).map((el) => el.className);
+    expect(classes).toHaveLength(3);
     expect(classes[0]).toContain('bg-key-correct');
     expect(classes[1]).toContain('bg-key-present');
     expect(classes[2]).toContain('bg-key-absent');
-    expect(classes[3]).toContain('bg-surface-sunken');
-    expect(classes[3]).not.toContain('bg-key-');
+  });
+
+  it('is one plain key once a single board is left open', () => {
+    const { container } = render(
+      <SplitKey letter="A" segments={[null, 'present']} disabled={false} onPress={vi.fn()} />,
+    );
+
+    expect(segmentsOf(container)).toHaveLength(1);
+    expect(segmentsOf(container)[0]?.className).toContain('bg-key-present');
+    expect(
+      screen.getByRole('button', { name: 'A: board 1 solved, board 2 present' }),
+    ).toBeVisible();
+  });
+
+  it('draws one blank key when every board is solved', () => {
+    const { container } = render(
+      <SplitKey letter="A" segments={[null, null]} disabled={false} onPress={vi.fn()} />,
+    );
+
+    expect(segmentsOf(container)).toHaveLength(1);
   });
 
   it('shows an unused letter on the neutral key colour', () => {

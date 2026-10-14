@@ -7,7 +7,7 @@ import { KEYBOARD_ROWS } from '../keyboard/layout';
 import { SplitKey } from './SplitKey';
 
 export interface StackKeyboardProps {
-  /** One map per board; `null` for a solved board, whose segment is blank (FR-109). */
+  /** One map per board; `null` for a solved board, which drops out of the key (FR-109). */
   readonly boardKeyStates: readonly (ReadonlyMap<string, LetterState> | null)[];
   readonly disabled: boolean;
   readonly onKeyPress: (value: KeyValue) => void;

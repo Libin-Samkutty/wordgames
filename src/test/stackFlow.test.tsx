@@ -64,6 +64,11 @@ function rowStates(board: number, row: number): string[] {
   );
 }
 
+function rowCount(board: number): number {
+  const grid = screen.getByRole('grid', { name: new RegExp(`^Board ${String(board)} of`) });
+  return within(grid).getAllByRole('row').length;
+}
+
 function rowLetters(board: number, row: number): string {
   const grid = screen.getByRole('grid', { name: new RegExp(`^Board ${String(board)} of`) });
   return within(within(grid).getAllByRole('row')[row - 1] as HTMLElement)
@@ -179,7 +184,8 @@ describe('WordStack', () => {
 
       expect(screen.getByRole('grid', { name: 'Board 1 of 2, solved' })).toBeInTheDocument();
       expect(rowLetters(1, 3)).toBe('PLANT');
-      expect(rowLetters(1, 4)).toBe('');
+      // A solved board keeps only the rows it used.
+      expect(rowCount(1)).toBe(3);
       expect(rowLetters(2, 4)).toBe('CRANE');
       expect(screen.getByRole('grid', { name: 'Board 2 of 2' })).toBeInTheDocument();
     });
@@ -401,7 +407,7 @@ describe('WordStack', () => {
 
       expect(rowLetters(1, 1)).toBe('PANEL');
       expect(rowLetters(2, 2)).toBe('PLANT');
-      expect(rowLetters(1, 3)).toBe('');
+      expect(rowCount(1)).toBe(2);
       expect(rowLetters(2, 3)).toBe('CR');
       expect(screen.getByRole('grid', { name: 'Board 1 of 2, solved' })).toBeInTheDocument();
     });
