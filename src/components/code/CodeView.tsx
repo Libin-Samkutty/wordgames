@@ -133,7 +133,7 @@ function CodeScreen(): React.JSX.Element {
           // and the notes while the keyboard below stays on screen (FR-59).
           // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- see above
           tabIndex={0}
-          className="flex max-h-[clamp(8rem,calc(100dvh-22rem),60rem)] w-full max-w-md flex-col items-center gap-4 overflow-y-auto overscroll-contain px-1 py-1"
+          className="flex max-h-[clamp(8rem,calc(100dvh-20rem),60rem)] w-full max-w-md [scrollbar-gutter:stable_both-edges] flex-col items-center gap-4 overflow-y-auto overscroll-contain px-1 py-1 md:max-w-2xl md:flex-row md:items-start md:justify-center md:gap-8"
         >
           <CodeRows state={state} shake={shake} reducedMotion={prefersReducedMotion} />
           <NotesPanel notes={state.notes} disabled={isGameOver} onCycle={cycleNote} />

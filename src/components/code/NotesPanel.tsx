@@ -31,7 +31,10 @@ export const NotesPanel = memo(function NotesPanel({
   onCycle,
 }: NotesPanelProps): React.JSX.Element {
   return (
-    <section aria-labelledby="code-notes-heading" className="flex w-full flex-col gap-1.5">
+    <section
+      aria-labelledby="code-notes-heading"
+      className="flex w-full flex-col gap-1.5 md:max-w-60"
+    >
       <h2
         id="code-notes-heading"
         className="text-center text-[0.65rem] font-bold tracking-wide text-text-muted uppercase"
