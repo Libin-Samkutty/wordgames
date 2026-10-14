@@ -74,9 +74,16 @@ export function CodeRows({ state, shake, reducedMotion }: CodeRowsProps): React.
           return (
             <li key={index} className="flex items-center justify-between gap-3">
               <Tiles letters={guess.word} length={length} filled pop={false} />
-              <span className="w-[6.25rem] text-xs leading-tight whitespace-nowrap">
+              <span className="flex w-[6.25rem] flex-col text-sm leading-tight font-semibold whitespace-nowrap">
                 <span className="sr-only">{guess.word}: </span>
-                {countLabel(guess.bulls, 'bull', 'bulls')} · {countLabel(guess.cows, 'cow', 'cows')}
+                {/* A filled dot for bulls and a hollow one for cows; the words stay, so the dots never carry meaning alone. */}
+                <span className="before:mr-1.5 before:text-text-muted before:content-['●']">
+                  {countLabel(guess.bulls, 'bull', 'bulls')}
+                </span>
+                <span className="sr-only"> · </span>
+                <span className="before:mr-1.5 before:text-text-muted before:content-['○']">
+                  {countLabel(guess.cows, 'cow', 'cows')}
+                </span>
               </span>
             </li>
           );

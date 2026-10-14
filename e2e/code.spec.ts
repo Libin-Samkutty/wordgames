@@ -18,9 +18,11 @@ type Length = keyof typeof SECRETS;
 
 const heading = (page: Page) => page.getByRole('heading', { level: 1 });
 const rowsList = (page: Page) => page.getByRole('list', { name: 'Guesses' });
-const notesPanel = (page: Page) => page.getByRole('region', { name: 'Letter notes' });
+const keyboard = (page: Page) => page.getByLabel('Keyboard');
 const noteButton = (page: Page, letter: string) =>
-  notesPanel(page).getByRole('button', { name: new RegExp(`^${letter}, `) });
+  keyboard(page).getByRole('button', { name: new RegExp(`^${letter}(,|$)`) });
+/** Switches the keyboard to Mark mode, where a letter key cycles its note. */
+const markMode = (page: Page) => page.getByRole('button', { name: 'Mark' }).click();
 async function scan(page: Page) {
   return new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
 }
@@ -100,11 +102,11 @@ test.describe('opening and navigating (AC-45)', () => {
 });
 
 test.describe('playing (FR-129, FR-131, AC-51)', () => {
-  test('a real game opens with ten empty rows, 26 notes and 5 letters', async ({ page }) => {
+  test('a real game opens with ten empty rows, 26 letter keys and 5 letters', async ({ page }) => {
     await openCode(page);
 
     await expect(rowsList(page).getByRole('listitem')).toHaveCount(10);
-    await expect(notesPanel(page).getByRole('button')).toHaveCount(26);
+    await expect(keyboard(page).getByRole('button')).toHaveCount(26 + 2 + 2);
     await expect(page.getByRole('radio', { name: /^5/ })).toBeChecked();
   });
 
@@ -171,12 +173,10 @@ test.describe('playing (FR-129, FR-131, AC-51)', () => {
 test.describe('letter notes (FR-132, AC-52)', () => {
   test('three presses clear a mark, and the keyboard shows it', async ({ page }) => {
     await openCode(page);
+    await markMode(page);
 
     await noteButton(page, 'P').click();
     await expect(noteButton(page, 'P')).toHaveAccessibleName('P, ruled out');
-    await expect(
-      page.getByLabel('Keyboard').getByRole('button', { name: 'P, ruled out' }),
-    ).toBeVisible();
 
     await noteButton(page, 'P').click();
     await expect(noteButton(page, 'P')).toHaveAccessibleName('P, in the word');
@@ -187,6 +187,7 @@ test.describe('letter notes (FR-132, AC-52)', () => {
   test('marks and rows survive a reload (AC-52)', async ({ page }) => {
     await seedGame(page);
     await openCode(page);
+    await markMode(page);
     await noteButton(page, 'Q').click();
     await noteButton(page, 'Z').click();
     await noteButton(page, 'Z').click();
@@ -212,7 +213,7 @@ test.describe('letter notes (FR-132, AC-52)', () => {
     await guess(page, 'panel', 1);
 
     await expect(noteButton(page, 'P')).toHaveAccessibleName('P, ruled out');
-    await expect(noteButton(page, 'A')).toHaveAccessibleName('A, unmarked');
+    await expect(noteButton(page, 'A')).toHaveAccessibleName('A');
   });
 });
 
@@ -333,7 +334,7 @@ test.describe('layout (FR-131, FR-59, AC-22)', () => {
         await openCode(page);
 
         await expect(page.getByRole('button', { name: 'Enter' })).toBeInViewport();
-        await expect(page.getByRole('group', { name: 'Board and letter notes' })).toBeInViewport({
+        await expect(page.getByRole('group', { name: 'Board' })).toBeInViewport({
           ratio: 0.1,
         });
         const overflow = await page.evaluate(
@@ -350,7 +351,7 @@ test.describe('layout (FR-131, FR-59, AC-22)', () => {
     }
   }
 
-  test('buttons, keys and notes are at least 44 px', async ({ page }) => {
+  test('buttons and keys are at least 44 px', async ({ page }) => {
     await openCode(page);
 
     for (const name of ['Enter', 'Backspace']) {
@@ -362,9 +363,10 @@ test.describe('layout (FR-131, FR-59, AC-22)', () => {
       .getByRole('button', { name: 'Q', exact: true })
       .boundingBox();
     expect(key?.height ?? 0).toBeGreaterThanOrEqual(44);
-    const note = await noteButton(page, 'Q').boundingBox();
-    expect(note?.height ?? 0).toBeGreaterThanOrEqual(44);
-    expect(note?.width ?? 0).toBeGreaterThanOrEqual(44);
+    for (const name of ['Type', 'Mark']) {
+      const box = await page.getByRole('button', { name, exact: true }).boundingBox();
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
     for (const name of ['How to play', 'New game', 'Statistics', 'Settings']) {
       const box = await page.getByRole('button', { name }).boundingBox();
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);

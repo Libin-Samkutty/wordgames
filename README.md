@@ -1,8 +1,8 @@
 # wordgames
 
-An offline suite of word games. **Wordwright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
+An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
 
-> **Status:** All six games are built, 91 of 91 tasks: Wordwright, WordWeaver, WordStack, WordRange, WordCode and WordShuffle. 1,845 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
+> **Status:** All six games are built, 91 of 91 tasks: WordWright, WordWeaver, WordStack, WordRange, WordCode and WordShuffle. 1,847 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
 
 ---
 
@@ -37,7 +37,7 @@ wordgames is a single-page web app with a Home screen and one view per game, cho
 
 | Light                                                     | Dark                                                    |
 | --------------------------------------------------------- | ------------------------------------------------------- |
-| ![Wordwright in light mode](./docs/screenshots/light.png) | ![Wordwright in dark mode](./docs/screenshots/dark.png) |
+| ![WordWright in light mode](./docs/screenshots/light.png) | ![WordWright in dark mode](./docs/screenshots/dark.png) |
 
 | Colourblind palette                                                                                                    | Statistics                                                                                                  |
 | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -57,7 +57,7 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 - Hash routes with working Back, Forward and bookmarks; the page title and focus follow the view
 - Leaving a game keeps it: coming back restores the board, the typed letters and the move count
 - **Enter** on a result screen starts the next game, in every game
-- Returning Wordwright players keep their statistics, streaks, settings and game in progress: the app copies the old `wordwright:v1:*` data across once and never deletes it
+- Returning WordWright players keep their statistics, streaks, settings and game in progress: the app copies the old `wordwright:v1:*` data across once and never deletes it
 
 ### WordWeaver
 
@@ -86,7 +86,7 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 
 - Find the hidden word from counts only: **bulls** are letters in the right place, **cows** are letters in the word but misplaced
 - 4, 5 or 6 letters, 10 guesses, and no tile colours
-- **Letter notes**: 26 buttons that cycle a letter through unmarked, ruled out and in the word. Marks show on the keyboard and are saved with the game
+- **Letter notes**: switch the keyboard to **Mark** and tap a letter to cycle it through unmarked, ruled out and in the word. Marks show on the keys and are saved with the game
 - Statistics overall and per length
 
 ### WordShuffle
@@ -96,7 +96,7 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 - Up to 2 **hints** lock the next letter of the drawn word in place; **Reshuffle** is free; **Give up** shows every valid anagram
 - 4, 5 or 6 letters, no clock and no guess limit. Statistics count hints, not time
 
-### Wordwright
+### WordWright
 
 - 4, 5, and 6 letter modes — 6 guesses in every mode
 - Unlimited games with random answer selection (no repeats until the pool cycles)
@@ -255,7 +255,7 @@ Read `SPEC.md` first. When code and docs disagree, the docs win — or the docs 
 ## Roadmap
 
 **Suite V1 and releases R2 to R5**
-Home and navigation, Wordwright, WordWeaver, the rename to wordgames with no loss of saved data, then WordStack, WordRange, WordCode and WordShuffle. Nothing else is planned: Appendix A of the SPEC lists game ideas that are deliberately not built.
+Home and navigation, WordWright, WordWeaver, the rename to wordgames with no loss of saved data, then WordStack, WordRange, WordCode and WordShuffle. Nothing else is planned: Appendix A of the SPEC lists game ideas that are deliberately not built.
 
 **V2 — Gameplay expansion (not implemented; architecture must not block it)**
 Daily challenge · hard mode · practice mode · timed mode · survival mode · custom & seeded games · shareable links · calendar heatmap · long-term trends · per-length analytics · win history charts · sound effects · richer animations · themes · confetti · achievements · installable PWA with offline caching.

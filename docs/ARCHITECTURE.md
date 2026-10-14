@@ -195,7 +195,7 @@ wordgames/
 │   │   │              help and stats dialogs
 │   │   ├── range/     RangeView, RangeBoard (bounds, input row, sorted guess list), HeatBadge,
 │   │   │              RangeResultPanel, help and stats dialogs
-│   │   ├── code/      CodeView, CodeRows, NotesPanel, CodeKeyboard (note marks), CodeResultPanel,
+│   │   ├── code/      CodeView, CodeRows, CodeKeyboard (Type/Mark switch, note marks), CodeResultPanel,
 │   │   │              help and stats dialogs
 │   │   ├── shuffle/   ShuffleView, ShuffleBoard (answer row and tray), shuffleLabels,
 │   │   │              result, help and stats dialogs
@@ -456,7 +456,7 @@ Actions
 - `SUBMIT_GUESS` appends the word to `words` and, for each board not yet solved, appends `{ word, evaluation: evaluateGuess(word, answer) }` (FR-105). A solved board takes no more guesses, so its rows stay empty (FR-106, EC-39).
 - `REVEAL_COMPLETE` sets `won` when every board is solved (EC-40), `lost` when `words.length` reaches the mode's `maxGuesses` with any board unsolved (FR-107), and `playing` otherwise.
 - `pickAnswers(pool, recent, count, random)` calls `pickAnswer` once per board, putting each answer it has drawn at the front of the recent list, so the boards always get different answers (FR-103, EC-41). One ring buffer serves both modes.
-- Selectors: `boardKeyStates(state)` returns one `deriveKeyStates(board.guesses)` map per board, or `null` for a solved board, whose key segment is blank (FR-109). `boardRows(state, i)` is one board's `maxGuesses` rows, `boardStatus` is `playing`, `solved` or `failed`, and `boardsSolved`, `unsolvedAnswers`, `remainingGuesses`, `isGameOver` and `stackRecord` (the FR-111 stats record) round it out. A solve only counts once its reveal has finished, so neither the "solved" mark nor a blank key segment spoils the result mid-flip (FR-52).
+- Selectors: `boardKeyStates(state)` returns one `deriveKeyStates(board.guesses)` map per board, or `null` for a solved board, which drops out of the key (FR-109). `boardRows(state, i)` is one board's `maxGuesses` rows, `boardStatus` is `playing`, `solved` or `failed`, and `boardsSolved`, `unsolvedAnswers`, `remainingGuesses`, `isGameOver` and `stackRecord` (the FR-111 stats record) round it out. A solve only counts once its reveal has finished, so neither the "solved" mark nor a blank key segment spoils the result mid-flip (FR-52).
 - **Provider.** `StackProvider` loads the 5-letter dictionary, draws answers with `pickAnswers`, remembers them in the one shared ring buffer, and restores a saved game of the current mode whose answers are all still in the answer list. It words the A11Y-21 summary by scoring the guess once with the reducer before dispatching it.
 - **Reuses** `evaluateGuess`, `validateGuess`, `deriveKeyStates`, `pickAnswer`, `Guess` and `RandomSource` from the root engine. No new evaluation code.
 
@@ -557,7 +557,7 @@ Actions
 - Notes live in the state, so they are saved with the session and restored on reload (FR-135, EC-45). The reducer never sets a mark itself.
 - Selectors: `remainingGuesses`, `guessesUsed`, `noteOf(state, letter)`, `isGameOver` and `codeRecord` (the FR-134 stats record).
 - **Provider.** `CodeProvider` loads the dictionary for the selected length, draws the secret with `pickAnswer` and that length's ring buffer, and restores a saved game of the current length whose secret is still an answer. A length change clears the saved game first and locks input until the new list loads. Statistics are one bucket set overall and one per length, each with 10 distribution buckets.
-- **View.** `CodeRows` draws neutral tiles with the counts as text (`1 bull · 3 cows`), and each guess row reads as one line. The rows and the 26-button `NotesPanel` share one focusable scroll region, so the keyboard stays on screen at 6 letters. A note shows on its button and key as a strike (ruled out) or an underline with a heavy outline (in the word), plus the word on the button. These use the existing neutral key tokens, so no new colour token was needed.
+- **View.** `CodeRows` draws neutral tiles with the counts as text (`1 bull · 3 cows`), and each guess row reads as one line. The rows sit in one focusable scroll region, so the keyboard stays on screen at 6 letters. `CodeKeyboard` has a Type and Mark switch; in Mark mode a letter key cycles its note instead of typing. A note shows on its key as a dimmed key with a dashed outline and a × (ruled out) or a solid heavy outline and a ● (in the word). These use the existing neutral key tokens, so no new colour token was needed.
 - **Reuses** `evaluateGuess`, `validateGuess`, `pickAnswer` and `WordLength`. There is no tile reveal: rows show neutral tiles and the counts as text (FR-131).
 
 ### 3.10 WordShuffle engine

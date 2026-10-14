@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 import { codeReducer, createCodeGame, scoreCode } from '@/engine/code';
 import type { CodeAction, CodeRecord, CodeState } from '@/engine/code';
@@ -19,7 +19,6 @@ import { CodeKeyboard } from './CodeKeyboard';
 import { CodeResultPanel } from './CodeResultPanel';
 import { CodeRows } from './CodeRows';
 import { CodeStatsModal } from './CodeStatsModal';
-import { NotesPanel } from './NotesPanel';
 import { codeHelpExample } from './helpExample';
 import { countLabel, noteLabel, noteName } from './noteLabel';
 
@@ -82,52 +81,69 @@ describe('CodeRows (FR-131)', () => {
   });
 });
 
-describe('NotesPanel (FR-132, A11Y-23)', () => {
-  it('has 26 buttons named for their mark and cycles on press', async () => {
-    const onCycle = vi.fn();
-    render(<NotesPanel notes={{ P: 'out', Q: 'in' }} disabled={false} onCycle={onCycle} />);
+describe('CodeKeyboard (FR-132, A11Y-23)', () => {
+  function renderKeyboard(props: Partial<React.ComponentProps<typeof CodeKeyboard>> = {}): {
+    onKeyPress: Mock;
+    onCycleNote: Mock;
+    onModeChange: Mock;
+  } {
+    const handlers = { onKeyPress: vi.fn(), onCycleNote: vi.fn(), onModeChange: vi.fn() };
+    render(<CodeKeyboard notes={{}} mode="type" disabled={false} {...handlers} {...props} />);
+    return handlers;
+  }
 
-    expect(screen.getAllByRole('button')).toHaveLength(26);
-    expect(screen.getByRole('button', { name: 'P, ruled out' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Q, in the word' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'A, unmarked' })).toBeInTheDocument();
+  it('in Type mode a marked key is named for its mark, and a press types the letter', async () => {
+    const { onKeyPress, onCycleNote } = renderKeyboard({ notes: { P: 'out' } });
+    const user = userEvent.setup();
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'A, unmarked' }));
-    expect(onCycle).toHaveBeenCalledWith('A');
-  });
-
-  it('is disabled once the game is over', () => {
-    render(<NotesPanel notes={{}} disabled onCycle={vi.fn()} />);
-
-    for (const button of screen.getAllByRole('button')) expect(button).toBeDisabled();
-  });
-
-  it('writes the mark on the button, so it never relies on colour', () => {
-    render(<NotesPanel notes={{ P: 'out', Q: 'in' }} disabled={false} onCycle={vi.fn()} />);
-
-    expect(screen.getByRole('button', { name: 'P, ruled out' })).toHaveTextContent('out');
-    expect(screen.getByRole('button', { name: 'Q, in the word' })).toHaveTextContent('in');
-  });
-});
-
-describe('CodeKeyboard (FR-132)', () => {
-  it('names a marked key for its mark and presses its letter', async () => {
-    const onKeyPress = vi.fn();
-    render(<CodeKeyboard notes={{ P: 'out' }} disabled={false} onKeyPress={onKeyPress} />);
-
-    await userEvent.setup().click(screen.getByRole('button', { name: 'P, ruled out' }));
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Q' }));
+    await user.click(screen.getByRole('button', { name: 'P, ruled out' }));
+    await user.click(screen.getByRole('button', { name: 'Q' }));
 
     expect(onKeyPress).toHaveBeenNthCalledWith(1, 'P');
     expect(onKeyPress).toHaveBeenNthCalledWith(2, 'Q');
+    expect(onCycleNote).not.toHaveBeenCalled();
+  });
+
+  it('in Mark mode every key is named for its note, and a press cycles it', async () => {
+    const { onKeyPress, onCycleNote } = renderKeyboard({
+      mode: 'mark',
+      notes: { P: 'out', Q: 'in' },
+    });
+    const user = userEvent.setup();
+
+    expect(screen.getByRole('button', { name: 'P, ruled out' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Q, in the word' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'A, unmarked' }));
+
+    expect(onCycleNote).toHaveBeenCalledWith('A');
+    expect(onKeyPress).not.toHaveBeenCalled();
+  });
+
+  it('has a Type and Mark switch that reports the choice', async () => {
+    const { onModeChange } = renderKeyboard();
+    const user = userEvent.setup();
+
+    expect(screen.getByRole('button', { name: 'Type' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Mark' })).toHaveAttribute('aria-pressed', 'false');
+    await user.click(screen.getByRole('button', { name: 'Mark' }));
+
+    expect(onModeChange).toHaveBeenCalledWith('mark');
+  });
+
+  it('writes the mark on the key as a glyph, so it never relies on colour', () => {
+    renderKeyboard({ notes: { P: 'out', Q: 'in' } });
+
+    expect(screen.getByRole('button', { name: 'P, ruled out' })).toHaveTextContent('×');
+    expect(screen.getByRole('button', { name: 'Q, in the word' })).toHaveTextContent('●');
   });
 
   it('has Enter and Backspace, and is disabled as a whole', () => {
-    render(<CodeKeyboard notes={{}} disabled onKeyPress={vi.fn()} />);
+    renderKeyboard({ disabled: true });
 
     expect(screen.getByRole('button', { name: 'Enter' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Backspace' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'A' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Mark' })).toBeDisabled();
   });
 });
 

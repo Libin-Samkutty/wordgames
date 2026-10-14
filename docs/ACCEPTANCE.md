@@ -106,34 +106,34 @@ Sections 18–21, and the rows marked R2 to R5 in §6, §8, §9 and §10, cover 
 
 ## 6. Accessibility
 
-| #    | Criterion                                                                                                                                               | Type | Ref            | ✓   |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------- | --- |
-| 6.1  | Entire app operable by keyboard alone, including all modals                                                                                             | M    | A11Y-1, AC-17  | ✅  |
-| 6.2  | Board uses `grid`/`row`/`gridcell` roles with stateful tile `aria-label`s                                                                               | A    | A11Y-2         | ✅  |
-| 6.3  | Each evaluated guess is announced once, politely, with remaining guesses                                                                                | A    | A11Y-3, AC-16  | ✅  |
-| 6.4  | Errors announced assertively                                                                                                                            | A    | A11Y-4         | ✅  |
-| 6.5  | Win/loss announced, including the answer on loss                                                                                                        | A    | A11Y-5         | ✅  |
-| 6.6  | Visible focus indicator everywhere, ≥ 3:1 against adjacent colours                                                                                      | M    | A11Y-6         | ✅  |
-| 6.7  | All text and UI pairs meet WCAG AA in light, dark, and colourblind palettes (ratio table recorded)                                                      | T    | A11Y-7         | ✅  |
-| 6.8  | State never conveyed by colour alone                                                                                                                    | M    | A11Y-8         | ✅  |
-| 6.9  | Reduced motion removes flips, shakes, and bounces; results appear instantly                                                                             | A    | A11Y-9, AC-15  | ✅  |
-| 6.10 | On-screen keys are real buttons with accessible names                                                                                                   | A    | A11Y-10        | ✅  |
-| 6.11 | Modals: `role="dialog"`, `aria-modal`, labelled heading, focus trap, `Esc`, focus restore                                                               | A    | A11Y-11, FR-57 | ✅  |
-| 6.12 | Landmarks present, exactly one `h1`, sensible `<title>`                                                                                                 | A    | A11Y-12        | ✅  |
-| 6.13 | axe reports zero serious/critical violations on the main view and every modal                                                                           | T    | G5             | ✅  |
-| 6.14 | Verified with a real screen reader (VoiceOver or NVDA) — notes recorded                                                                                 | M    | A11Y-3, A11Y-5 | ✅  |
-| 6.15 | Help example tiles are decorative and expose no orphan `gridcell`; axe clean on the dialog in both palettes                                             | A    | A11Y-13        | ✅  |
-| 6.16 | Suite V1: Home lists the games as a `<ul>` of links with names like "Play WordWeaver" and a description; every view has one `<h1>`                      | A    | A11Y-14        | ✅  |
-| 6.17 | Suite V1: focus moves to the new view's `<h1>` on every view change, including Back with a dialog open; **All games** is first in tab order             | A    | A11Y-15, EC-38 | ✅  |
-| 6.18 | Suite V1: WordWeaver board is a `grid` named "Word ladder" with Start, Rung _n_, Next rung and End rows and stateful tile labels                        | A    | A11Y-16        | ✅  |
-| 6.19 | Suite V1: each accepted rung, undo, solve and give up is announced once, politely, with the A11Y-17 wording; errors stay assertive                      | A    | A11Y-17        | ✅  |
-| 6.20 | Suite V1: Enter to continue never moves focus, and **Play again** is reachable with Tab                                                                 | A    | A11Y-18        | ✅  |
-| 6.21 | Suite V1: WordWeaver uses only the existing `correct` and `absent` tokens and markers; `check:contrast` passes with no new pair                         | T    | A11Y-19        | ✅  |
-| 6.22 | R2: WordStack boards are separate `grid`s named "Board 1 of 4" and so on, with "solved" added once solved; split keys name every board's state          | A    | A11Y-20        | ✅  |
-| 6.23 | R2: WordStack announces one summary per guess with the A11Y-21 wording                                                                                  | A    | A11Y-21        | ✅  |
-| 6.24 | R3: WordRange announces each guess with its direction, the new range and the heat in words; heat never relies on colour alone                           | A    | A11Y-22        | ✅  |
-| 6.25 | R4: WordCode announces counts in words; letter-note buttons are toggle buttons whose label includes the current mark                                    | A    | A11Y-23        | ✅  |
-| 6.26 | R5: WordShuffle tray buttons name the letter and remaining count; hints, reshuffles and solves are announced; the answer row label marks hinted letters | A    | A11Y-24        | ✅  |
+| #    | Criterion                                                                                                                                                    | Type | Ref            | ✓   |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- | -------------- | --- |
+| 6.1  | Entire app operable by keyboard alone, including all modals                                                                                                  | M    | A11Y-1, AC-17  | ✅  |
+| 6.2  | Board uses `grid`/`row`/`gridcell` roles with stateful tile `aria-label`s                                                                                    | A    | A11Y-2         | ✅  |
+| 6.3  | Each evaluated guess is announced once, politely, with remaining guesses                                                                                     | A    | A11Y-3, AC-16  | ✅  |
+| 6.4  | Errors announced assertively                                                                                                                                 | A    | A11Y-4         | ✅  |
+| 6.5  | Win/loss announced, including the answer on loss                                                                                                             | A    | A11Y-5         | ✅  |
+| 6.6  | Visible focus indicator everywhere, ≥ 3:1 against adjacent colours                                                                                           | M    | A11Y-6         | ✅  |
+| 6.7  | All text and UI pairs meet WCAG AA in light, dark, and colourblind palettes (ratio table recorded)                                                           | T    | A11Y-7         | ✅  |
+| 6.8  | State never conveyed by colour alone                                                                                                                         | M    | A11Y-8         | ✅  |
+| 6.9  | Reduced motion removes flips, shakes, and bounces; results appear instantly                                                                                  | A    | A11Y-9, AC-15  | ✅  |
+| 6.10 | On-screen keys are real buttons with accessible names                                                                                                        | A    | A11Y-10        | ✅  |
+| 6.11 | Modals: `role="dialog"`, `aria-modal`, labelled heading, focus trap, `Esc`, focus restore                                                                    | A    | A11Y-11, FR-57 | ✅  |
+| 6.12 | Landmarks present, exactly one `h1`, sensible `<title>`                                                                                                      | A    | A11Y-12        | ✅  |
+| 6.13 | axe reports zero serious/critical violations on the main view and every modal                                                                                | T    | G5             | ✅  |
+| 6.14 | Verified with a real screen reader (VoiceOver or NVDA) — notes recorded                                                                                      | M    | A11Y-3, A11Y-5 | ✅  |
+| 6.15 | Help example tiles are decorative and expose no orphan `gridcell`; axe clean on the dialog in both palettes                                                  | A    | A11Y-13        | ✅  |
+| 6.16 | Suite V1: Home lists the games as a `<ul>` of links with names like "Play WordWeaver" and a description; every view has one `<h1>`                           | A    | A11Y-14        | ✅  |
+| 6.17 | Suite V1: focus moves to the new view's `<h1>` on every view change, including Back with a dialog open; **All games** is first in tab order                  | A    | A11Y-15, EC-38 | ✅  |
+| 6.18 | Suite V1: WordWeaver board is a `grid` named "Word ladder" with Start, Rung _n_, Next rung and End rows and stateful tile labels                             | A    | A11Y-16        | ✅  |
+| 6.19 | Suite V1: each accepted rung, undo, solve and give up is announced once, politely, with the A11Y-17 wording; errors stay assertive                           | A    | A11Y-17        | ✅  |
+| 6.20 | Suite V1: Enter to continue never moves focus, and **Play again** is reachable with Tab                                                                      | A    | A11Y-18        | ✅  |
+| 6.21 | Suite V1: WordWeaver uses only the existing `correct` and `absent` tokens and markers; `check:contrast` passes with no new pair                              | T    | A11Y-19        | ✅  |
+| 6.22 | R2: WordStack boards are separate `grid`s named "Board 1 of 4" and so on, with "solved" added once solved; split keys name every board's state               | A    | A11Y-20        | ✅  |
+| 6.23 | R2: WordStack announces one summary per guess with the A11Y-21 wording                                                                                       | A    | A11Y-21        | ✅  |
+| 6.24 | R3: WordRange announces each guess with its direction, the new range and the heat in words; heat never relies on colour alone                                | A    | A11Y-22        | ✅  |
+| 6.25 | R4: WordCode announces counts in words; in Mark mode letter keys are named with their current mark, and the Type and Mark switch is a pair of toggle buttons | A    | A11Y-23        | ✅  |
+| 6.26 | R5: WordShuffle tray buttons name the letter and remaining count; hints, reshuffles and solves are announced; the answer row label marks hinted letters      | A    | A11Y-24        | ✅  |
 
 ## 7. Responsive & Cross-Browser
 
@@ -337,7 +337,7 @@ Releases R2–R5: each `EC-39 … EC-49` needs the same evidence before its rele
 | 18.4  | Each game draws a different answer per board; one no-repeat ring buffer serves both modes                                                                                    | A    | FR-103, EC-41        | ✅  |
 | 18.5  | Input and validation match Wordwright; a rejected guess costs no turn on any board                                                                                           | A    | FR-104               | ✅  |
 | 18.6  | An accepted guess lands on every unsolved board and each board scores it against its own answer; `PANEL` against `PLANT` and `STORM` matches AC-46                           | A    | FR-105, AC-46        | ✅  |
-| 18.7  | A solved board is marked "Solved", takes no more guesses, and its key segments go blank                                                                                      | A    | FR-106, EC-39, AC-47 | ✅  |
+| 18.7  | A solved board is marked "Solved", takes no more guesses, and it drops out of the keys, and its grid shrinks to the rows used                                                | A    | FR-106, EC-39, AC-47 | ✅  |
 | 18.8  | The game is won when every board is solved within the limit, including on the final guess; otherwise it is lost and every unsolved answer is shown                           | A    | FR-107, EC-40, AC-48 | ✅  |
 | 18.9  | Duo boards sit side by side and Quad boards in a 2 × 2 grid; the board area scrolls and the keyboard stays visible at 320 px and in landscape                                | M    | FR-108               | ✅  |
 | 18.10 | Split keys show each board's best state, in halves for Duo and quarters for Quad, with markers so state never relies on colour alone                                         | A    | FR-109, US-33        | ✅  |
@@ -389,7 +389,7 @@ Releases R2–R5: each `EC-39 … EC-49` needs the same evidence before its rele
 | 20.6  | Every row of the SPEC §6.3 truth table gives counts equal to its `correct` and `present` totals                                                                         | A    | EC-44                | ✅  |
 | 20.7  | The game is won when bulls equal the length and lost after 10 guesses, revealing the secret                                                                             | A    | FR-130               | ✅  |
 | 20.8  | Each row shows the guess on neutral tiles and the counts as text, such as "2 bulls · 1 cow"                                                                             | A    | FR-131, US-35        | ✅  |
-| 20.9  | Letter notes cycle unmarked, ruled out, in the word; marks show on the keys in a style unlike game feedback; the game never sets them                                   | A    | FR-132, US-36        | ✅  |
+| 20.9  | Letter notes: in Mark mode a key cycles unmarked, ruled out, in the word; marks show on the keys in a style unlike game feedback; the game never sets them              | A    | FR-132, US-36        | ✅  |
 | 20.10 | Result panel shows the outcome, guesses used, the secret, **Play again** and **Change length**                                                                          | A    | FR-133               | ✅  |
 | 20.11 | Statistics overall and per length, with buckets 1–10, match a hand-computed expectation; each game is recorded once                                                     | A    | FR-134               | ✅  |
 | 20.12 | Leaving or reloading restores the rows, typed letters and letter notes; the keyboard shows the restored marks                                                           | A    | FR-135, EC-45, AC-52 | ✅  |
@@ -618,17 +618,17 @@ WordCode is built and verified in this environment. Nothing has been deployed or
 
 **Layout and accessibility**
 
-- At 4 and 6 letters with nine guesses, the board fits from 320 px to 2560 px and at 740 x 360 landscape, with no horizontal scroll, no clipped counts and the keyboard on screen. The rows and the notes panel sit in one scrollable region with a tab stop and a label. Keys, header buttons and note buttons are at least 44 px.
+- At 4 and 6 letters with nine guesses, the board fits from 320 px to 2560 px and at 740 x 360 landscape, with no horizontal scroll, no clipped counts and the keyboard on screen. The rows sit in one scrollable region with a tab stop and a label. Keys, the Type and Mark switch and header buttons are at least 44 px.
 - axe: zero violations in light and dark with both palettes, with guesses, marks on the notes and keys, and typed letters on screen. Also clean at 4 and 6 letters and on the help, statistics (empty and with a game), result and confirmation dialogs.
-- Note marks use no new colour token. They use the neutral key tokens and differ by form: a strike for ruled out, an underline with a heavy outline for in the word. The word "out" or "in" is written on each note button. `check:contrast` therefore has nothing new to cover, and axe checked the rendered marks in every palette.
-- The announcement matches A11Y-23: `PANEL: 1 bull, 3 cows. 9 guesses left.` A count of zero is said aloud. Each note button is named like `P, ruled out`, and a marked key takes the same name.
+- Note marks use no new colour token. They use the neutral key tokens and differ by form: a dimmed key with a dashed outline for ruled out, a solid heavy outline for in the word. A corner glyph (× or ●) repeats each mark. `check:contrast` therefore has nothing new to cover, and axe checked the rendered marks in every palette.
+- The announcement matches A11Y-23: `PANEL: 1 bull, 3 cows. 9 guesses left.` A count of zero is said aloud. In Mark mode every key is named like `P, ruled out` or `P, unmarked`, and a marked key keeps that name in Type mode.
 - A guess row reads as one line (`PANEL: 1 bull · 3 cows`), not as a grid.
 
 **Changes made while building**
 
 - The header carries **New game** beside How to play, the length selector and Statistics, for the reason in ADR-034. Row 20.2 lists the order without it.
 - The board does not show a guesses-left counter. The ten rows show it, and the announcement says it. No row in §20 asks for one.
-- The notes panel is always shown, not collapsed, and scrolls with the rows on small screens.
+- Letter notes are set on the keyboard itself through a Type and Mark switch, so there is no separate notes panel. Each guess row shows bulls and cows on two lines with a filled and a hollow dot beside the words.
 
 **Not verified**
 

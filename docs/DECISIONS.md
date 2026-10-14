@@ -681,7 +681,7 @@ This is not a plugin system. There is no runtime registration and no shared inte
 - Bulls are the number of `correct` positions and cows the number of `present` positions in `evaluateGuess(guess, secret)` (FR-129). There is no second counting algorithm.
 - Lengths 4, 5 and 6, default 5, with their own length preference. Every length allows **10 guesses** (FR-127).
 - The secret may have repeated letters. It comes from the answer list with its own ring buffer.
-- **Letter notes** are the player's own marks (unmarked, ruled out, in the word) on 26 letter buttons, mirrored on the keyboard. The game never sets them. They are saved with the session (FR-132, FR-135).
+- **Letter notes** are the player's own marks (unmarked, ruled out, in the word) set on the keyboard keys through a Type and Mark switch. The game never sets them. They are saved with the session (FR-132, FR-135).
 
 **Consequences.**
 

@@ -46,9 +46,15 @@ function rows(): HTMLElement[] {
   return within(screen.getByRole('list', { name: 'Guesses' })).getAllByRole('listitem');
 }
 
+/** A letter key on the keyboard, named `P`, or `P, ruled out` once marked or in Mark mode. */
 function noteButton(letter: string): HTMLElement {
-  const panel = screen.getByRole('region', { name: 'Letter notes' });
-  return within(panel).getByRole('button', { name: new RegExp(`^${letter}, `) });
+  const keyboard = screen.getByLabelText('Keyboard');
+  return within(keyboard).getByRole('button', { name: new RegExp(`^${letter}(,|$)`) });
+}
+
+/** Switches the keyboard to Mark mode, where a letter key cycles its note. */
+async function markMode(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(screen.getByRole('button', { name: 'Mark' }));
 }
 
 describe('WordCode', () => {
@@ -71,9 +77,9 @@ describe('WordCode', () => {
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WordCode');
       expect(document.title).toBe('WordCode · wordgames');
       expect(rows()).toHaveLength(10);
-      const panel = screen.getByRole('region', { name: 'Letter notes' });
-      expect(within(panel).getAllByRole('button')).toHaveLength(26);
-      expect(noteButton('P')).toHaveAccessibleName('P, unmarked');
+      expect(screen.queryByRole('region', { name: 'Letter notes' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Type' })).toHaveAttribute('aria-pressed', 'true');
+      expect(noteButton('P')).toHaveAccessibleName('P');
     });
 
     it('defaults to 5 letters and offers 4, 5 and 6 as a radio group (FR-127)', async () => {
@@ -239,6 +245,7 @@ describe('WordCode', () => {
   describe('letter notes (FR-132, EC-45, AC-52)', () => {
     it('three presses return a letter to unmarked, and the name says the mark (A11Y-23)', async () => {
       const { user } = await openCode();
+      await markMode(user);
 
       await user.click(noteButton('P'));
       expect(noteButton('P')).toHaveAccessibleName('P, ruled out');
@@ -250,6 +257,7 @@ describe('WordCode', () => {
 
     it('shows each mark on the matching keyboard key', async () => {
       const { user } = await openCode();
+      await markMode(user);
       const keyboard = screen.getByLabelText('Keyboard');
 
       await user.click(noteButton('P'));
@@ -258,20 +266,21 @@ describe('WordCode', () => {
 
       expect(within(keyboard).getByRole('button', { name: 'P, ruled out' })).toBeInTheDocument();
       expect(within(keyboard).getByRole('button', { name: 'Q, in the word' })).toBeInTheDocument();
-      expect(within(keyboard).getByRole('button', { name: 'W' })).toBeInTheDocument();
+      expect(within(keyboard).getByRole('button', { name: 'W, unmarked' })).toBeInTheDocument();
     });
 
     it('marks look different from game feedback and from each other without colour', async () => {
       const { user } = await openCode();
+      await markMode(user);
 
       await user.click(noteButton('P'));
       await user.click(noteButton('Q'));
       await user.click(noteButton('Q'));
 
-      expect(noteButton('P').className).toContain('line-through');
-      expect(noteButton('Q').className).toContain('underline');
-      expect(noteButton('P')).toHaveTextContent('out');
-      expect(noteButton('Q')).toHaveTextContent('in');
+      expect(noteButton('P').className).toContain('outline-dashed');
+      expect(noteButton('Q').className).toContain('outline-solid');
+      expect(noteButton('P')).toHaveTextContent('×');
+      expect(noteButton('Q')).toHaveTextContent('●');
       for (const letter of ['P', 'Q']) {
         expect(noteButton(letter).className).not.toMatch(/key-(correct|present|absent)/);
       }
@@ -279,6 +288,7 @@ describe('WordCode', () => {
 
     it('no guess changes a mark', async () => {
       const { user } = await openCode();
+      await markMode(user);
       await user.click(noteButton('P'));
       await user.click(noteButton('Z'));
 
@@ -296,12 +306,13 @@ describe('WordCode', () => {
         within(screen.getByLabelText('Keyboard')).getByRole('button', { name: 'P' }),
       );
 
-      expect(noteButton('P')).toHaveAccessibleName('P, unmarked');
+      expect(noteButton('P')).toHaveAccessibleName('P');
       expect(screen.getByRole('listitem', { name: 'Your guess: P' })).toBeInTheDocument();
     });
 
     it('survive leaving and returning, with the rows and the typed letters (AC-52, EC-45)', async () => {
       const { user } = await openCode();
+      await markMode(user);
       await user.click(noteButton('P'));
       await user.click(noteButton('Q'));
       await user.click(noteButton('Q'));
@@ -324,6 +335,7 @@ describe('WordCode', () => {
 
     it('a new game starts with a clean notepad', async () => {
       const { user } = await openCode();
+      await markMode(user);
       await user.click(noteButton('P'));
 
       await user.click(screen.getByRole('button', { name: 'New game' }));

@@ -14,11 +14,10 @@ import { HeaderIconButton } from '../layout/Header';
 import { HeaderControls } from '../layout/HeaderControls';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { CodeHelpModal } from './CodeHelpModal';
-import { CodeKeyboard } from './CodeKeyboard';
+import { CodeKeyboard, type KeyboardMode } from './CodeKeyboard';
 import { CodeResultPanel } from './CodeResultPanel';
 import { CodeRows } from './CodeRows';
 import { CodeStatsModal } from './CodeStatsModal';
-import { NotesPanel } from './NotesPanel';
 
 /** How long the invalid-guess shake stays on, matching --duration-shake. */
 const SHAKE_DURATION_MS = 600;
@@ -46,6 +45,7 @@ function CodeScreen(): React.JSX.Element {
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [isStatsOpen, setStatsOpen] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
+  const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('type');
 
   const [shake, setShake] = useState(false);
   const shakeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,16 +127,15 @@ function CodeScreen(): React.JSX.Element {
       <>
         <div
           role="group"
-          aria-label="Board and letter notes"
+          aria-label="Board"
           // A scrollable region must be reachable by keyboard (WCAG 2.1.1, axe
           // scrollable-region-focusable), so a keyboard user can scroll the rows
-          // and the notes while the keyboard below stays on screen (FR-59).
+          // while the keyboard below stays on screen (FR-59).
           // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- see above
           tabIndex={0}
-          className="flex max-h-[clamp(8rem,calc(100dvh-20rem),60rem)] w-full max-w-md [scrollbar-gutter:stable_both-edges] flex-col items-center gap-4 overflow-y-auto overscroll-contain px-1 py-1 md:max-w-2xl md:flex-row md:items-start md:justify-center md:gap-8"
+          className="flex max-h-[clamp(8rem,calc(100dvh-22rem),60rem)] w-full max-w-md [scrollbar-gutter:stable_both-edges] flex-col items-center overflow-y-auto overscroll-contain px-1 py-1"
         >
           <CodeRows state={state} shake={shake} reducedMotion={prefersReducedMotion} />
-          <NotesPanel notes={state.notes} disabled={isGameOver} onCycle={cycleNote} />
         </div>
 
         {isGameOver ? (
@@ -229,7 +228,14 @@ function CodeScreen(): React.JSX.Element {
         <div className="flex w-full flex-1 flex-col items-center justify-start gap-4">{body}</div>
 
         {isReady ? (
-          <CodeKeyboard notes={state.notes} disabled={inputLocked} onKeyPress={handleKeyPress} />
+          <CodeKeyboard
+            notes={state.notes}
+            mode={keyboardMode}
+            disabled={inputLocked}
+            onModeChange={setKeyboardMode}
+            onKeyPress={handleKeyPress}
+            onCycleNote={cycleNote}
+          />
         ) : null}
       </main>
 

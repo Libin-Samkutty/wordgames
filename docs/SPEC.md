@@ -353,7 +353,7 @@ else:
 | A11Y-20 | WordStack boards are separate `grid`s named "Board 1 of 4" and so on, with "solved" added once solved. Split keyboard keys carry every board's state in their label, for example "A: board 1 present, board 2 absent, board 3 solved, board 4 absent".           |
 | A11Y-21 | WordStack announces one summary per guess: `"CRANE. Board 1: 2 correct, 1 present. Board 2: solved. 6 guesses left."`                                                                                                                                            |
 | A11Y-22 | WordRange announces each guess with its direction, the new range and the heat in words: `"BRAVE: the word is after it. Range BRAVE to ZZZZZ. Freezing. 13 guesses left."` Heat never relies on colour alone.                                                     |
-| A11Y-23 | WordCode announces counts in words (`"PANEL: 1 bull, 3 cows. 9 guesses left."`). Letter-note buttons are toggle buttons whose label includes the current mark.                                                                                                   |
+| A11Y-23 | WordCode announces counts in words (`"PANEL: 1 bull, 3 cows. 9 guesses left."`). In Mark mode every letter key is named with its current mark, and a marked key keeps that name in Type mode. The Type and Mark switch is a pair of toggle buttons.              |
 | A11Y-24 | WordShuffle tray letters are buttons labelled with the letter and remaining count. Hints, reshuffles and solves are announced, and the answer row is labelled with hinted letters marked.                                                                        |
 
 ---
@@ -500,7 +500,7 @@ Principles: never a raw stack trace in the UI; never a silent failure; every err
 
 - **AC-45** Given the release that ships a game, then Home shows its card in catalogue order, its route opens it with the right title and `<h1>`, and routes for games not yet shipped go Home.
 - **AC-46** Given WordStack Duo with answers `PLANT` and `STORM`, when I guess `PANEL`, then board 1 shows `[correct, present, present, absent, present]` and board 2 shows `[absent, absent, absent, absent, absent]`.
-- **AC-47** Given WordStack Duo where my third guess solves board 1, when I make a fourth guess, then it appears only on board 2 and board 1's key segments are blank.
+- **AC-47** Given WordStack Duo where my third guess solves board 1, when I make a fourth guess, then it appears only on board 2 and board 1 drops out of the keys, which now split across board 2 only, and board 1 shows only the three rows it used.
 - **AC-48** Given WordStack Quad, when 9 guesses pass with two boards unsolved, then the game is lost and both unsolved answers are shown.
 - **AC-49** Given WordRange with secret `PLANT`, when I guess `BRAVE`, then it is marked "after", the range becomes `BRAVE … ZZZZZ` and the heat is Freezing. When I guess `PLAIN`, the heat is Burning.
 - **AC-50** Given WordRange range `BRAVE … STORM`, when I guess `ABOUT`, then I see `Outside the range` and the guess count is unchanged.
@@ -683,7 +683,7 @@ Wordle on two or four boards at once. Every guess is played on every unsolved bo
 ### 17.2 Interface
 
 - **FR-108** Layout: Duo shows the boards side by side. Quad shows a 2 × 2 grid. When the boards don't fit above the keyboard, the board area scrolls and the keyboard stays visible (FR-59).
-- **FR-109** Each keyboard key is split into one segment per board: left and right halves for Duo, quarters for Quad. Each segment shows that board's best state for the letter, following FR-53. A solved board's segment is blank.
+- **FR-109** Each keyboard key is split into one segment per board: left and right halves for Duo, quarters for Quad. Each segment shows that board's best state for the letter, following FR-53. A solved board drops out of the keys, so they split across the open boards only, and are plain once one board is left. A solved board's grid shows only the rows it used.
 - **FR-110** The result panel shows won or lost, guesses used out of the limit, how many boards were solved, the answers, and **Play again** (same mode) and **Change mode**.
 - **FR-111** Statistics are kept overall and per mode, and recorded once per game (idempotent by game id):
   - games played, won, win % (derived), and current and best streak
@@ -745,7 +745,7 @@ Bulls & Cows with words. Each guess reports only two numbers: letters in the rig
 ### 19.2 Interface
 
 - **FR-131** Each board row shows the guess letters on neutral tiles, followed by the bull and cow counts as text, for example "2 bulls · 1 cow".
-- **FR-132** **Letter notes.** A panel of 26 letter buttons lets the player mark each letter as unmarked, ruled out or in the word. Each press cycles to the next mark. Marks also show on the matching keyboard keys in a style that cannot be confused with game feedback. Marks are the player's own notes; the game never sets them. They are saved with the session.
+- **FR-132** **Letter notes.** A Type and Mark switch above the on-screen keyboard sets what a letter key does. In Type, a key enters the letter. In Mark, a key cycles that letter through unmarked, ruled out and in the word. Marks show on the keys in a style that cannot be confused with game feedback, and are never colour alone. Marks are the player's own notes; the game never sets them. They are saved with the session.
 - **FR-133** The result panel shows won or lost, guesses used, the secret, and **Play again** and **Change length**.
 - **FR-134** Statistics are kept overall and per length, and recorded once per game: played, won, win %, current and best streak, the guess distribution for wins (buckets 1–10), and the last 50 games `{ id, playedAt, length, secret, guessesUsed, won }`.
 - **FR-135** The in-progress game, including letter notes, is saved and restored as in FR-32, FR-33 and FR-65. Restarting or switching length with at least one guess asks for confirmation.

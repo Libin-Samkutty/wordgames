@@ -38,9 +38,11 @@ export function CodeHelpModal({ isOpen, length, onClose }: CodeHelpModalProps): 
           guess with three E&rsquo;s can score one bull or one cow for E, never more.
         </p>
         <p>
-          <strong className="font-bold">Letter notes</strong> are yours to keep. Press a letter to
-          mark it ruled out, press again to mark it in the word, and press a third time to clear it.
-          The game never changes your notes, and they show on the keyboard too.
+          <strong className="font-bold">Letter notes</strong> are yours to keep. Switch the keyboard
+          to <strong className="font-bold">Mark</strong>, press a letter to mark it ruled out, press
+          again to mark it in the word, and press a third time to clear it. Switch back to{' '}
+          <strong className="font-bold">Type</strong> to enter guesses. The game never changes your
+          notes.
         </p>
 
         <section>
