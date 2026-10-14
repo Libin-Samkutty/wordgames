@@ -18,6 +18,7 @@ import {
   rememberStart,
   resetWeaverHistory,
   resetWeaverStatistics,
+  weaverAverageUndos,
   weaverGaveUp,
   weaverSolvePercentage,
 } from './weaverRepositories';
@@ -62,7 +63,7 @@ describe('recordWeaverGame (FR-92)', () => {
   it('records a solve overall and for its length', () => {
     const stats = recordWeaverGame(defaultWeaverStats(), solved('a'));
 
-    expect(stats.overall).toEqual({
+    expect(stats.overall).toMatchObject({
       gamesPlayed: 1,
       gamesSolved: 1,
       parHits: 1,
@@ -630,5 +631,101 @@ describe('repositories (FR-68)', () => {
     expect(localStorage.getItem(gameKeys('wordwright').stats)).toBe(before);
     expect(createStatsRepository('wordwright').read().overall.gamesPlayed).toBe(10);
     expect(weaver.read().overall.gamesPlayed).toBe(0);
+  });
+});
+
+describe('detail stats added after release', () => {
+  const NEW_FIELDS = [
+    'overParDistribution',
+    'totalUndos',
+    'hardestParSolved',
+    'timedSolves',
+    'totalSolveMs',
+    'fastestSolveMs',
+  ];
+
+  it('loads a stats blob saved before the new fields existed, without a reset', () => {
+    const old = JSON.parse(JSON.stringify(defaultWeaverStats())) as {
+      overall: Record<string, unknown>;
+      perLength: Record<string, Record<string, unknown>>;
+    };
+    for (const bucket of Object.values({ overall: old.overall, ...old.perLength })) {
+      for (const field of NEW_FIELDS) delete bucket[field];
+    }
+    old.overall.gamesPlayed = 5;
+    old.overall.gamesSolved = 4;
+
+    const loaded = validateWeaverStats(old);
+
+    expect(loaded?.overall.gamesSolved).toBe(4);
+    expect(loaded?.overall.overParDistribution).toEqual([0, 0, 0, 0, 0]);
+    expect(loaded?.overall.hardestParSolved).toBeNull();
+    expect(loaded?.perLength[5].timedSolves).toBe(0);
+  });
+
+  it('still loads an old record row that has no time', () => {
+    const stats = { ...defaultWeaverStats(), recentGames: [record()] };
+
+    expect(validateWeaverStats(JSON.parse(JSON.stringify(stats)))?.recentGames).toHaveLength(1);
+  });
+
+  it('rejects a chart that counts more solves than there are', () => {
+    const bad = JSON.parse(JSON.stringify(defaultWeaverStats())) as {
+      overall: Record<string, unknown>;
+    };
+    bad.overall.overParDistribution = [1, 0, 0, 0, 0];
+
+    expect(validateWeaverStats(bad)).toBeNull();
+  });
+
+  it('sorts solves by moves over par, with four or more in the last bucket', () => {
+    let stats = recordWeaverGame(defaultWeaverStats(), solved('a', 4));
+    stats = recordWeaverGame(stats, solved('b', 5));
+    stats = recordWeaverGame(stats, solved('c', 5));
+    stats = recordWeaverGame(stats, solved('d', 8));
+    stats = recordWeaverGame(stats, solved('e', 20));
+    stats = recordWeaverGame(stats, gaveUp('f'));
+
+    expect(stats.overall.overParDistribution).toEqual([1, 2, 0, 0, 2]);
+  });
+
+  it('adds undos from moves beyond the ladder, and averages over the counted solves', () => {
+    let stats = recordWeaverGame(
+      defaultWeaverStats(),
+      record({ id: 'a', moves: 6, ladderLength: 4 }),
+    );
+    stats = recordWeaverGame(stats, record({ id: 'b', moves: 4, ladderLength: 4 }));
+
+    expect(stats.overall.totalUndos).toBe(2);
+    expect(weaverAverageUndos(stats.overall)).toBe(1);
+    expect(weaverAverageUndos(defaultWeaverStats().overall)).toBeNull();
+  });
+
+  it('keeps the hardest par solved, ignoring give ups', () => {
+    let stats = recordWeaverGame(defaultWeaverStats(), record({ id: 'a', par: 5, moves: 5 }));
+    stats = recordWeaverGame(stats, record({ id: 'b', par: 4, moves: 4 }));
+    stats = recordWeaverGame(stats, record({ id: 'c', par: 7, solved: false }));
+
+    expect(stats.overall.hardestParSolved).toBe(5);
+  });
+
+  it('adds time on solves only, and tracks the fastest', () => {
+    let stats = recordWeaverGame(defaultWeaverStats(), record({ id: 'a', solveMs: 40_000 }));
+    stats = recordWeaverGame(stats, record({ id: 'b', solveMs: 15_000 }));
+    stats = recordWeaverGame(stats, record({ id: 'c', solved: false, solveMs: 2_000 }));
+    stats = recordWeaverGame(stats, record({ id: 'd' }));
+
+    expect(stats.overall).toMatchObject({
+      timedSolves: 2,
+      totalSolveMs: 55_000,
+      fastestSolveMs: 15_000,
+    });
+  });
+
+  it('keeps the solve time on a stored record', () => {
+    const row = record({ solveMs: 8_765 });
+    const stats = { ...defaultWeaverStats(), recentGames: [row] };
+
+    expect(validateWeaverStats(JSON.parse(JSON.stringify(stats)))?.recentGames[0]).toEqual(row);
   });
 });

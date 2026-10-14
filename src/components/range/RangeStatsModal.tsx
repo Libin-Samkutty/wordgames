@@ -1,9 +1,23 @@
 import { RANGE_MAX_GUESSES } from '@/engine/range';
 import { RECENT_GAMES_LIMIT } from '@/engine/constants';
-import { formatNumber, formatPercent } from '@/lib/format';
+import {
+  EMPTY_VALUE,
+  formatAverage,
+  formatDuration,
+  formatNumber,
+  formatPercent,
+} from '@/lib/format';
 import { useRangeStats } from '@/state/range';
-import { rangeWinPercentage } from '@/storage';
+import {
+  averageTimedSolveMs,
+  rangeAverageFirstBurning,
+  rangeBurningPercentage,
+  rangeWinPercentage,
+  type RangeStatsState,
+} from '@/storage';
+import type { RangeRecord } from '@/engine/range';
 
+import { Distribution } from '../stats/Distribution';
 import { ResetStatsSection } from '../stats/ResetStatsSection';
 import { StatTile } from '../stats/StatTile';
 import { Modal } from '../ui/Modal';
@@ -11,32 +25,34 @@ import { Modal } from '../ui/Modal';
 /** Rows shown in the recent-games list; the log itself keeps 50 (FR-124). */
 const RECENT_SHOWN = 8;
 
-function Distribution({ counts }: { counts: readonly number[] }): React.JSX.Element {
-  const max = Math.max(1, ...counts);
-
-  return (
-    <div className="flex flex-col gap-1">
-      {counts.map((count, index) => (
-        <div key={index} className="flex items-center gap-2 text-sm">
-          <span className="w-4 tabular-nums">{index + 1}</span>
-          <div className="flex-1">
-            <div
-              className="flex justify-end rounded-sm bg-tile-absent px-1.5 py-0.5 text-xs font-bold text-tile-text-revealed data-[has-count=true]:bg-tile-correct"
-              style={{ width: `${String(Math.max(7, (count / max) * 100))}%` }}
-              data-has-count={count > 0}
-            >
-              {count}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export interface RangeStatsModalProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
+}
+
+/** Mean guesses over wins, read off the distribution, or null with no wins. */
+function averageWinGuesses(stats: RangeStatsState): number | null {
+  const wins = stats.distribution.reduce((sum, count) => sum + count, 0);
+  if (wins === 0) return null;
+  const total = stats.distribution.reduce((sum, count, index) => sum + count * (index + 1), 0);
+  return total / wins;
+}
+
+/** The first guess played most often in the kept games, or null before there are two to compare. */
+function mostUsedOpener(records: readonly RangeRecord[]): string | null {
+  const counts = new Map<string, number>();
+  for (const record of records) {
+    if (record.opener) counts.set(record.opener, (counts.get(record.opener) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = 1;
+  for (const [word, count] of counts) {
+    if (count > bestCount) {
+      best = word;
+      bestCount = count;
+    }
+  }
+  return best;
 }
 
 /**
@@ -48,6 +64,11 @@ export interface RangeStatsModalProps {
 export function RangeStatsModal({ isOpen, onClose }: RangeStatsModalProps): React.JSX.Element {
   const { stats, resetStatistics, resetHistory } = useRangeStats();
   const hasGames = stats.gamesPlayed > 0;
+  const opener = mostUsedOpener(stats.recentGames);
+  const lastGame = stats.recentGames.at(0);
+  // Mark the bar of the game just finished, when it was a win.
+  const highlightIndex = lastGame?.won ? lastGame.guessesUsed - 1 : null;
+  const burningPercent = rangeBurningPercentage(stats);
 
   return (
     <Modal isOpen={isOpen} title="Statistics" onClose={onClose}>
@@ -60,11 +81,32 @@ export function RangeStatsModal({ isOpen, onClose }: RangeStatsModalProps): Reac
             <StatTile label="Best streak" value={formatNumber(stats.bestStreak)} />
           </dl>
 
+          <dl className="grid grid-cols-4 gap-2">
+            <StatTile label="Avg guesses" value={formatAverage(averageWinGuesses(stats))} />
+            <StatTile label="Avg time" value={formatDuration(averageTimedSolveMs(stats))} />
+            <StatTile label="Fastest" value={formatDuration(stats.fastestSolveMs)} />
+            <StatTile
+              label="Closest miss"
+              value={
+                stats.closestMiss === null ? EMPTY_VALUE : `${formatNumber(stats.closestMiss)} left`
+              }
+            />
+          </dl>
+
+          {burningPercent === null && opener === null ? null : (
+            <p className="text-sm text-text-muted">
+              {burningPercent === null
+                ? null
+                : `Reached Burning in ${formatPercent(burningPercent)} of games, on guess ${formatAverage(rangeAverageFirstBurning(stats))} on average. `}
+              {opener === null ? null : `Favourite opener: ${opener.toUpperCase()}.`}
+            </p>
+          )}
+
           <section>
             <h3 className="mb-2 text-xs font-bold tracking-wide uppercase">
               Wins by guesses (1 to {RANGE_MAX_GUESSES})
             </h3>
-            <Distribution counts={stats.distribution} />
+            <Distribution counts={stats.distribution} highlightIndex={highlightIndex} />
           </section>
 
           {stats.recentGames.length > 0 ? (
@@ -78,6 +120,9 @@ export function RangeStatsModal({ isOpen, onClose }: RangeStatsModalProps): Reac
                       {record.won
                         ? `${String(record.guessesUsed)}/${String(RANGE_MAX_GUESSES)}`
                         : 'Not found'}
+                      {record.won && record.solveMs !== undefined
+                        ? ` · ${formatDuration(record.solveMs)}`
+                        : ''}
                     </span>
                   </li>
                 ))}
@@ -99,7 +144,7 @@ export function RangeStatsModal({ isOpen, onClose }: RangeStatsModalProps): Reac
       {hasGames || stats.recentGames.length > 0 ? (
         <div className="mt-6">
           <ResetStatsSection
-            statisticsDescription="games played, win percentage, streaks and the guess distribution"
+            statisticsDescription="games played, win percentage, streaks, times and the guess distribution"
             onResetStatistics={resetStatistics}
             onResetHistory={resetHistory}
           />

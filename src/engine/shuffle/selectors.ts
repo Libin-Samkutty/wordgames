@@ -1,3 +1,5 @@
+import { clampDuration } from '@/lib/clock';
+
 import { MAX_HINTS } from './constants';
 import type { ShuffleRecord, ShuffleState } from './types';
 
@@ -51,5 +53,7 @@ export function shuffleRecord(state: ShuffleState): ShuffleRecord | null {
     found: state.found,
     hintsUsed: state.hinted.length,
     solved: state.status === 'solved',
+    solveMs: clampDuration((state.finishedAt ?? 0) - (state.startedAt ?? 0)),
+    anagramCount: state.anagrams.length,
   };
 }

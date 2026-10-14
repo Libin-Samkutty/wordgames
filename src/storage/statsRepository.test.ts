@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { GameRecord } from '@/engine/types';
 
-import { defaultStats, type StatsState } from './schemas';
+import { defaultStats, validateStats, type StatsState } from './schemas';
 import {
   averageGuesses,
   averageSolveMs,
@@ -273,5 +273,65 @@ describe('immutability', () => {
     recordGame(before, game());
 
     expect(before).toEqual(snapshot);
+  });
+});
+
+describe('best score and opener (added after release)', () => {
+  it('keeps the highest score from one win, ignoring losses', () => {
+    const stats = play([
+      game({ score: 300 }),
+      game({ score: 650 }),
+      game({ score: 400 }),
+      game({ won: false, score: 0 }),
+    ]);
+
+    expect(stats.overall.bestScore).toBe(650);
+    expect(stats.perLength[5].bestScore).toBe(650);
+    expect(stats.perLength[4].bestScore).toBe(0);
+  });
+
+  it('loads a stats blob saved before bestScore existed, without a reset', () => {
+    const old = JSON.parse(JSON.stringify(defaultStats())) as {
+      overall: Record<string, unknown>;
+      perLength: Record<string, Record<string, unknown>>;
+    };
+    for (const bucket of Object.values({ overall: old.overall, ...old.perLength })) {
+      delete bucket.bestScore;
+    }
+    old.overall.gamesPlayed = 12;
+    old.overall.gamesWon = 9;
+
+    const loaded = validateStats(old);
+
+    expect(loaded?.overall.gamesPlayed).toBe(12);
+    expect(loaded?.overall.bestScore).toBe(0);
+    expect(loaded?.perLength[6].bestScore).toBe(0);
+  });
+
+  it('rejects a bestScore that is present but wrong', () => {
+    const bad = JSON.parse(JSON.stringify(defaultStats())) as { overall: Record<string, unknown> };
+    bad.overall.bestScore = -5;
+
+    expect(validateStats(bad)).toBeNull();
+  });
+
+  it('keeps the opener on a stored record, and still loads rows without one', () => {
+    const withOpener = game({ opener: 'CRANE' });
+    const without = game();
+    const stats = { ...defaultStats(), recentGames: [withOpener, without] };
+
+    const loaded = validateStats(JSON.parse(JSON.stringify(stats)));
+
+    expect(loaded?.recentGames[0]).toEqual(withOpener);
+    expect(loaded?.recentGames[1]).toEqual(without);
+  });
+
+  it('drops an opener of the wrong length rather than rejecting the row', () => {
+    const stats = { ...defaultStats(), recentGames: [game({ opener: 'CRANES' })] };
+
+    const loaded = validateStats(JSON.parse(JSON.stringify(stats)));
+
+    expect(loaded?.recentGames).toHaveLength(1);
+    expect(loaded?.recentGames[0]?.opener).toBeUndefined();
   });
 });

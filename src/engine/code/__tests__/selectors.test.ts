@@ -63,7 +63,31 @@ describe('codeRecord (FR-134)', () => {
       secret: 'PLANT',
       guessesUsed: 2,
       won: true,
+      solveMs: 0,
+      lettersFoundAt: 2,
+      usedNotes: false,
+      opener: 'PANEL',
     });
+  });
+
+  it('records the guess that showed every letter, even before the win', () => {
+    // PLANT anagram TPLAN has all five letters, but is not the secret.
+    const state = run(fresh(), submit('TPLAN'), submit('PLANT'));
+
+    expect(codeRecord(state)).toMatchObject({ lettersFoundAt: 1, guessesUsed: 2 });
+  });
+
+  it('has no lettersFoundAt when no guess showed every letter', () => {
+    let state = fresh();
+    for (let i = 0; i < 10; i += 1) state = run(state, submit('SLOTH'));
+
+    expect(codeRecord(state)?.lettersFoundAt).toBeNull();
+  });
+
+  it('records whether the notepad was used', () => {
+    const state = run(fresh(), { type: 'CYCLE_NOTE', letter: 'Z' }, submit('PLANT'));
+
+    expect(codeRecord(state)?.usedNotes).toBe(true);
   });
 
   it('records a loss', () => {

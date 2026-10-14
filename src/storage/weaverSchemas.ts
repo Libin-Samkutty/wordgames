@@ -1,5 +1,10 @@
 import { RECENT_GAMES_LIMIT } from '@/engine/constants';
-import { DEFAULT_WEAVER_LENGTH, MAX_MOVES, WEAVER_LENGTHS } from '@/engine/weaver/constants';
+import {
+  DEFAULT_WEAVER_LENGTH,
+  MAX_MOVES,
+  OVER_PAR_BUCKETS,
+  WEAVER_LENGTHS,
+} from '@/engine/weaver/constants';
 import type {
   Rung,
   RungState,
@@ -8,6 +13,8 @@ import type {
   WeaverState,
   WeaverStatus,
 } from '@/engine/weaver/types';
+
+import { emptyTimeStats, readTimeStats, type TimeStats } from './timeStats';
 
 /**
  * Persisted WordWeaver shapes and their runtime guards (SPEC §16, FR-68,
@@ -28,7 +35,7 @@ export interface WeaverPrefs {
 }
 
 /** Metrics kept overall and per length (FR-92). */
-export interface WeaverStatsBucket {
+export interface WeaverStatsBucket extends TimeStats {
   readonly gamesPlayed: number;
   readonly gamesSolved: number;
   /** Solves with `moves <= par` (FR-84). */
@@ -39,6 +46,15 @@ export interface WeaverStatsBucket {
   readonly bestOverPar: number | null;
   readonly currentStreak: number;
   readonly bestStreak: number;
+  /**
+   * Solves by moves over par: par, +1, +2, +3, +4 or more. Counts only solves made since
+   * this was added, so its total is also the number of solves `totalUndos` covers.
+   */
+  readonly overParDistribution: readonly number[];
+  /** Moves minus rungs, summed over those solves: the undos taken. */
+  readonly totalUndos: number;
+  /** The highest par among solved puzzles, or null before any solve was recorded with it. */
+  readonly hardestParSolved: number | null;
 }
 
 export interface WeaverStatsState {
@@ -102,6 +118,10 @@ export function emptyWeaverBucket(): WeaverStatsBucket {
     bestOverPar: null,
     currentStreak: 0,
     bestStreak: 0,
+    overParDistribution: new Array<number>(OVER_PAR_BUCKETS).fill(0),
+    totalUndos: 0,
+    hardestParSolved: null,
+    ...emptyTimeStats(),
   };
 }
 
@@ -154,6 +174,39 @@ function validateBucket(value: unknown): WeaverStatsBucket | null {
   if (stored !== undefined && stored !== null && !isInteger(stored)) return null;
   const bestOverPar = typeof stored === 'number' ? stored : null;
 
+  // Detail fields saved before they existed read as no data yet.
+  const storedDistribution = value.overParDistribution;
+  const overParDistribution: readonly unknown[] =
+    storedDistribution === undefined
+      ? new Array<number>(OVER_PAR_BUCKETS).fill(0)
+      : Array.isArray(storedDistribution)
+        ? storedDistribution
+        : [];
+  if (
+    overParDistribution.length !== OVER_PAR_BUCKETS ||
+    !overParDistribution.every(isNonNegativeInteger)
+  ) {
+    return null;
+  }
+  const counted = overParDistribution.reduce((sum, count) => sum + count, 0);
+  if (counted > gamesSolved) return null;
+
+  const totalUndos = value.totalUndos === undefined ? 0 : value.totalUndos;
+  if (!isNonNegativeInteger(totalUndos)) return null;
+
+  const storedHardest = value.hardestParSolved;
+  if (
+    storedHardest !== undefined &&
+    storedHardest !== null &&
+    !isNonNegativeInteger(storedHardest)
+  ) {
+    return null;
+  }
+  const hardestParSolved = typeof storedHardest === 'number' ? storedHardest : null;
+
+  const time = readTimeStats(value);
+  if (!time || time.timedSolves > gamesSolved) return null;
+
   return {
     gamesPlayed,
     gamesSolved,
@@ -162,6 +215,10 @@ function validateBucket(value: unknown): WeaverStatsBucket | null {
     bestOverPar,
     currentStreak,
     bestStreak,
+    overParDistribution: overParDistribution,
+    totalUndos,
+    hardestParSolved,
+    ...time,
   };
 }
 
@@ -178,7 +235,11 @@ function validateRecord(value: unknown): WeaverRecord | null {
   if (!isNonNegativeInteger(ladderLength)) return null;
   if (typeof solved !== 'boolean') return null;
 
-  return { id, playedAt, length, start, end, par, moves, ladderLength, solved };
+  const base = { id, playedAt, length, start, end, par, moves, ladderLength, solved };
+
+  // Fields added later are optional, so an older row still loads.
+  const solveMs = value.solveMs;
+  return isFiniteNumber(solveMs) && solveMs >= 0 ? { ...base, solveMs } : base;
 }
 
 export function validateWeaverStats(value: unknown): WeaverStatsState | null {

@@ -37,6 +37,8 @@ export interface StatsBucket {
   readonly totalScore: number;
   readonly totalSolveMs: number;
   readonly fastestSolveMs: number | null;
+  /** The highest score from one win. Zero until a win is recorded with it. */
+  readonly bestScore: number;
 }
 
 export interface StatsState {
@@ -100,6 +102,7 @@ export function emptyBucket(): StatsBucket {
     totalScore: 0,
     totalSolveMs: 0,
     fastestSolveMs: null,
+    bestScore: 0,
   };
 }
 
@@ -171,6 +174,10 @@ function validateBucket(value: unknown): StatsBucket | null {
 
   if (fastestSolveMs !== null && !isNonNegative(fastestSolveMs)) return null;
 
+  // A bucket saved before this field existed has none, which reads as no best yet.
+  const bestScore = value.bestScore === undefined ? 0 : value.bestScore;
+  if (!isNonNegative(bestScore)) return null;
+
   if (
     !Array.isArray(distribution) ||
     distribution.length !== MAX_GUESSES ||
@@ -192,6 +199,7 @@ function validateBucket(value: unknown): StatsBucket | null {
     totalScore,
     totalSolveMs,
     fastestSolveMs,
+    bestScore,
   };
 }
 
@@ -209,7 +217,12 @@ function validateGameRecord(value: unknown): GameRecord | null {
   if (!isNonNegative(solveMs)) return null;
   if (!isNonNegative(score)) return null;
 
-  return { id, playedAt, wordLength, answer, guessesUsed, won, solveMs, score };
+  const base = { id, playedAt, wordLength, answer, guessesUsed, won, solveMs, score };
+
+  // Fields added later are optional, so an older row still loads.
+  const opener = value.opener;
+  const hasOpener = typeof opener === 'string' && opener.length === wordLength;
+  return hasOpener ? { ...base, opener } : base;
 }
 
 export function validateStats(value: unknown): StatsState | null {

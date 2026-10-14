@@ -12,6 +12,8 @@ import {
   createShuffleSessionRepository,
   createShuffleStatsRepository,
   recordShuffleGame,
+  shuffleAltAnswerPercentage,
+  shuffleHintDistribution,
   rememberShuffleAnswer,
   resetShuffleHistory,
   resetShuffleStatistics,
@@ -66,7 +68,7 @@ describe('recordShuffleGame (FR-146)', () => {
   it('records a solve without hints overall and for its length', () => {
     const stats = recordShuffleGame(defaultShuffleStats(), solve('a'));
 
-    expect(stats.overall).toEqual({
+    expect(stats.overall).toMatchObject({
       gamesPlayed: 1,
       gamesSolved: 1,
       solvedWithoutHints: 1,
@@ -435,5 +437,98 @@ describe('repositories (FR-99, AC-56)', () => {
 
     expect(localStorage.getItem(gameKeys('wordwright').stats)).toBe(before);
     expect(shuffle.read().overall.gamesPlayed).toBe(0);
+  });
+});
+
+describe('detail stats added after release', () => {
+  const NEW_FIELDS = [
+    'timeDistribution',
+    'multiAnswerSolves',
+    'altAnswerSolves',
+    'timedSolves',
+    'totalSolveMs',
+    'fastestSolveMs',
+  ];
+
+  it('loads a stats blob saved before the new fields existed, without a reset', () => {
+    const old = JSON.parse(JSON.stringify(defaultShuffleStats())) as {
+      overall: Record<string, unknown>;
+      perLength: Record<string, Record<string, unknown>>;
+    };
+    for (const bucket of Object.values({ overall: old.overall, ...old.perLength })) {
+      for (const field of NEW_FIELDS) delete bucket[field];
+    }
+    old.overall.gamesPlayed = 4;
+    old.overall.gamesSolved = 3;
+    old.overall.solvedWithoutHints = 3;
+
+    const loaded = validateShuffleStats(old);
+
+    expect(loaded?.overall.gamesSolved).toBe(3);
+    expect(loaded?.overall.timedSolves).toBe(0);
+    expect(loaded?.overall.timeDistribution).toEqual([0, 0, 0, 0, 0]);
+    expect(loaded?.perLength[5].altAnswerSolves).toBe(0);
+  });
+
+  it('still loads an old record row that has no detail fields', () => {
+    const stats = { ...defaultShuffleStats(), recentGames: [solve('old')] };
+
+    expect(validateShuffleStats(JSON.parse(JSON.stringify(stats)))?.recentGames).toHaveLength(1);
+  });
+
+  it('rejects a time chart that does not match the timed solves', () => {
+    const bad = JSON.parse(JSON.stringify(defaultShuffleStats())) as {
+      overall: Record<string, unknown>;
+    };
+    bad.overall.timeDistribution = [1, 0, 0, 0, 0];
+
+    expect(validateShuffleStats(bad)).toBeNull();
+  });
+
+  it('sorts timed solves into their time bucket and tracks the fastest', () => {
+    let stats = recordShuffleGame(defaultShuffleStats(), solve('a', { solveMs: 4_000 }));
+    stats = recordShuffleGame(stats, solve('b', { solveMs: 25_000 }));
+    stats = recordShuffleGame(stats, solve('c', { solveMs: 65_000 }));
+    stats = recordShuffleGame(stats, solve('d', { solveMs: 500_000 }));
+    stats = recordShuffleGame(stats, gaveUp('e', { solveMs: 1_000 }));
+    stats = recordShuffleGame(stats, solve('f'));
+
+    expect(stats.overall.timeDistribution).toEqual([1, 1, 0, 1, 1]);
+    expect(stats.overall).toMatchObject({
+      timedSolves: 4,
+      totalSolveMs: 594_000,
+      fastestSolveMs: 4_000,
+    });
+    expect(stats.perLength[5].timeDistribution).toEqual([1, 1, 0, 1, 1]);
+  });
+
+  it('counts another anagram only in puzzles that had several answers', () => {
+    let stats = recordShuffleGame(
+      defaultShuffleStats(),
+      solve('a', { found: 'SLANT', anagramCount: 2 }),
+    );
+    stats = recordShuffleGame(stats, solve('b', { anagramCount: 3 }));
+    stats = recordShuffleGame(stats, solve('c', { anagramCount: 1 }));
+    stats = recordShuffleGame(stats, solve('d'));
+
+    expect(stats.overall).toMatchObject({ multiAnswerSolves: 2, altAnswerSolves: 1 });
+    expect(shuffleAltAnswerPercentage(stats.overall)).toBe(50);
+  });
+
+  it('derives solves by hints from counts saved before the chart existed', () => {
+    let stats = recordShuffleGame(defaultShuffleStats(), solve('a'));
+    stats = recordShuffleGame(stats, solve('b', { hintsUsed: 1 }));
+    stats = recordShuffleGame(stats, solve('c', { hintsUsed: 2 }));
+    stats = recordShuffleGame(stats, solve('d', { hintsUsed: 2 }));
+    stats = recordShuffleGame(stats, gaveUp('e', { hintsUsed: 2 }));
+
+    expect(shuffleHintDistribution(stats.overall)).toEqual([1, 1, 2]);
+  });
+
+  it('keeps the new fields on a stored record', () => {
+    const row = solve('a', { solveMs: 777, anagramCount: 2 });
+    const stats = { ...defaultShuffleStats(), recentGames: [row] };
+
+    expect(validateShuffleStats(JSON.parse(JSON.stringify(stats)))?.recentGames[0]).toEqual(row);
   });
 });

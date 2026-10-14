@@ -758,3 +758,27 @@ This is not a plugin system. There is no runtime registration and no shared inte
 - The portal is an indirection to learn. It is contained in two small files, `headerSlot.ts` and `HeaderControls.tsx`.
 
 **Alternatives.** (a) Each view renders its own header. Rejected: repeated markup, and it loses the heading during a lazy load. (b) A `controls` prop on the shell's header, with each game's controls lifted into the shell. Rejected: the shell would import every game's providers. (c) A registry the games write their controls into. Rejected: a plugin-style indirection that ADR-021 rules out.
+
+---
+
+## ADR-035 — New statistics fields read as zero in older saves
+
+**Context.** Five of the six games saved no solve time, and each had little beyond played, win % and streaks. Adding a field is risky because every statistics validator rebuilds a bucket from a fixed list and returns null if one is missing. That discards the whole blob, so a player would lose their statistics on the first load after an update. The migration chain exists but no repository uses it, and the stored blobs carry no version of their own.
+
+**Decision.**
+
+- A field added to a statistics bucket is optional on read. A bucket saved without it reads as a neutral value: `0` for totals, `null` for a best or minimum, a zero array for a distribution. A field that is present but wrong still rejects the bucket.
+- A field added to a game record is optional, and a malformed value is dropped rather than rejecting the row.
+- Averages over a new field keep their own count (for example `timedSolves`), because wins saved before the field existed have no value. Dividing by `gamesWon` would skew the average.
+- Where an existing count already implies the new figure, it is derived instead of stored. WordShuffle's solves by hints and WordStack's All-view chart are both worked out from existing counts, so they include games from before this change.
+- The solve-time counters live in one module, `src/storage/timeStats.ts`, shared by the five games.
+- The shared `Distribution` chart marks the row for the game just won, and `ViewSwitcher` replaces four copies of the same radio group.
+
+**Consequences.**
+
+- Nobody loses statistics on upgrade, and no `schemaVersion` or migration is needed.
+- New figures start from zero for existing players. A time average or a chart fills in as they play, and shows `—` until then.
+- Each new field needs three edits: the type and default, the validator, and the fold. Each also needs an "old blob still loads" test next to the existing storage tests.
+- Stack and Weaver record time from the reducer's `finishedAt`, which a reload mid-reveal sets to the reload time. That solve can be a few seconds long, and is clamped by `clampDuration` like WordWright's.
+
+**Alternatives.** (a) Store a `schemaVersion` in each blob and add migrations. Rejected: a bigger change that the existing path has never exercised, and the global version would bump for every game at once. (b) Reset statistics when a field is missing. Rejected: it throws away the player's history for a cosmetic addition.

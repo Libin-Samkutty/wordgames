@@ -51,4 +51,16 @@ export interface CodeRecord {
   readonly secret: string;
   readonly guessesUsed: number;
   readonly won: boolean;
+  /**
+   * The fields below were added later, so a row saved before then has none
+   * (they read as undefined and are skipped when counting).
+   */
+  /** Time from the first keystroke to the end, in ms. */
+  readonly solveMs?: number;
+  /** The first guess whose bulls and cows added up to the word length, if any. */
+  readonly lettersFoundAt?: number | null;
+  /** Whether any letter was marked on the notepad. */
+  readonly usedNotes?: boolean;
+  /** The first word guessed. */
+  readonly opener?: string;
 }

@@ -1,38 +1,44 @@
-import { MAX_GUESSES } from '@/engine';
-import { formatAverage, formatDuration, formatNumber, formatPercent } from '@/lib/format';
+import { useState } from 'react';
+
+import { MAX_GUESSES, WORD_LENGTHS, type GameRecord, type WordLength } from '@/engine';
+import {
+  EMPTY_VALUE,
+  formatAverage,
+  formatDuration,
+  formatNumber,
+  formatPercent,
+} from '@/lib/format';
 import { useStats } from '@/state';
-import { averageGuesses, averageSolveMs, winPercentage, type StatsBucket } from '@/storage';
+import { averageGuesses, averageSolveMs, winPercentage } from '@/storage';
 
 import { Modal } from '../ui/Modal';
+import { Distribution } from './Distribution';
 import { ResetStatsSection } from './ResetStatsSection';
 import { StatTile } from './StatTile';
+import { ViewSwitcher } from './ViewSwitcher';
 
-function GuessDistribution({ bucket }: { bucket: StatsBucket }): React.JSX.Element {
-  const max = Math.max(1, ...bucket.distribution);
+type View = 'all' | WordLength;
 
-  return (
-    <div className="flex flex-col gap-1">
-      {Array.from({ length: MAX_GUESSES }, (_unused, index) => {
-        const count = bucket.distribution[index] ?? 0;
-        const widthPercent = Math.max(7, (count / max) * 100);
+const VIEWS: readonly { value: View; label: string }[] = [
+  { value: 'all', label: 'All' },
+  ...WORD_LENGTHS.map((length) => ({ value: length, label: `${String(length)} letters` })),
+];
 
-        return (
-          <div key={index} className="flex items-center gap-2 text-sm">
-            <span className="w-3 tabular-nums">{index + 1}</span>
-            <div className="flex-1">
-              <div
-                className="flex justify-end rounded-sm bg-tile-absent px-1.5 py-0.5 text-xs font-bold text-tile-text-revealed data-[has-count=true]:bg-tile-correct"
-                style={{ width: `${String(widthPercent)}%` }}
-                data-has-count={count > 0}
-              >
-                {count}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+/** The first guess played most often in the kept games, or null before there are two to compare. */
+function mostUsedOpener(records: readonly GameRecord[]): string | null {
+  const counts = new Map<string, number>();
+  for (const record of records) {
+    if (record.opener) counts.set(record.opener, (counts.get(record.opener) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = 1;
+  for (const [word, count] of counts) {
+    if (count > bestCount) {
+      best = word;
+      bestCount = count;
+    }
+  }
+  return best;
 }
 
 export function StatsModal({
@@ -43,13 +49,32 @@ export function StatsModal({
   onClose: () => void;
 }): React.JSX.Element {
   const { stats, resetStatistics, resetHistory } = useStats();
-  const bucket = stats.overall;
-  const hasGames = bucket.gamesPlayed > 0;
+  const [view, setView] = useState<View>('all');
+
+  const bucket = view === 'all' ? stats.overall : stats.perLength[view];
+  const games = stats.recentGames.filter((record) => view === 'all' || record.wordLength === view);
+  const hasGames = stats.overall.gamesPlayed > 0;
+  const opener = mostUsedOpener(games);
+
+  // Wins saved before the best score was tracked still count: take the better of the two.
+  const bestScore = Math.max(
+    bucket.bestScore,
+    ...games.filter((record) => record.won).map((record) => record.score),
+  );
+
+  // Mark the bar of the game just finished, when it was a win in the chosen view.
+  const lastGame = stats.recentGames.at(0);
+  const highlightIndex =
+    lastGame?.won && (view === 'all' || lastGame.wordLength === view)
+      ? lastGame.guessesUsed - 1
+      : null;
 
   return (
     <Modal isOpen={isOpen} title="Statistics" onClose={onClose}>
       {hasGames ? (
         <div className="flex flex-col gap-6">
+          <ViewSwitcher views={VIEWS} value={view} onChange={setView} />
+
           <dl className="grid grid-cols-4 gap-2">
             <StatTile label="Played" value={formatNumber(bucket.gamesPlayed)} />
             <StatTile label="Win %" value={formatPercent(winPercentage(bucket))} />
@@ -64,16 +89,24 @@ export function StatsModal({
             <StatTile label="Score" value={formatNumber(bucket.totalScore)} />
           </dl>
 
+          <p className="text-sm text-text-muted">
+            Best score in one game: {bestScore > 0 ? formatNumber(bestScore) : EMPTY_VALUE}.
+            {opener === null ? null : ` Favourite opener: ${opener.toUpperCase()}.`}
+          </p>
+
           <section>
             <h3 className="mb-2 text-xs font-bold tracking-wide uppercase">Guess distribution</h3>
-            <GuessDistribution bucket={bucket} />
+            <Distribution
+              counts={bucket.distribution.slice(0, MAX_GUESSES)}
+              highlightIndex={highlightIndex}
+            />
           </section>
 
-          {stats.recentGames.length > 0 ? (
+          {games.length > 0 ? (
             <section>
               <h3 className="mb-2 text-xs font-bold tracking-wide uppercase">Recent games</h3>
               <ul className="flex flex-col gap-1 text-sm">
-                {stats.recentGames.slice(0, 8).map((record) => (
+                {games.slice(0, 8).map((record) => (
                   <li key={record.id} className="flex items-center justify-between gap-2">
                     <span className="font-mono tracking-wider uppercase">{record.answer}</span>
                     <span className="text-text-muted">

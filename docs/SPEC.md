@@ -270,6 +270,8 @@ else:
 - **FR-38** Average guesses counts **wins only** (`totalGuessesInWins / gamesWon`), displayed to one decimal; `—` when `gamesWon == 0`.
 - **FR-39** Recent games: last 50 completed games, newest first, each storing `{ id, playedAt, wordLength, answer, guessesUsed, won, solveMs, score }`.
 - **FR-40** The statistics panel shows the guess distribution as horizontal bars with the current game's row highlighted.
+  - Added later (ADR-035): the panel has an **All / 4 / 5 / 6 letters** switch that scopes every figure, the best score from a single win, the most-used first guess (from the last 50 games, shown once one word has been used twice), and each game record may carry `opener`.
+  - Every WordGames statistics dialog highlights the row or rows of the game just won, when it falls in the chosen view (ADR-035).
 - **FR-41** Empty state: with 0 games played, the panel shows a friendly "No games yet" message rather than zeros and `NaN`.
 - **FR-42** Stats are written atomically: read → transform → serialise → write; a failed write must never leave a partial record.
 
@@ -660,6 +662,7 @@ _5-letter pairs are usually far apart, so drawing E from the in-band candidates 
   - best against par: the best single solve, shown as `Par`, `−1` for one under par or `+2` for two over, `—` when no games are solved
   - current streak and best streak: a solve adds one, a give up resets to 0. Abandoned games (New puzzle, length change) are not recorded and do not affect streaks.
   - the last 50 games, newest first: `{ id, playedAt, length, start, end, par, moves, ladderLength, solved }`
+  - added later (ADR-035): average and fastest solve time, a chart of solves by moves over par (par, +1, +2, +3, +4 or more), undos per solve, and the hardest par solved. Each record carries `solveMs`.
 - **FR-93** The in-progress game (start, end, par, rungs, moves, current input, length, status) is saved after every change with the same debounce as Wordwright, and also on page hide and view unmount (FR-65). On restore it is discarded silently, and a new puzzle starts, if: the length doesn't match, start or end is no longer in the answer list, any rung is no longer in the guess list, or the ladder breaks the one-letter rule.
 - **FR-94** **New puzzle** and a length change ask for confirmation when at least one rung has been played, using the shared confirmation dialog. Confirming abandons the game with no effect on statistics.
 - **FR-95** WordWeaver has its own **How to play** dialog: the rules in short sentences, the meaning of green and grey, how undo and give up work, and a small worked example that follows the selected length and palette. It is never opened automatically (ADR-020). Examples follow A11Y-13.
@@ -689,6 +692,7 @@ Wordle on two or four boards at once. Every guess is played on every unsolved bo
   - games played, won, win % (derived), and current and best streak
   - the guess distribution for wins, with buckets 2–7 for Duo and 4–9 for Quad
   - the last 50 games, newest first: `{ id, playedAt, mode, answers, guessesUsed, boardsSolved, won }`
+  - added later (ADR-035): average and fastest win time, losses with all boards but one solved ("so close"), boards solved per loss, the average guess on which the first board falls, and on the All view a chart of wins by guesses to spare. Each record carries `solveMs` and `boardSolveGuesses`.
 - **FR-112** The in-progress game is saved and restored as in FR-32, FR-33 and FR-65. A restore is discarded if any answer has left the answer list.
 - **FR-113** Restarting or switching mode with at least one guess played asks for confirmation through the shared dialog, and has no effect on statistics.
 - **FR-114** The How to play dialog explains shared guesses, the per-board colours and the split keyboard, with a two-board example.
@@ -726,6 +730,7 @@ Find a secret word by its place in the dictionary. Each guess says whether the s
 - **FR-122** The on-screen keyboard has no letter colours.
 - **FR-123** The result panel shows won or lost, guesses used, the secret, and **Play again**.
 - **FR-124** Statistics, recorded once per game: played, won, win %, current and best streak, the guess distribution for wins (buckets 1–14), and the last 50 games `{ id, playedAt, secret, guessesUsed, won }`.
+  - Added later (ADR-035): average guesses, average and fastest win time, the closest miss (fewest words left in the range after a loss), the share of games that reached Burning and the average guess it first did, and the most-used first guess. Each record carries `solveMs`, `firstBurningGuess`, `wordsLeft` (losses) and `opener`.
 - **FR-125** The in-progress game is saved and restored as in FR-32 and FR-65. A restore is discarded if the secret has left the answer list. Restarting with at least one guess asks for confirmation.
 - **FR-126** The How to play dialog explains the range, before and after, and the heat levels, with a three-guess example.
 
@@ -748,6 +753,7 @@ Bulls & Cows with words. Each guess reports only two numbers: letters in the rig
 - **FR-132** **Letter notes.** A Type and Mark switch above the on-screen keyboard sets what a letter key does. In Type, a key enters the letter. In Mark, a key cycles that letter through unmarked, ruled out and in the word. Marks show on the keys in a style that cannot be confused with game feedback, and are never colour alone. Marks are the player's own notes; the game never sets them. They are saved with the session.
 - **FR-133** The result panel shows won or lost, guesses used, the secret, and **Play again** and **Change length**.
 - **FR-134** Statistics are kept overall and per length, and recorded once per game: played, won, win %, current and best streak, the guess distribution for wins (buckets 1–10), and the last 50 games `{ id, playedAt, length, secret, guessesUsed, won }`.
+  - Added later (ADR-035): average guesses, average and fastest win time, the average guess by which every letter was known, the share of games that used the notepad, and the most-used first guess. Each record carries `solveMs`, `lettersFoundAt`, `usedNotes` and `opener`.
 - **FR-135** The in-progress game, including letter notes, is saved and restored as in FR-32, FR-33 and FR-65. Restarting or switching length with at least one guess asks for confirmation.
 - **FR-136** The How to play dialog explains bulls, cows, duplicate letters and letter notes, with a two-guess example that follows the selected length.
 
@@ -779,6 +785,7 @@ Unscramble a word. The letters arrive shuffled, and any real word that uses exac
   - solved without hints, and average hints per solve
   - current and best streak: a solve adds one, a give up resets to 0
   - the last 50 games `{ id, playedAt, length, target, found, hintsUsed, solved }`
+  - added later (ADR-035): average and fastest solve time, a chart of solves by time (under 10 s, 30 s, 1 min, 2 min, longer), a chart of solves by hints used, and how often another anagram was found in puzzles that had several answers. Each record carries `solveMs` and `anagramCount`, and the recent list shows the word found.
 - **FR-147** The in-progress puzzle (target, scramble, tray, answer row, hints) is saved and restored as in FR-32, FR-33 and FR-65. Starting a new puzzle or switching length after any input asks for confirmation. The How to play dialog explains the tray, reshuffle, hints and that any valid anagram wins.
 
 ---

@@ -98,6 +98,8 @@ export interface WeaverRecord {
   readonly moves: number;
   readonly ladderLength: number;
   readonly solved: boolean;
+  /** Time from the first keystroke to the end, in ms. Added later, so older rows have none. */
+  readonly solveMs?: number;
 }
 
 /** How a solved puzzle compares with par (FR-84, FR-91). */

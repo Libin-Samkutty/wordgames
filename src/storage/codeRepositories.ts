@@ -17,6 +17,7 @@ import {
   type CodeStatsState,
 } from './codeSchemas';
 import { gameKeys } from './keys';
+import { addSolveTime } from './timeStats';
 
 type OnIssue = (issue: StorageIssue, key: string) => void;
 
@@ -66,11 +67,27 @@ export function createCodeMetaRepository(onIssue?: OnIssue): Repository<CodeMeta
  * Statistics (FR-134)
  * ------------------------------------------------------------------ */
 
+/** The detail counters, which count a game whether it was won or lost. */
+function applyDetail(bucket: CodeStatsBucket, record: CodeRecord): CodeStatsBucket {
+  const found = record.lettersFoundAt;
+  const hasFound = typeof found === 'number' && found > 0;
+  const noted = record.usedNotes;
+
+  return {
+    ...bucket,
+    lettersFoundGames: bucket.lettersFoundGames + (hasFound ? 1 : 0),
+    totalLettersFoundAt: bucket.totalLettersFoundAt + (hasFound ? found : 0),
+    notesTrackedGames: bucket.notesTrackedGames + (noted === undefined ? 0 : 1),
+    notesUsedGames: bucket.notesUsedGames + (noted === true ? 1 : 0),
+  };
+}
+
 function applyToBucket(bucket: CodeStatsBucket, record: CodeRecord): CodeStatsBucket {
   const gamesPlayed = bucket.gamesPlayed + 1;
+  const detailed = applyDetail(bucket, record);
 
   // A loss breaks the streak and leaves the best untouched.
-  if (!record.won) return { ...bucket, gamesPlayed, currentStreak: 0 };
+  if (!record.won) return { ...detailed, gamesPlayed, currentStreak: 0 };
 
   const currentStreak = bucket.currentStreak + 1;
   const distribution = [...bucket.distribution];
@@ -79,6 +96,8 @@ function applyToBucket(bucket: CodeStatsBucket, record: CodeRecord): CodeStatsBu
     distribution[index] = (distribution[index] ?? 0) + 1;
 
   return {
+    ...detailed,
+    ...addSolveTime(bucket, record.solveMs),
     gamesPlayed,
     gamesWon: bucket.gamesWon + 1,
     currentStreak,
@@ -121,6 +140,18 @@ export function resetCodeStatistics(stats: CodeStatsState): CodeStatsState {
 /** Clears the recent-games log but keeps the metrics (FR-47). */
 export function resetCodeHistory(stats: CodeStatsState): CodeStatsState {
   return { ...stats, recentGames: [], recordedGameIds: [] };
+}
+
+/** Mean guess at which a game's letters were all known, or null with none. */
+export function codeAverageLettersFoundAt(bucket: CodeStatsBucket): number | null {
+  if (bucket.lettersFoundGames === 0) return null;
+  return bucket.totalLettersFoundAt / bucket.lettersFoundGames;
+}
+
+/** Share of tracked games that used the notepad, as a whole percent, or null with none. */
+export function codeNotesUsedPercentage(bucket: CodeStatsBucket): number | null {
+  if (bucket.notesTrackedGames === 0) return null;
+  return Math.round((bucket.notesUsedGames / bucket.notesTrackedGames) * 100);
 }
 
 /** Win rate as a whole percent, 0 with no games. */

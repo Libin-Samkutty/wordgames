@@ -15,6 +15,8 @@ import type {
 } from '@/engine/code/types';
 import type { WordLength } from '@/engine/types';
 
+import { emptyTimeStats, readTimeStats, type TimeStats } from './timeStats';
+
 /**
  * Persisted WordCode shapes and their runtime guards (SPEC §19, FR-127,
  * FR-134, FR-135). Parsed JSON is untrusted: anything that fails a guard is
@@ -31,13 +33,19 @@ export interface CodePrefs {
 }
 
 /** Counts kept overall and per length (FR-134). */
-export interface CodeStatsBucket {
+export interface CodeStatsBucket extends TimeStats {
   readonly gamesPlayed: number;
   readonly gamesWon: number;
   readonly currentStreak: number;
   readonly bestStreak: number;
   /** Wins by guesses used. Index 0 is a win on guess 1, index 9 on guess 10. */
   readonly distribution: readonly number[];
+  /** Games in which some guess showed every letter, and the sum of that guess number. */
+  readonly lettersFoundGames: number;
+  readonly totalLettersFoundAt: number;
+  /** Games saved with the notepad flag, and how many of those used the notepad. */
+  readonly notesTrackedGames: number;
+  readonly notesUsedGames: number;
 }
 
 export interface CodeStatsState {
@@ -95,6 +103,11 @@ export function emptyCodeBucket(): CodeStatsBucket {
     currentStreak: 0,
     bestStreak: 0,
     distribution: new Array<number>(CODE_MAX_GUESSES).fill(0),
+    lettersFoundGames: 0,
+    totalLettersFoundAt: 0,
+    notesTrackedGames: 0,
+    notesUsedGames: 0,
+    ...emptyTimeStats(),
   };
 }
 
@@ -145,7 +158,37 @@ function validateBucket(value: unknown): CodeStatsBucket | null {
     return null;
   }
 
-  return { gamesPlayed, gamesWon, currentStreak, bestStreak, distribution };
+  // A bucket saved before these fields existed has none, which reads as zero.
+  const counters = [
+    value.lettersFoundGames,
+    value.totalLettersFoundAt,
+    value.notesTrackedGames,
+    value.notesUsedGames,
+  ].map((counter) => (counter === undefined ? 0 : counter));
+  if (!counters.every(isNonNegativeInteger)) return null;
+  const [
+    lettersFoundGames = 0,
+    totalLettersFoundAt = 0,
+    notesTrackedGames = 0,
+    notesUsedGames = 0,
+  ] = counters;
+  if (notesUsedGames > notesTrackedGames) return null;
+
+  const time = readTimeStats(value);
+  if (!time) return null;
+
+  return {
+    gamesPlayed,
+    gamesWon,
+    currentStreak,
+    bestStreak,
+    distribution,
+    lettersFoundGames,
+    totalLettersFoundAt,
+    notesTrackedGames,
+    notesUsedGames,
+    ...time,
+  };
 }
 
 function validateRecord(value: unknown): CodeRecord | null {
@@ -160,7 +203,23 @@ function validateRecord(value: unknown): CodeRecord | null {
   if (!isNonNegativeInteger(guessesUsed) || guessesUsed > CODE_MAX_GUESSES) return null;
   if (typeof won !== 'boolean') return null;
 
-  return { id, playedAt, length, secret, guessesUsed, won };
+  const base = { id, playedAt, length, secret, guessesUsed, won };
+
+  // Fields added later are optional, so an older row still loads.
+  const extra: {
+    solveMs?: number;
+    lettersFoundAt?: number | null;
+    usedNotes?: boolean;
+    opener?: string;
+  } = {};
+  if (isFiniteNumber(value.solveMs) && value.solveMs >= 0) extra.solveMs = value.solveMs;
+  if (value.lettersFoundAt === null) extra.lettersFoundAt = null;
+  else if (isNonNegativeInteger(value.lettersFoundAt) && value.lettersFoundAt <= CODE_MAX_GUESSES)
+    extra.lettersFoundAt = value.lettersFoundAt;
+  if (typeof value.usedNotes === 'boolean') extra.usedNotes = value.usedNotes;
+  if (isWord(value.opener, length)) extra.opener = value.opener;
+
+  return { ...base, ...extra };
 }
 
 export function validateCodeStats(value: unknown): CodeStatsState | null {

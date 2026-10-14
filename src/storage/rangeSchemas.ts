@@ -15,6 +15,8 @@ import type {
   RangeStatus,
 } from '@/engine/range/types';
 
+import { emptyTimeStats, readTimeStats, type TimeStats } from './timeStats';
+
 /**
  * Persisted WordRange shapes and their runtime guards (SPEC §18, FR-124,
  * FR-125). Parsed JSON is untrusted: anything that fails a guard is discarded
@@ -28,13 +30,19 @@ import type {
 /** WordRange has no preferences yet; the key exists so reset and import stay uniform. */
 export type RangePrefs = Record<string, never>;
 
-export interface RangeStatsState {
+export interface RangeStatsState extends TimeStats {
   readonly gamesPlayed: number;
   readonly gamesWon: number;
   readonly currentStreak: number;
   readonly bestStreak: number;
   /** Wins by guesses used. Index 0 is a win on guess 1, index 13 on guess 14 (FR-124). */
   readonly distribution: readonly number[];
+  /** Games saved with the heat field, how many reached Burning, and the sum of that guess number. */
+  readonly heatTrackedGames: number;
+  readonly burningGames: number;
+  readonly totalFirstBurningAt: number;
+  /** The fewest words left in the range after a loss, or null with no such loss yet. */
+  readonly closestMiss: number | null;
   /** Newest first, at most `RECENT_GAMES_LIMIT`. */
   readonly recentGames: readonly RangeRecord[];
   /** Ids already recorded, so a replayed completion cannot double-count. */
@@ -83,6 +91,11 @@ export function defaultRangeStats(): RangeStatsState {
     currentStreak: 0,
     bestStreak: 0,
     distribution: new Array<number>(RANGE_MAX_GUESSES).fill(0),
+    heatTrackedGames: 0,
+    burningGames: 0,
+    totalFirstBurningAt: 0,
+    closestMiss: null,
+    ...emptyTimeStats(),
     recentGames: [],
     recordedGameIds: [],
   };
@@ -111,7 +124,27 @@ function validateRecord(value: unknown): RangeRecord | null {
   if (!isNonNegativeInteger(guessesUsed) || guessesUsed > RANGE_MAX_GUESSES) return null;
   if (typeof won !== 'boolean') return null;
 
-  return { id, playedAt, secret, guessesUsed, won };
+  const base = { id, playedAt, secret, guessesUsed, won };
+
+  // Fields added later are optional, so an older row still loads.
+  const extra: {
+    solveMs?: number;
+    firstBurningGuess?: number | null;
+    wordsLeft?: number | null;
+    opener?: string;
+  } = {};
+  if (isFiniteNumber(value.solveMs) && value.solveMs >= 0) extra.solveMs = value.solveMs;
+  if (value.firstBurningGuess === null) extra.firstBurningGuess = null;
+  else if (
+    isNonNegativeInteger(value.firstBurningGuess) &&
+    value.firstBurningGuess <= RANGE_MAX_GUESSES
+  )
+    extra.firstBurningGuess = value.firstBurningGuess;
+  if (value.wordsLeft === null) extra.wordsLeft = null;
+  else if (isNonNegativeInteger(value.wordsLeft)) extra.wordsLeft = value.wordsLeft;
+  if (isWord(value.opener)) extra.opener = value.opener;
+
+  return { ...base, ...extra };
 }
 
 export function validateRangeStats(value: unknown): RangeStatsState | null {
@@ -147,7 +180,29 @@ export function validateRangeStats(value: unknown): RangeStatsState | null {
 
   const recordedGameIds = isStringArray(value.recordedGameIds) ? value.recordedGameIds : [];
 
+  // Counters saved before these fields existed read as zero, and no closest miss yet.
+  const counters = [value.heatTrackedGames, value.burningGames, value.totalFirstBurningAt].map(
+    (counter) => (counter === undefined ? 0 : counter),
+  );
+  if (!counters.every(isNonNegativeInteger)) return null;
+  const [heatTrackedGames = 0, burningGames = 0, totalFirstBurningAt = 0] = counters;
+  if (burningGames > heatTrackedGames) return null;
+
+  const storedMiss = value.closestMiss;
+  if (storedMiss !== undefined && storedMiss !== null && !isNonNegativeInteger(storedMiss)) {
+    return null;
+  }
+  const closestMiss = typeof storedMiss === 'number' ? storedMiss : null;
+
+  const time = readTimeStats(value);
+  if (!time) return null;
+
   return {
+    heatTrackedGames,
+    burningGames,
+    totalFirstBurningAt,
+    closestMiss,
+    ...time,
     gamesPlayed,
     gamesWon,
     currentStreak,

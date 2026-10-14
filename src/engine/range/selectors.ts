@@ -1,3 +1,5 @@
+import { clampDuration } from '@/lib/clock';
+
 import { RANGE_MAX_GUESSES } from './constants';
 import type { Heat, RangeGuess, RangeRecord, RangeState } from './types';
 
@@ -29,6 +31,14 @@ export function guessedWords(state: RangeState): readonly string[] {
   return state.guesses.map((guess) => guess.word);
 }
 
+/** The 1-based guess that was Burning, or the secret itself, or null if none was. */
+export function firstBurningGuess(state: RangeState): number | null {
+  const index = state.guesses.findIndex(
+    (guess) => guess.heat === 'burning' || guess.direction === null,
+  );
+  return index === -1 ? null : index + 1;
+}
+
 /** A finished game for the statistics log (FR-124), or null while it is still in play. */
 export function rangeRecord(state: RangeState): RangeRecord | null {
   if (!isGameOver(state)) return null;
@@ -40,5 +50,8 @@ export function rangeRecord(state: RangeState): RangeRecord | null {
     secret: state.secret,
     guessesUsed: state.guesses.length,
     won: state.status === 'won',
+    solveMs: clampDuration((state.finishedAt ?? 0) - (state.startedAt ?? 0)),
+    firstBurningGuess: firstBurningGuess(state),
+    ...(state.guesses[0] ? { opener: state.guesses[0].word } : {}),
   };
 }

@@ -15,6 +15,7 @@ export {
 } from './keys';
 export { importLegacyData, type LegacyImportResult } from './legacyImport';
 export { MIGRATIONS, migrate, type Migration } from './migrations';
+export { addSolveTime, averageTimedSolveMs, emptyTimeStats, type TimeStats } from './timeStats';
 export { createSafeStorage, resetSafeStorage, safeStorage, type SafeStorage } from './safeStorage';
 export {
   DEFAULT_SETTINGS,
@@ -79,6 +80,8 @@ export {
   resetWeaverHistory,
   resetWeaverStatistics,
   weaverGaveUp,
+  weaverAverageUndos,
+  weaverDetailSolves,
   weaverSolvePercentage,
 } from './weaverRepositories';
 export {
@@ -108,6 +111,9 @@ export {
   rememberStackAnswers,
   resetStackHistory,
   resetStackStatistics,
+  stackAverageBoardsOnLoss,
+  stackAverageFirstBoard,
+  stackSpareDistribution,
   stackWinPercentage,
 } from './stackRepositories';
 export {
@@ -128,6 +134,8 @@ export {
   createRangePrefsRepository,
   createRangeSessionRepository,
   createRangeStatsRepository,
+  rangeAverageFirstBurning,
+  rangeBurningPercentage,
   rangeWinPercentage,
   recordRangeGame,
   rememberRangeAnswer,
@@ -150,6 +158,8 @@ export {
   type CodeStatsState,
 } from './codeSchemas';
 export {
+  codeAverageLettersFoundAt,
+  codeNotesUsedPercentage,
   codeWinPercentage,
   createCodeMetaRepository,
   createCodePrefsRepository,
@@ -186,5 +196,7 @@ export {
   resetShuffleStatistics,
   shuffleAverageHints,
   shuffleGaveUp,
+  shuffleAltAnswerPercentage,
+  shuffleHintDistribution,
   shuffleSolvePercentage,
 } from './shuffleRepositories';

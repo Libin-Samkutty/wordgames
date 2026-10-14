@@ -102,7 +102,20 @@ describe('rangeRecord (FR-124)', () => {
       secret: 'PLANT',
       guessesUsed: 2,
       won: true,
+      solveMs: 0,
+      firstBurningGuess: 2,
+      opener: 'BRAVE',
     });
+  });
+
+  it('records the first Burning guess, and none when no guess got that close', () => {
+    expect(rangeRecord(run(fresh(), submit('BRAVE', 10), submit('PLANT', 0)))).toMatchObject({
+      firstBurningGuess: 1,
+    });
+
+    let state = fresh();
+    for (let i = 0; i < 14; i += 1) state = run(state, submit('BRAVE', 5000));
+    expect(rangeRecord(state)?.firstBurningGuess).toBeNull();
   });
 
   it('records a loss', () => {

@@ -184,8 +184,17 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
     if (!record || recordedRef.current === state.id) return;
 
     recordedRef.current = state.id;
-    recordGame(record);
-  }, [state, recordGame]);
+
+    // On a loss, count the words still in the range. The list is needed for that, so a
+    // game restored before the dictionary loads is recorded without it.
+    let wordsLeft: number | null = null;
+    if (!record.won && dictionary) {
+      const apart = listDistance(dictionary.guessList, state.lower, state.upper);
+      if (apart !== null) wordsLeft = Math.max(0, apart - 1);
+    }
+
+    recordGame(record.won ? record : { ...record, wordsLeft });
+  }, [state, recordGame, dictionary]);
 
   const addLetter = useCallback((letter: string): void => {
     dispatch({ type: 'ADD_LETTER', letter, now: now() });

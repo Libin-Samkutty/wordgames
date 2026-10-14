@@ -53,4 +53,11 @@ export interface StackRecord {
   readonly guessesUsed: number;
   readonly boardsSolved: number;
   readonly won: boolean;
+  /**
+   * The fields below were added later, so a row saved before then has none.
+   */
+  /** Time from the first keystroke to the end, in ms. */
+  readonly solveMs?: number;
+  /** Per board, in board order: the guess that solved it, or null if it never was. */
+  readonly boardSolveGuesses?: readonly (number | null)[];
 }

@@ -5,6 +5,8 @@ import { codeReducer, createCodeGame, type CodeAction } from '@/engine/code';
 import type { CodeRecord, CodeState } from '@/engine/code';
 
 import {
+  codeAverageLettersFoundAt,
+  codeNotesUsedPercentage,
   codeWinPercentage,
   createCodeMetaRepository,
   createCodePrefsRepository,
@@ -401,5 +403,94 @@ describe('repositories (FR-99, AC-56)', () => {
 
     expect(localStorage.getItem(gameKeys('wordwright').stats)).toBe(before);
     expect(code.read().overall.gamesPlayed).toBe(0);
+  });
+});
+
+describe('detail stats added after release', () => {
+  it('loads a stats blob saved before the new fields existed, without a reset', () => {
+    const old = JSON.parse(JSON.stringify(defaultCodeStats())) as Record<string, unknown>;
+    const strip = (bucket: Record<string, unknown>): void => {
+      for (const field of [
+        'lettersFoundGames',
+        'totalLettersFoundAt',
+        'notesTrackedGames',
+        'notesUsedGames',
+        'timedSolves',
+        'totalSolveMs',
+        'fastestSolveMs',
+      ]) {
+        delete bucket[field];
+      }
+    };
+    strip(old.overall as Record<string, unknown>);
+    for (const bucket of Object.values(old.perLength as Record<string, Record<string, unknown>>)) {
+      strip(bucket);
+    }
+    (old.overall as Record<string, unknown>).gamesPlayed = 7;
+    (old.overall as Record<string, unknown>).gamesWon = 5;
+
+    const loaded = validateCodeStats(old);
+
+    expect(loaded?.overall.gamesPlayed).toBe(7);
+    expect(loaded?.overall.timedSolves).toBe(0);
+    expect(loaded?.overall.fastestSolveMs).toBeNull();
+    expect(loaded?.overall.notesTrackedGames).toBe(0);
+  });
+
+  it('still loads an old record row that has no detail fields', () => {
+    const stats = { ...defaultCodeStats(), recentGames: [record('old')] };
+
+    expect(validateCodeStats(JSON.parse(JSON.stringify(stats)))?.recentGames).toHaveLength(1);
+  });
+
+  it('rejects a bucket whose detail fields are present but wrong', () => {
+    const bad = JSON.parse(JSON.stringify(defaultCodeStats())) as {
+      overall: Record<string, unknown>;
+    };
+    bad.overall.timedSolves = -1;
+
+    expect(validateCodeStats(bad)).toBeNull();
+  });
+
+  it('adds time on wins only, and tracks the fastest', () => {
+    let stats = recordCodeGame(defaultCodeStats(), record('a', { solveMs: 30_000 }));
+    stats = recordCodeGame(stats, record('b', { solveMs: 10_000 }));
+    stats = recordCodeGame(stats, record('c', { won: false, solveMs: 5_000 }));
+    stats = recordCodeGame(stats, record('d'));
+
+    expect(stats.overall).toMatchObject({
+      timedSolves: 2,
+      totalSolveMs: 40_000,
+      fastestSolveMs: 10_000,
+    });
+  });
+
+  it('counts letters-found and notepad use on losses too, skipping rows without them', () => {
+    let stats = recordCodeGame(
+      defaultCodeStats(),
+      record('a', { lettersFoundAt: 3, usedNotes: true }),
+    );
+    stats = recordCodeGame(
+      stats,
+      record('b', { won: false, guessesUsed: 10, lettersFoundAt: 5, usedNotes: false }),
+    );
+    stats = recordCodeGame(stats, record('c', { lettersFoundAt: null }));
+    stats = recordCodeGame(stats, record('d'));
+
+    expect(stats.overall).toMatchObject({
+      lettersFoundGames: 2,
+      totalLettersFoundAt: 8,
+      notesTrackedGames: 2,
+      notesUsedGames: 1,
+    });
+    expect(codeAverageLettersFoundAt(stats.overall)).toBe(4);
+    expect(codeNotesUsedPercentage(stats.overall)).toBe(50);
+  });
+
+  it('keeps the new fields on a stored record', () => {
+    const row = record('a', { solveMs: 1234, lettersFoundAt: 2, usedNotes: true, opener: 'PANEL' });
+    const stats = { ...defaultCodeStats(), recentGames: [row] };
+
+    expect(validateCodeStats(JSON.parse(JSON.stringify(stats)))?.recentGames[0]).toEqual(row);
   });
 });

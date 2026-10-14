@@ -204,7 +204,21 @@ describe('stackRecord (FR-111)', () => {
       guessesUsed: 2,
       boardsSolved: 2,
       won: true,
+      solveMs: expect.any(Number) as number,
+      boardSolveGuesses: [1, 2],
     });
+  });
+
+  it('records the guess that solved each board, null for one never solved', () => {
+    const state = play(
+      quad(),
+      'PLANT',
+      'CRANE',
+      'STORM',
+      ...Array.from({ length: 6 }, () => 'SLOTH'),
+    );
+
+    expect(stackRecord(state)?.boardSolveGuesses).toEqual([1, 3, 2, null]);
   });
 
   it('records a loss with the boards that were solved', () => {

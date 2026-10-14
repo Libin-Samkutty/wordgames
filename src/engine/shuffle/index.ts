@@ -8,7 +8,14 @@
  */
 
 export { anagramKey, anagramsOf, buildAnagramIndex, type AnagramIndex } from './anagram';
-export { DEFAULT_SHUFFLE_LENGTH, MAX_HINTS, SHUFFLE_LENGTHS } from './constants';
+export {
+  DEFAULT_SHUFFLE_LENGTH,
+  MAX_HINTS,
+  SHUFFLE_LENGTHS,
+  TIME_BUCKET_COUNT,
+  TIME_BUCKET_LIMITS_MS,
+  timeBucketIndex,
+} from './constants';
 export { createShuffleGame, shuffleReducer, type ShuffleAction } from './reducer';
 export { createPuzzle, makeScramble, shuffleLetters, type PuzzleLists } from './scramble';
 export {

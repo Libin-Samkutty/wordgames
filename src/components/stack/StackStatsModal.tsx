@@ -1,14 +1,24 @@
 import { useState } from 'react';
 
 import { RECENT_GAMES_LIMIT } from '@/engine/constants';
-import { STACK_MODE_IDS, STACK_MODES, type StackMode } from '@/engine/stack';
-import { cn } from '@/lib/cn';
-import { formatNumber, formatPercent } from '@/lib/format';
+import { STACK_MODE_IDS, STACK_MODES, type StackMode, type StackRecord } from '@/engine/stack';
+import { formatAverage, formatDuration, formatNumber, formatPercent } from '@/lib/format';
 import { useStackStats } from '@/state/stack';
-import { STACK_MIN_WIN_GUESSES, stackWinPercentage, type StackModeStats } from '@/storage';
+import {
+  STACK_MIN_WIN_GUESSES,
+  averageTimedSolveMs,
+  stackAverageBoardsOnLoss,
+  stackAverageFirstBoard,
+  stackSpareDistribution,
+  stackWinPercentage,
+  type StackModeStats,
+  type StackStatsBucket,
+} from '@/storage';
 
+import { Distribution } from '../stats/Distribution';
 import { ResetStatsSection } from '../stats/ResetStatsSection';
 import { StatTile } from '../stats/StatTile';
+import { ViewSwitcher } from '../stats/ViewSwitcher';
 import { Modal } from '../ui/Modal';
 
 type View = 'all' | StackMode;
@@ -23,34 +33,30 @@ const VIEWS: readonly { value: View; label: string }[] = [
 /** Rows shown in the recent-games list; the log itself keeps 50 (FR-111). */
 const RECENT_SHOWN = 8;
 
-/** Wins by guess count for one mode: Duo buckets 2 to 7, Quad 4 to 9 (FR-111). */
-function Distribution({
-  mode,
-  stats,
-}: {
-  mode: StackMode;
-  stats: StackModeStats;
-}): React.JSX.Element {
-  const max = Math.max(1, ...stats.distribution);
+/** Mean guesses over a mode's wins, read off its distribution, or null with no wins. */
+function averageWinGuesses(mode: StackMode, stats: StackModeStats): number | null {
+  const wins = stats.distribution.reduce((sum, count) => sum + count, 0);
+  if (wins === 0) return null;
   const first = STACK_MIN_WIN_GUESSES[mode];
+  const total = stats.distribution.reduce((sum, count, index) => sum + count * (first + index), 0);
+  return total / wins;
+}
 
+/** The row to mark for the game just finished: its guesses to spare, in the chosen view. */
+function highlightFor(record: StackRecord | undefined, view: View): number | null {
+  if (!record?.won || (view !== 'all' && record.mode !== view)) return null;
+  // Rows run from the fewest guesses (most spare) down, in both modes.
+  return record.guessesUsed - STACK_MIN_WIN_GUESSES[record.mode];
+}
+
+function BucketTiles({ bucket }: { bucket: StackStatsBucket }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-1">
-      {stats.distribution.map((count, index) => (
-        <div key={index} className="flex items-center gap-2 text-sm">
-          <span className="w-3 tabular-nums">{first + index}</span>
-          <div className="flex-1">
-            <div
-              className="flex justify-end rounded-sm bg-tile-absent px-1.5 py-0.5 text-xs font-bold text-tile-text-revealed data-[has-count=true]:bg-tile-correct"
-              style={{ width: `${String(Math.max(7, (count / max) * 100))}%` }}
-              data-has-count={count > 0}
-            >
-              {count}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+    <dl className="grid grid-cols-4 gap-2">
+      <StatTile label="Avg time" value={formatDuration(averageTimedSolveMs(bucket))} />
+      <StatTile label="Fastest" value={formatDuration(bucket.fastestSolveMs)} />
+      <StatTile label="So close" value={formatNumber(bucket.nearMisses)} />
+      <StatTile label="First board by" value={formatAverage(stackAverageFirstBoard(bucket))} />
+    </dl>
   );
 }
 
@@ -72,30 +78,13 @@ export function StackStatsModal({ isOpen, onClose }: StackStatsModalProps): Reac
   const bucket = view === 'all' ? stats.overall : stats.perMode[view];
   const games = stats.recentGames.filter((record) => view === 'all' || record.mode === view);
   const hasGames = stats.overall.gamesPlayed > 0;
+  const lastGame = stats.recentGames.at(0);
 
   return (
     <Modal isOpen={isOpen} title="Statistics" onClose={onClose}>
       {hasGames ? (
         <div className="flex flex-col gap-6">
-          <div role="radiogroup" aria-label="Statistics for" className="flex gap-1">
-            {VIEWS.map(({ value, label }) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={view === value}
-                onClick={() => {
-                  setView(value);
-                }}
-                className={cn(
-                  'min-h-9 rounded px-2.5 text-xs font-semibold text-text-muted',
-                  'aria-checked:bg-surface-sunken aria-checked:text-text',
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <ViewSwitcher views={VIEWS} value={view} onChange={setView} />
 
           <dl className="grid grid-cols-4 gap-2">
             <StatTile label="Played" value={formatNumber(bucket.gamesPlayed)} />
@@ -104,13 +93,39 @@ export function StackStatsModal({ isOpen, onClose }: StackStatsModalProps): Reac
             <StatTile label="Best streak" value={formatNumber(bucket.bestStreak)} />
           </dl>
 
+          <BucketTiles bucket={bucket} />
+
           {view === 'all' ? null : (
+            <p className="text-sm text-text-muted">
+              {`Average guesses on a win: ${formatAverage(averageWinGuesses(view, stats.perMode[view]))}. `}
+              {`Boards solved in a loss: ${formatAverage(stackAverageBoardsOnLoss(bucket))}.`}
+            </p>
+          )}
+
+          {view === 'all' ? (
+            <section>
+              <h3 className="mb-2 text-xs font-bold tracking-wide uppercase">
+                Wins by guesses to spare
+              </h3>
+              <Distribution
+                counts={stackSpareDistribution(stats)}
+                labels={stackSpareDistribution(stats).map((_count, index, all) =>
+                  String(all.length - 1 - index),
+                )}
+                highlightIndex={highlightFor(lastGame, view)}
+              />
+            </section>
+          ) : (
             <section>
               <h3 className="mb-2 text-xs font-bold tracking-wide uppercase">
                 {MODE_LABEL[view]} wins by guesses ({STACK_MIN_WIN_GUESSES[view]} to{' '}
                 {STACK_MODES[view].maxGuesses})
               </h3>
-              <Distribution mode={view} stats={stats.perMode[view]} />
+              <Distribution
+                counts={stats.perMode[view].distribution}
+                firstLabel={STACK_MIN_WIN_GUESSES[view]}
+                highlightIndex={highlightFor(lastGame, view)}
+              />
             </section>
           )}
 
@@ -128,6 +143,9 @@ export function StackStatsModal({ isOpen, onClose }: StackStatsModalProps): Reac
                       {record.won
                         ? `${String(record.guessesUsed)}/${String(STACK_MODES[record.mode].maxGuesses)}`
                         : `${String(record.boardsSolved)}/${String(record.answers.length)} solved`}
+                      {record.won && record.solveMs !== undefined
+                        ? ` · ${formatDuration(record.solveMs)}`
+                        : ''}
                     </span>
                   </li>
                 ))}
@@ -149,7 +167,7 @@ export function StackStatsModal({ isOpen, onClose }: StackStatsModalProps): Reac
       {hasGames || stats.recentGames.length > 0 ? (
         <div className="mt-6">
           <ResetStatsSection
-            statisticsDescription="games played, win percentages, streaks and the guess distributions"
+            statisticsDescription="games played, win percentages, streaks, times and the guess distributions"
             onResetStatistics={resetStatistics}
             onResetHistory={resetHistory}
           />

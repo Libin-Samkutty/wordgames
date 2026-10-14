@@ -1,9 +1,11 @@
 import { RECENT_ANSWER_WINDOW, RECENT_GAMES_LIMIT } from '@/engine/constants';
+import { timeBucketIndex } from '@/engine/shuffle/constants';
 import type { ShuffleRecord, ShuffleState } from '@/engine/shuffle/types';
 import type { WordLength } from '@/engine/types';
 
 import { createRepository, type Repository, type StorageIssue } from './createRepository';
 import { gameKeys } from './keys';
+import { addSolveTime } from './timeStats';
 import {
   DEFAULT_SHUFFLE_PREFS,
   defaultShuffleMeta,
@@ -73,7 +75,19 @@ function applyToBucket(bucket: ShuffleStatsBucket, record: ShuffleRecord): Shuff
   if (!record.solved) return { ...bucket, gamesPlayed, currentStreak: 0 };
 
   const currentStreak = bucket.currentStreak + 1;
+
+  const timeDistribution = [...bucket.timeDistribution];
+  if (record.solveMs !== undefined) {
+    const index = timeBucketIndex(record.solveMs);
+    timeDistribution[index] = (timeDistribution[index] ?? 0) + 1;
+  }
+  const multi = record.anagramCount !== undefined && record.anagramCount > 1;
+
   return {
+    ...addSolveTime(bucket, record.solveMs),
+    timeDistribution,
+    multiAnswerSolves: bucket.multiAnswerSolves + (multi ? 1 : 0),
+    altAnswerSolves: bucket.altAnswerSolves + (multi && record.found !== record.target ? 1 : 0),
     gamesPlayed,
     gamesSolved: bucket.gamesSolved + 1,
     solvedWithoutHints: bucket.solvedWithoutHints + (record.hintsUsed === 0 ? 1 : 0),
@@ -137,6 +151,24 @@ export function shuffleGaveUp(bucket: ShuffleStatsBucket): number {
 export function shuffleAverageHints(bucket: ShuffleStatsBucket): number | null {
   if (bucket.gamesSolved === 0) return null;
   return bucket.totalHintsOnSolves / bucket.gamesSolved;
+}
+
+/**
+ * Solves by hints taken: none, one, two. Worked out from the existing counts, so
+ * it is right for puzzles solved before it was shown. Every hinted solve took at
+ * least one, so with `h` hinted solves and `t` hints in all, two-hint solves are
+ * `t - h` and one-hint solves are `2h - t`.
+ */
+export function shuffleHintDistribution(bucket: ShuffleStatsBucket): readonly number[] {
+  const hinted = bucket.gamesSolved - bucket.solvedWithoutHints;
+  const two = bucket.totalHintsOnSolves - hinted;
+  return [bucket.solvedWithoutHints, hinted - two, two];
+}
+
+/** Share of multi-answer puzzles solved with another word, as a whole percent, or null with none. */
+export function shuffleAltAnswerPercentage(bucket: ShuffleStatsBucket): number | null {
+  if (bucket.multiAnswerSolves === 0) return null;
+  return Math.round((bucket.altAnswerSolves / bucket.multiAnswerSolves) * 100);
 }
 
 /* ------------------------------------------------------------------ *

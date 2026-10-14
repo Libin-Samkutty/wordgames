@@ -161,6 +161,7 @@ describe('weaverRecord (FR-92)', () => {
       moves: 4,
       ladderLength: 4,
       solved: true,
+      solveMs: expect.any(Number) as number,
     });
   });
 

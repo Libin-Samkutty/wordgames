@@ -44,6 +44,7 @@ function applyToBucket(bucket: StatsBucket, record: GameRecord): StatsBucket {
       bucket.fastestSolveMs === null
         ? record.solveMs
         : Math.min(bucket.fastestSolveMs, record.solveMs),
+    bestScore: Math.max(bucket.bestScore, record.score),
   };
 }
 

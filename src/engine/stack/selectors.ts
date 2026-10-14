@@ -1,3 +1,5 @@
+import { clampDuration } from '@/lib/clock';
+
 import { deriveKeyStates } from '../keyboardState';
 import type { LetterState, RowView, TileView } from '../types';
 import { STACK_LENGTH, STACK_MODES } from './constants';
@@ -115,6 +117,14 @@ export function boardKeyStates(
   );
 }
 
+/** Per board, the 1-based guess that solved it, or null if it never was. */
+export function boardSolveGuesses(state: StackState): readonly (number | null)[] {
+  return state.boards.map((board) => {
+    const index = board.guesses.findIndex((guess) => guess.word === board.answer);
+    return index === -1 ? null : index + 1;
+  });
+}
+
 /** A finished game for the statistics log (FR-111), or null while it is still in play. */
 export function stackRecord(state: StackState): StackRecord | null {
   if (!isGameOver(state)) return null;
@@ -128,5 +138,7 @@ export function stackRecord(state: StackState): StackRecord | null {
     guessesUsed: state.words.length,
     boardsSolved: boardsSolved(state),
     won: state.status === 'won',
+    solveMs: clampDuration((state.finishedAt ?? 0) - (state.startedAt ?? 0)),
+    boardSolveGuesses: boardSolveGuesses(state),
   };
 }

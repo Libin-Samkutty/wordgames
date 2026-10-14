@@ -12,9 +12,11 @@ export {
   FALLBACK_MIN_PAR,
   MAX_MOVES,
   MAX_START_ATTEMPTS,
+  OVER_PAR_BUCKETS,
   PAR_BAND,
   RECENT_START_WINDOW,
   WEAVER_LENGTHS,
+  overParBucketIndex,
 } from './constants';
 export { evaluateRung } from './evaluate';
 export { generatePuzzle, type GenerateOptions } from './generate';

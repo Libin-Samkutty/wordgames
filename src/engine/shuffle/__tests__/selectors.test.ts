@@ -134,6 +134,8 @@ describe('shuffleRecord (FR-146)', () => {
       found: 'LISTEN',
       hintsUsed: 1,
       solved: true,
+      solveMs: expect.any(Number) as number,
+      anagramCount: 1,
     });
   });
 
@@ -146,6 +148,8 @@ describe('shuffleRecord (FR-146)', () => {
       found: null,
       hintsUsed: 0,
       solved: false,
+      solveMs: expect.any(Number) as number,
+      anagramCount: 0,
     });
   });
 

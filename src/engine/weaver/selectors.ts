@@ -1,3 +1,5 @@
+import { clampDuration } from '@/lib/clock';
+
 import { MAX_MOVES } from './constants';
 import { evaluateRung } from './evaluate';
 import type {
@@ -84,6 +86,7 @@ export function weaverRecord(state: WeaverState): WeaverRecord | null {
     moves: state.moves,
     ladderLength: state.rungs.length,
     solved: state.status === 'solved',
+    solveMs: clampDuration((state.finishedAt ?? 0) - (state.startedAt ?? 0)),
   };
 }
 

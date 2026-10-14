@@ -1,8 +1,15 @@
 import { RECENT_GAMES_LIMIT } from '@/engine/constants';
 import { anagramKey } from '@/engine/shuffle/anagram';
-import { DEFAULT_SHUFFLE_LENGTH, MAX_HINTS, SHUFFLE_LENGTHS } from '@/engine/shuffle/constants';
+import {
+  DEFAULT_SHUFFLE_LENGTH,
+  MAX_HINTS,
+  SHUFFLE_LENGTHS,
+  TIME_BUCKET_COUNT,
+} from '@/engine/shuffle/constants';
 import type { ShuffleRecord, ShuffleState, ShuffleStatus } from '@/engine/shuffle/types';
 import type { WordLength } from '@/engine/types';
+
+import { emptyTimeStats, readTimeStats, type TimeStats } from './timeStats';
 
 /**
  * Persisted WordShuffle shapes and their runtime guards (SPEC §20, FR-137,
@@ -20,7 +27,7 @@ export interface ShufflePrefs {
 }
 
 /** Metrics kept overall and per length (FR-146). */
-export interface ShuffleStatsBucket {
+export interface ShuffleStatsBucket extends TimeStats {
   readonly gamesPlayed: number;
   readonly gamesSolved: number;
   /** Solves that took no hint. */
@@ -30,6 +37,11 @@ export interface ShuffleStatsBucket {
   /** A solve adds one; a give up resets it to 0. */
   readonly currentStreak: number;
   readonly bestStreak: number;
+  /** Timed solves by duration: under 10s, 30s, 1m, 2m, and longer. Sums to `timedSolves`. */
+  readonly timeDistribution: readonly number[];
+  /** Solves of a puzzle that had several answers, and how many of them used another word. */
+  readonly multiAnswerSolves: number;
+  readonly altAnswerSolves: number;
 }
 
 export interface ShuffleStatsState {
@@ -88,6 +100,10 @@ export function emptyShuffleBucket(): ShuffleStatsBucket {
     totalHintsOnSolves: 0,
     currentStreak: 0,
     bestStreak: 0,
+    timeDistribution: new Array<number>(TIME_BUCKET_COUNT).fill(0),
+    multiAnswerSolves: 0,
+    altAnswerSolves: 0,
+    ...emptyTimeStats(),
   };
 }
 
@@ -144,6 +160,33 @@ function validateBucket(value: unknown): ShuffleStatsBucket | null {
   const hinted = gamesSolved - solvedWithoutHints;
   if (totalHintsOnSolves < hinted || totalHintsOnSolves > hinted * MAX_HINTS) return null;
 
+  // A bucket saved before these fields existed has none, which reads as zero.
+  const time = readTimeStats(value);
+  if (!time) return null;
+
+  const storedDistribution = value.timeDistribution;
+  const timeDistribution: readonly unknown[] =
+    storedDistribution === undefined
+      ? new Array<number>(TIME_BUCKET_COUNT).fill(0)
+      : Array.isArray(storedDistribution)
+        ? storedDistribution
+        : [];
+  if (
+    timeDistribution.length !== TIME_BUCKET_COUNT ||
+    !timeDistribution.every(isNonNegativeInteger)
+  ) {
+    return null;
+  }
+  const timed = timeDistribution.reduce((sum, count) => sum + count, 0);
+  if (timed !== time.timedSolves || time.timedSolves > gamesSolved) return null;
+
+  const multiAnswerSolves = value.multiAnswerSolves === undefined ? 0 : value.multiAnswerSolves;
+  const altAnswerSolves = value.altAnswerSolves === undefined ? 0 : value.altAnswerSolves;
+  if (!isNonNegativeInteger(multiAnswerSolves) || !isNonNegativeInteger(altAnswerSolves)) {
+    return null;
+  }
+  if (altAnswerSolves > multiAnswerSolves || multiAnswerSolves > gamesSolved) return null;
+
   return {
     gamesPlayed,
     gamesSolved,
@@ -151,6 +194,10 @@ function validateBucket(value: unknown): ShuffleStatsBucket | null {
     totalHintsOnSolves,
     currentStreak,
     bestStreak,
+    timeDistribution: timeDistribution,
+    multiAnswerSolves,
+    altAnswerSolves,
+    ...time,
   };
 }
 
@@ -168,7 +215,22 @@ function validateRecord(value: unknown): ShuffleRecord | null {
   // A solve names the word found, a give up has none.
   if (solved ? !isWord(found, length) : found !== null) return null;
 
-  return { id, playedAt, length, target, found: found as string | null, hintsUsed, solved };
+  const base = {
+    id,
+    playedAt,
+    length,
+    target,
+    found: found as string | null,
+    hintsUsed,
+    solved,
+  };
+
+  // Fields added later are optional, so an older row still loads.
+  const extra: { solveMs?: number; anagramCount?: number } = {};
+  if (isFiniteNumber(value.solveMs) && value.solveMs >= 0) extra.solveMs = value.solveMs;
+  if (isNonNegativeInteger(value.anagramCount)) extra.anagramCount = value.anagramCount;
+
+  return { ...base, ...extra };
 }
 
 export function validateShuffleStats(value: unknown): ShuffleStatsState | null {

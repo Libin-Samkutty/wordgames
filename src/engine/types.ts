@@ -73,4 +73,6 @@ export interface GameRecord {
   /** Wall-clock milliseconds from first keystroke to the final guess (FR-22). */
   readonly solveMs: number;
   readonly score: number;
+  /** The first word guessed. Added later, so an older row has none. */
+  readonly opener?: string;
 }

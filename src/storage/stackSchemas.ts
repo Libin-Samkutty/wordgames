@@ -14,6 +14,8 @@ import type {
 } from '@/engine/stack/types';
 import type { Guess, LetterState } from '@/engine/types';
 
+import { emptyTimeStats, readTimeStats, type TimeStats } from './timeStats';
+
 /**
  * Persisted WordStack shapes and their runtime guards (SPEC §17, FR-111,
  * FR-112). Parsed JSON is untrusted: anything that fails a guard is discarded
@@ -30,11 +32,18 @@ export interface StackPrefs {
 }
 
 /** Counts kept overall and per mode (FR-111). */
-export interface StackStatsBucket {
+export interface StackStatsBucket extends TimeStats {
   readonly gamesPlayed: number;
   readonly gamesWon: number;
   readonly currentStreak: number;
   readonly bestStreak: number;
+  /** Losses with every board but one solved ("so close"). */
+  readonly nearMisses: number;
+  /** Boards solved, summed over losses, for the average on a loss. */
+  readonly boardsSolvedOnLosses: number;
+  /** Games that solved at least one board and saved when, and the sum of the first solve's guess. */
+  readonly firstBoardGames: number;
+  readonly totalFirstBoardGuess: number;
 }
 
 /**
@@ -106,7 +115,17 @@ function isStringArray(value: unknown): value is string[] {
 export const DEFAULT_STACK_PREFS: StackPrefs = { mode: DEFAULT_STACK_MODE };
 
 function emptyBucket(): StackStatsBucket {
-  return { gamesPlayed: 0, gamesWon: 0, currentStreak: 0, bestStreak: 0 };
+  return {
+    gamesPlayed: 0,
+    gamesWon: 0,
+    currentStreak: 0,
+    bestStreak: 0,
+    nearMisses: 0,
+    boardsSolvedOnLosses: 0,
+    firstBoardGames: 0,
+    totalFirstBoardGuess: 0,
+    ...emptyTimeStats(),
+  };
 }
 
 export function emptyStackModeStats(mode: StackMode): StackModeStats {
@@ -152,7 +171,32 @@ function validateBucket(value: unknown): StackStatsBucket | null {
   // Cross-field sanity: more wins than games means the record is incoherent.
   if (gamesWon > gamesPlayed) return null;
 
-  return { gamesPlayed, gamesWon, currentStreak, bestStreak };
+  // A bucket saved before these fields existed has none, which reads as zero.
+  const counters = [
+    value.nearMisses,
+    value.boardsSolvedOnLosses,
+    value.firstBoardGames,
+    value.totalFirstBoardGuess,
+  ].map((counter) => (counter === undefined ? 0 : counter));
+  if (!counters.every(isNonNegativeInteger)) return null;
+  const [nearMisses = 0, boardsSolvedOnLosses = 0, firstBoardGames = 0, totalFirstBoardGuess = 0] =
+    counters;
+  if (nearMisses > gamesPlayed - gamesWon) return null;
+
+  const time = readTimeStats(value);
+  if (!time) return null;
+
+  return {
+    gamesPlayed,
+    gamesWon,
+    currentStreak,
+    bestStreak,
+    nearMisses,
+    boardsSolvedOnLosses,
+    firstBoardGames,
+    totalFirstBoardGuess,
+    ...time,
+  };
 }
 
 function validateModeStats(value: unknown, mode: StackMode): StackModeStats | null {
@@ -185,7 +229,24 @@ function validateRecord(value: unknown): StackRecord | null {
   if (!isNonNegativeInteger(boardsSolved) || boardsSolved > STACK_MODES[mode].boards) return null;
   if (typeof won !== 'boolean') return null;
 
-  return { id, playedAt, mode, answers: answers, guessesUsed, boardsSolved, won };
+  const base = { id, playedAt, mode, answers: answers, guessesUsed, boardsSolved, won };
+
+  // Fields added later are optional, so an older row still loads.
+  const extra: { solveMs?: number; boardSolveGuesses?: readonly (number | null)[] } = {};
+  if (isFiniteNumber(value.solveMs) && value.solveMs >= 0) extra.solveMs = value.solveMs;
+  const solves = value.boardSolveGuesses;
+  if (
+    Array.isArray(solves) &&
+    solves.length === STACK_MODES[mode].boards &&
+    solves.every(
+      (entry) =>
+        entry === null || (isNonNegativeInteger(entry) && entry <= STACK_MODES[mode].maxGuesses),
+    )
+  ) {
+    extra.boardSolveGuesses = solves as readonly (number | null)[];
+  }
+
+  return { ...base, ...extra };
 }
 
 export function validateStackStats(value: unknown): StackStatsState | null {

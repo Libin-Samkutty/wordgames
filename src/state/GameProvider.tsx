@@ -226,6 +226,7 @@ export function GameProvider({ children }: { children: ReactNode }): React.JSX.E
       won,
       solveMs,
       score: scoreGame({ won, guessesUsed, wordLength: state.wordLength, solveMs }),
+      ...(state.guesses[0] ? { opener: state.guesses[0].word } : {}),
     });
 
     setAnnouncement(

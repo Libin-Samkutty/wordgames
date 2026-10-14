@@ -48,4 +48,11 @@ export interface ShuffleRecord {
   readonly found: string | null;
   readonly hintsUsed: number;
   readonly solved: boolean;
+  /**
+   * The fields below were added later, so a row saved before then has none.
+   */
+  /** Time from the first keystroke to the end, in ms. */
+  readonly solveMs?: number;
+  /** How many words used these letters, so a puzzle with several answers can be told apart. */
+  readonly anagramCount?: number;
 }

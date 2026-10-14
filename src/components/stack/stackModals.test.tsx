@@ -179,7 +179,7 @@ describe('StackStatsModal (FR-111, FR-47)', () => {
     await user.click(screen.getByRole('button', { name: 'Reset statistics' }));
     const confirm = await screen.findByRole('alertdialog');
     expect(confirm).toHaveTextContent(
-      /games played, win percentages, streaks and the guess distributions/,
+      /games played, win percentages, streaks, times and the guess distributions/,
     );
     await user.click(within(confirm).getByRole('button', { name: 'Delete' }));
 

@@ -10,6 +10,8 @@ import {
   createRangePrefsRepository,
   createRangeSessionRepository,
   createRangeStatsRepository,
+  rangeAverageFirstBurning,
+  rangeBurningPercentage,
   rangeWinPercentage,
   recordRangeGame,
   rememberRangeAnswer,
@@ -344,5 +346,92 @@ describe('repositories (FR-99, AC-56)', () => {
     range.write(resetRangeStatistics(range.read()));
 
     expect(localStorage.getItem('wordgames:v1:wordwright:stats')).toBe(before);
+  });
+});
+
+describe('detail stats added after release', () => {
+  it('loads a stats blob saved before the new fields existed, without a reset', () => {
+    const old = JSON.parse(JSON.stringify(defaultRangeStats())) as Record<string, unknown>;
+    for (const field of [
+      'heatTrackedGames',
+      'burningGames',
+      'totalFirstBurningAt',
+      'closestMiss',
+      'timedSolves',
+      'totalSolveMs',
+      'fastestSolveMs',
+    ]) {
+      delete old[field];
+    }
+    old.gamesPlayed = 9;
+    old.gamesWon = 4;
+
+    const loaded = validateRangeStats(old);
+
+    expect(loaded?.gamesPlayed).toBe(9);
+    expect(loaded?.closestMiss).toBeNull();
+    expect(loaded?.timedSolves).toBe(0);
+    expect(loaded?.heatTrackedGames).toBe(0);
+  });
+
+  it('still loads an old record row that has no detail fields', () => {
+    const stats = { ...defaultRangeStats(), recentGames: [record('old')] };
+
+    expect(validateRangeStats(JSON.parse(JSON.stringify(stats)))?.recentGames).toHaveLength(1);
+  });
+
+  it('rejects detail fields that are present but wrong', () => {
+    const bad = {
+      ...(JSON.parse(JSON.stringify(defaultRangeStats())) as Record<string, unknown>),
+      closestMiss: -3,
+    };
+
+    expect(validateRangeStats(bad)).toBeNull();
+  });
+
+  it('adds time on wins only, and tracks the fastest', () => {
+    let stats = recordRangeGame(defaultRangeStats(), record('a', { solveMs: 60_000 }));
+    stats = recordRangeGame(stats, record('b', { solveMs: 20_000 }));
+    stats = recordRangeGame(stats, record('c', { won: false, solveMs: 1_000 }));
+    stats = recordRangeGame(stats, record('d'));
+
+    expect(stats).toMatchObject({ timedSolves: 2, totalSolveMs: 80_000, fastestSolveMs: 20_000 });
+  });
+
+  it('keeps the smallest words-left across losses, ignoring wins and rows without it', () => {
+    let stats = recordRangeGame(defaultRangeStats(), record('a', { won: false, wordsLeft: 40 }));
+    stats = recordRangeGame(stats, record('b', { won: false, wordsLeft: 7 }));
+    stats = recordRangeGame(stats, record('c', { won: false, wordsLeft: null }));
+    stats = recordRangeGame(stats, record('d', { won: false }));
+    stats = recordRangeGame(stats, record('e', { wordsLeft: 1 }));
+
+    expect(stats.closestMiss).toBe(7);
+  });
+
+  it('counts Burning games, on wins and losses', () => {
+    let stats = recordRangeGame(defaultRangeStats(), record('a', { firstBurningGuess: 4 }));
+    stats = recordRangeGame(stats, record('b', { won: false, firstBurningGuess: 8 }));
+    stats = recordRangeGame(stats, record('c', { firstBurningGuess: null }));
+    stats = recordRangeGame(stats, record('d'));
+
+    expect(stats).toMatchObject({
+      heatTrackedGames: 3,
+      burningGames: 2,
+      totalFirstBurningAt: 12,
+    });
+    expect(rangeAverageFirstBurning(stats)).toBe(6);
+    expect(rangeBurningPercentage(stats)).toBe(67);
+  });
+
+  it('keeps the new fields on a stored record', () => {
+    const row = record('a', {
+      solveMs: 4321,
+      firstBurningGuess: 3,
+      wordsLeft: null,
+      opener: 'BRAVE',
+    });
+    const stats = { ...defaultRangeStats(), recentGames: [row] };
+
+    expect(validateRangeStats(JSON.parse(JSON.stringify(stats)))?.recentGames[0]).toEqual(row);
   });
 });

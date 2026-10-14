@@ -1,3 +1,5 @@
+import { clampDuration } from '@/lib/clock';
+
 import { CODE_MAX_GUESSES } from './constants';
 import type { CodeRecord, CodeState, NoteMark } from './types';
 
@@ -19,6 +21,12 @@ export function noteOf(state: CodeState, letter: string): NoteMark | undefined {
   return state.notes[letter.toUpperCase()];
 }
 
+/** The 1-based guess on which every letter was known (bulls plus cows), or null. */
+export function lettersFoundAt(state: CodeState): number | null {
+  const index = state.guesses.findIndex((guess) => guess.bulls + guess.cows === state.wordLength);
+  return index === -1 ? null : index + 1;
+}
+
 /**
  * The finished game as a statistics record (FR-134), or null while it is still
  * in play. A game that was abandoned never reaches `won` or `lost`, so it is
@@ -34,5 +42,9 @@ export function codeRecord(state: CodeState): CodeRecord | null {
     secret: state.secret,
     guessesUsed: state.guesses.length,
     won: state.status === 'won',
+    solveMs: clampDuration((state.finishedAt ?? 0) - (state.startedAt ?? 0)),
+    lettersFoundAt: lettersFoundAt(state),
+    usedNotes: Object.keys(state.notes).length > 0,
+    ...(state.guesses[0] ? { opener: state.guesses[0].word } : {}),
   };
 }

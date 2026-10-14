@@ -1,9 +1,10 @@
 import { RECENT_GAMES_LIMIT } from '@/engine/constants';
-import { RECENT_START_WINDOW } from '@/engine/weaver/constants';
+import { RECENT_START_WINDOW, overParBucketIndex } from '@/engine/weaver/constants';
 import type { WeaverLength, WeaverRecord, WeaverState } from '@/engine/weaver/types';
 
 import { createRepository, type Repository, type StorageIssue } from './createRepository';
 import { gameKeys } from './keys';
+import { addSolveTime } from './timeStats';
 import {
   DEFAULT_WEAVER_PREFS,
   defaultWeaverMeta,
@@ -78,7 +79,16 @@ function applyToBucket(bucket: WeaverStatsBucket, record: WeaverRecord): WeaverS
   const overPar = record.moves - record.par;
   const currentStreak = bucket.currentStreak + 1;
 
+  const overParDistribution = [...bucket.overParDistribution];
+  const index = overParBucketIndex(overPar);
+  overParDistribution[index] = (overParDistribution[index] ?? 0) + 1;
+
   return {
+    ...addSolveTime(bucket, record.solveMs),
+    overParDistribution,
+    totalUndos: bucket.totalUndos + Math.max(0, record.moves - record.ladderLength),
+    hardestParSolved:
+      bucket.hardestParSolved === null ? record.par : Math.max(bucket.hardestParSolved, record.par),
     gamesPlayed,
     gamesSolved: bucket.gamesSolved + 1,
     parHits: bucket.parHits + (overPar <= 0 ? 1 : 0),
@@ -143,6 +153,18 @@ export function weaverGaveUp(bucket: WeaverStatsBucket): number {
 export function averageOverPar(bucket: WeaverStatsBucket): number | null {
   if (bucket.gamesSolved === 0) return null;
   return bucket.totalOverPar / bucket.gamesSolved;
+}
+
+/** Solves counted by the over-par chart, which is also what `totalUndos` covers. */
+export function weaverDetailSolves(bucket: WeaverStatsBucket): number {
+  return bucket.overParDistribution.reduce((sum, count) => sum + count, 0);
+}
+
+/** Average undos per solve, or null before any solve was recorded with the detail. */
+export function weaverAverageUndos(bucket: WeaverStatsBucket): number | null {
+  const solves = weaverDetailSolves(bucket);
+  if (solves === 0) return null;
+  return bucket.totalUndos / solves;
 }
 
 /* ------------------------------------------------------------------ *

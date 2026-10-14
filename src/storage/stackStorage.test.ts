@@ -25,6 +25,9 @@ import {
   rememberStackAnswers,
   resetStackHistory,
   resetStackStatistics,
+  stackAverageBoardsOnLoss,
+  stackAverageFirstBoard,
+  stackSpareDistribution,
   stackWinPercentage,
 } from './stackRepositories';
 import { defaultStats } from './schemas';
@@ -64,7 +67,12 @@ describe('recordStackGame (FR-111)', () => {
   it('records a Duo win overall and in the Duo bucket, with the distribution', () => {
     const stats = recordStackGame(defaultStackStats(), record('a', { guessesUsed: 5 }));
 
-    expect(stats.overall).toEqual({ gamesPlayed: 1, gamesWon: 1, currentStreak: 1, bestStreak: 1 });
+    expect(stats.overall).toMatchObject({
+      gamesPlayed: 1,
+      gamesWon: 1,
+      currentStreak: 1,
+      bestStreak: 1,
+    });
     expect(stats.perMode.duo).toMatchObject({ gamesPlayed: 1, gamesWon: 1 });
     // Duo buckets are 2..7, so 5 guesses is index 3.
     expect(stats.perMode.duo.distribution).toEqual([0, 0, 0, 1, 0, 0]);
@@ -527,5 +535,111 @@ describe('repositories (FR-99, AC-56)', () => {
     for (const key of [keys.prefs, keys.stats, keys.session, keys.meta]) {
       expect(key.startsWith('wordgames:v1:stack:')).toBe(true);
     }
+  });
+});
+
+describe('detail stats added after release', () => {
+  const NEW_FIELDS = [
+    'nearMisses',
+    'boardsSolvedOnLosses',
+    'firstBoardGames',
+    'totalFirstBoardGuess',
+    'timedSolves',
+    'totalSolveMs',
+    'fastestSolveMs',
+  ];
+
+  it('loads a stats blob saved before the new fields existed, without a reset', () => {
+    const old = JSON.parse(JSON.stringify(defaultStackStats())) as {
+      overall: Record<string, unknown>;
+      perMode: Record<string, Record<string, unknown>>;
+    };
+    for (const bucket of Object.values({ overall: old.overall, ...old.perMode })) {
+      for (const field of NEW_FIELDS) delete bucket[field];
+    }
+    old.overall.gamesPlayed = 6;
+    old.overall.gamesWon = 3;
+
+    const loaded = validateStackStats(old);
+
+    expect(loaded?.overall.gamesPlayed).toBe(6);
+    expect(loaded?.overall.timedSolves).toBe(0);
+    expect(loaded?.perMode.quad.nearMisses).toBe(0);
+    expect(loaded?.perMode.duo.fastestSolveMs).toBeNull();
+  });
+
+  it('still loads an old record row that has no detail fields', () => {
+    const stats = { ...defaultStackStats(), recentGames: [record('old')] };
+
+    expect(validateStackStats(JSON.parse(JSON.stringify(stats)))?.recentGames).toHaveLength(1);
+  });
+
+  it('rejects detail fields that are present but wrong', () => {
+    const bad = JSON.parse(JSON.stringify(defaultStackStats())) as {
+      overall: Record<string, unknown>;
+    };
+    bad.overall.nearMisses = 3;
+
+    // Three near misses are more than the zero losses recorded.
+    expect(validateStackStats(bad)).toBeNull();
+  });
+
+  it('adds time on wins only, overall and per mode', () => {
+    let stats = recordStackGame(defaultStackStats(), record('a', { solveMs: 50_000 }));
+    stats = recordStackGame(stats, quadRecord('b', { solveMs: 30_000 }));
+    stats = recordStackGame(stats, record('c', { won: false, boardsSolved: 1, solveMs: 1_000 }));
+    stats = recordStackGame(stats, record('d'));
+
+    expect(stats.overall).toMatchObject({
+      timedSolves: 2,
+      totalSolveMs: 80_000,
+      fastestSolveMs: 30_000,
+    });
+    expect(stats.perMode.duo).toMatchObject({ timedSolves: 1, fastestSolveMs: 50_000 });
+    expect(stats.perMode.quad).toMatchObject({ timedSolves: 1, fastestSolveMs: 30_000 });
+  });
+
+  it('counts a loss with all boards but one solved as so close', () => {
+    let stats = recordStackGame(defaultStackStats(), record('a', { won: false, boardsSolved: 1 }));
+    stats = recordStackGame(stats, record('b', { won: false, boardsSolved: 0 }));
+    stats = recordStackGame(stats, quadRecord('c', { won: false, boardsSolved: 3 }));
+    stats = recordStackGame(stats, quadRecord('d', { won: false, boardsSolved: 2 }));
+
+    expect(stats.perMode.duo.nearMisses).toBe(1);
+    expect(stats.perMode.quad.nearMisses).toBe(1);
+    expect(stats.overall.nearMisses).toBe(2);
+    expect(stackAverageBoardsOnLoss(stats.overall)).toBe(1.5);
+  });
+
+  it('averages the guess on which the first board fell, skipping rows without it', () => {
+    let stats = recordStackGame(defaultStackStats(), record('a', { boardSolveGuesses: [3, 5] }));
+    stats = recordStackGame(
+      stats,
+      record('b', { won: false, boardsSolved: 1, boardSolveGuesses: [null, 2] }),
+    );
+    stats = recordStackGame(
+      stats,
+      record('c', { won: false, boardsSolved: 0, boardSolveGuesses: [null, null] }),
+    );
+    stats = recordStackGame(stats, record('d'));
+
+    expect(stats.overall).toMatchObject({ firstBoardGames: 2, totalFirstBoardGuess: 5 });
+    expect(stackAverageFirstBoard(stats.overall)).toBe(2.5);
+  });
+
+  it('sums Duo and Quad wins by guesses to spare', () => {
+    let stats = recordStackGame(defaultStackStats(), record('a', { guessesUsed: 2 }));
+    stats = recordStackGame(stats, quadRecord('b', { guessesUsed: 4 }));
+    stats = recordStackGame(stats, quadRecord('c', { guessesUsed: 9 }));
+
+    // Index 0 is five to spare, the last index none to spare.
+    expect(stackSpareDistribution(stats)).toEqual([2, 0, 0, 0, 0, 1]);
+  });
+
+  it('keeps the new fields on a stored record', () => {
+    const row = record('a', { solveMs: 999, boardSolveGuesses: [2, 4] });
+    const stats = { ...defaultStackStats(), recentGames: [row] };
+
+    expect(validateStackStats(JSON.parse(JSON.stringify(stats)))?.recentGames[0]).toEqual(row);
   });
 });

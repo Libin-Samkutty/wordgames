@@ -3,6 +3,7 @@ import type { RangeRecord, RangeState } from '@/engine/range/types';
 
 import { createRepository, type Repository, type StorageIssue } from './createRepository';
 import { gameKeys } from './keys';
+import { addSolveTime } from './timeStats';
 import {
   DEFAULT_RANGE_PREFS,
   defaultRangeMeta,
@@ -79,8 +80,34 @@ export function recordRangeGame(stats: RangeStatsState, record: RangeRecord): Ra
   // Bounded alongside the log, so it cannot grow without limit.
   const recordedGameIds = [record.id, ...stats.recordedGameIds].slice(0, RECENT_GAMES_LIMIT * 2);
 
+  // Counted whether the game was won or lost, for records that carry the field.
+  const burning = record.firstBurningGuess;
+  const detail = {
+    heatTrackedGames: stats.heatTrackedGames + (burning === undefined ? 0 : 1),
+    burningGames: stats.burningGames + (typeof burning === 'number' ? 1 : 0),
+    totalFirstBurningAt: stats.totalFirstBurningAt + (typeof burning === 'number' ? burning : 0),
+  };
+
   // A loss breaks the streak and leaves the best untouched.
-  if (!record.won) return { ...stats, gamesPlayed, currentStreak: 0, recentGames, recordedGameIds };
+  if (!record.won) {
+    const left = record.wordsLeft;
+    const closestMiss =
+      typeof left === 'number'
+        ? stats.closestMiss === null
+          ? left
+          : Math.min(stats.closestMiss, left)
+        : stats.closestMiss;
+
+    return {
+      ...stats,
+      ...detail,
+      closestMiss,
+      gamesPlayed,
+      currentStreak: 0,
+      recentGames,
+      recordedGameIds,
+    };
+  }
 
   const currentStreak = stats.currentStreak + 1;
   const distribution = [...stats.distribution];
@@ -89,6 +116,9 @@ export function recordRangeGame(stats: RangeStatsState, record: RangeRecord): Ra
     distribution[index] = (distribution[index] ?? 0) + 1;
 
   return {
+    ...detail,
+    closestMiss: stats.closestMiss,
+    ...addSolveTime(stats, record.solveMs),
     gamesPlayed,
     gamesWon: stats.gamesWon + 1,
     currentStreak,
@@ -111,6 +141,18 @@ export function resetRangeStatistics(stats: RangeStatsState): RangeStatsState {
 /** Clears the recent-games log but keeps the metrics (FR-47). */
 export function resetRangeHistory(stats: RangeStatsState): RangeStatsState {
   return { ...stats, recentGames: [], recordedGameIds: [] };
+}
+
+/** Mean guess on which a game first reached Burning, or null if none did. */
+export function rangeAverageFirstBurning(stats: RangeStatsState): number | null {
+  if (stats.burningGames === 0) return null;
+  return stats.totalFirstBurningAt / stats.burningGames;
+}
+
+/** Share of tracked games that reached Burning, as a whole percent, or null with none. */
+export function rangeBurningPercentage(stats: RangeStatsState): number | null {
+  if (stats.heatTrackedGames === 0) return null;
+  return Math.round((stats.burningGames / stats.heatTrackedGames) * 100);
 }
 
 /** Win rate as a whole percent, 0 with no games. */

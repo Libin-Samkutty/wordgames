@@ -51,4 +51,15 @@ export interface RangeRecord {
   readonly secret: string;
   readonly guessesUsed: number;
   readonly won: boolean;
+  /**
+   * The fields below were added later, so a row saved before then has none.
+   */
+  /** Time from the first keystroke to the end, in ms. */
+  readonly solveMs?: number;
+  /** The first guess that was Burning (or the secret itself), or null if none was. */
+  readonly firstBurningGuess?: number | null;
+  /** On a loss, how many words were still in the range. Absent on a win. */
+  readonly wordsLeft?: number | null;
+  /** The first word guessed. */
+  readonly opener?: string;
 }

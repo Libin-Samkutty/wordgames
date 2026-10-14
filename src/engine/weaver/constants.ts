@@ -35,3 +35,11 @@ export const FALLBACK_MIN_PAR = 3;
 
 /** Safety cap on accepted rung submissions; Give up still works (FR-85, EC-34). */
 export const MAX_MOVES = 500;
+
+/** Buckets in the over-par chart: par, one over, two over, three over, four or more. */
+export const OVER_PAR_BUCKETS = 5;
+
+/** The over-par chart bucket for a solve: at par or under is the first, four or more the last. */
+export function overParBucketIndex(overPar: number): number {
+  return Math.min(Math.max(overPar, 0), OVER_PAR_BUCKETS - 1);
+}

@@ -1,8 +1,10 @@
 import { RECENT_ANSWER_WINDOW, RECENT_GAMES_LIMIT } from '@/engine/constants';
+import { STACK_MODES } from '@/engine/stack/constants';
 import type { StackRecord, StackState } from '@/engine/stack/types';
 
 import { createRepository, type Repository, type StorageIssue } from './createRepository';
 import { gameKeys } from './keys';
+import { addSolveTime } from './timeStats';
 import {
   DEFAULT_STACK_PREFS,
   STACK_MIN_WIN_GUESSES,
@@ -67,15 +69,34 @@ export function createStackMetaRepository(onIssue?: OnIssue): Repository<StackMe
  * Statistics (FR-111)
  * ------------------------------------------------------------------ */
 
-function applyToBucket<T extends StackStatsBucket>(bucket: T, won: boolean): T {
+function applyToBucket<T extends StackStatsBucket>(bucket: T, record: StackRecord): T {
   const gamesPlayed = bucket.gamesPlayed + 1;
 
+  // Games that solved a board, whether or not the game was won, for the first-board average.
+  const first = record.boardSolveGuesses?.filter((guess): guess is number => guess !== null);
+  const hasFirst = first !== undefined && first.length > 0;
+  const withFirst = {
+    ...bucket,
+    firstBoardGames: bucket.firstBoardGames + (hasFirst ? 1 : 0),
+    totalFirstBoardGuess: bucket.totalFirstBoardGuess + (hasFirst ? Math.min(...first) : 0),
+  };
+
   // A loss breaks the streak and leaves the best untouched.
-  if (!won) return { ...bucket, gamesPlayed, currentStreak: 0 };
+  if (!record.won) {
+    const boards = STACK_MODES[record.mode].boards;
+    return {
+      ...withFirst,
+      gamesPlayed,
+      currentStreak: 0,
+      nearMisses: bucket.nearMisses + (record.boardsSolved === boards - 1 ? 1 : 0),
+      boardsSolvedOnLosses: bucket.boardsSolvedOnLosses + record.boardsSolved,
+    };
+  }
 
   const currentStreak = bucket.currentStreak + 1;
   return {
-    ...bucket,
+    ...withFirst,
+    ...addSolveTime(bucket, record.solveMs),
     gamesPlayed,
     gamesWon: bucket.gamesWon + 1,
     currentStreak,
@@ -85,7 +106,7 @@ function applyToBucket<T extends StackStatsBucket>(bucket: T, won: boolean): T {
 
 /** Folds one finished game into its mode's bucket, including the win distribution. */
 function applyToMode(stats: StackModeStats, record: StackRecord): StackModeStats {
-  const next = applyToBucket(stats, record.won);
+  const next = applyToBucket(stats, record);
   if (!record.won) return next;
 
   const distribution = [...stats.distribution];
@@ -107,7 +128,7 @@ export function recordStackGame(stats: StackStatsState, record: StackRecord): St
   if (stats.recordedGameIds.includes(record.id)) return stats;
 
   return {
-    overall: applyToBucket(stats.overall, record.won),
+    overall: applyToBucket(stats.overall, record),
     perMode: {
       ...stats.perMode,
       [record.mode]: applyToMode(stats.perMode[record.mode], record),
@@ -130,6 +151,30 @@ export function resetStackStatistics(stats: StackStatsState): StackStatsState {
 /** Clears the recent-games log but keeps the metrics (FR-47). */
 export function resetStackHistory(stats: StackStatsState): StackStatsState {
   return { ...stats, recentGames: [], recordedGameIds: [] };
+}
+
+/** Mean guess on which a game's first board fell, or null if none has. */
+export function stackAverageFirstBoard(bucket: StackStatsBucket): number | null {
+  if (bucket.firstBoardGames === 0) return null;
+  return bucket.totalFirstBoardGuess / bucket.firstBoardGames;
+}
+
+/** Mean boards solved in a lost game, or null with no losses. */
+export function stackAverageBoardsOnLoss(bucket: StackStatsBucket): number | null {
+  const losses = bucket.gamesPlayed - bucket.gamesWon;
+  if (losses === 0) return null;
+  return bucket.boardsSolvedOnLosses / losses;
+}
+
+/**
+ * Wins by guesses to spare, summed over both modes, most spare first. Duo and Quad
+ * each have six distribution buckets and the same spread (the fewest-guess win has 5
+ * to spare in both), so index i adds up directly.
+ */
+export function stackSpareDistribution(stats: StackStatsState): readonly number[] {
+  return stats.perMode.duo.distribution.map(
+    (count, index) => count + (stats.perMode.quad.distribution[index] ?? 0),
+  );
 }
 
 /** Win rate as a whole percent, 0 with no games. */
