@@ -62,7 +62,7 @@ export function Header({
           <h1
             // Focus lands here after a view change (A11Y-15); it is not a tab stop.
             tabIndex={-1}
-            className="min-w-0 truncate text-sm font-bold tracking-[0.1em] uppercase sm:text-xl sm:tracking-[0.15em]"
+            className="min-w-0 truncate text-sm font-bold tracking-[0.1em] capitalize sm:text-xl sm:tracking-[0.15em]"
           >
             {title}
           </h1>

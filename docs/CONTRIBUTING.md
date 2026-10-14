@@ -1,6 +1,6 @@
 # Contributing to wordgames
 
-Working agreements for humans and AI assistants. Read [`SPEC.md`](./SPEC.md) and [`ARCHITECTURE.md`](./ARCHITECTURE.md) first — this document covers _how we work_, not _what we build_.
+Working agreements for contributors. Read [`SPEC.md`](./SPEC.md) and [`ARCHITECTURE.md`](./ARCHITECTURE.md) first — this document covers _how we work_, not _what we build_.
 
 ---
 
@@ -212,4 +212,4 @@ Reviewers check, in order: **correctness against the SPEC → accessibility → 
 
 Reject: speculative abstraction (ADR-005), business logic in components, untested engine branches, colour-only state, new dependencies without justification, silent failures.
 
-Be specific and cite requirement or ADR IDs. Suggest refactors only when they are justified by a concrete, present problem — see [`prompts/review.md`](../prompts/review.md).
+Be specific and cite requirement or ADR IDs. Suggest refactors only when they are justified by a concrete, present problem.

@@ -408,7 +408,7 @@ Turns the single game into the wordgames suite. Rationale in ADR-021 to ADR-024 
 
 ### ✅ T-50 · Rename to wordgames
 
-Rename the product. Change the `package.json` name, the `index.html` title and meta tags, `base: '/wordgames/'` in `vite.config.ts`, `robots.txt`, the favicon `aria-label`, and the product name in `Header` and `ErrorBoundary` copy. Update tests that assert the old name. Update README, CONTRIBUTING and the prompts, and add a one-line note at the top of `REVIEW.md` that it predates the rename. Owner steps, outside the PR: rename the GitHub repo, update the Pages settings, and run `git remote set-url` locally.
+Rename the product. Change the `package.json` name, the `index.html` title and meta tags, `base: '/wordgames/'` in `vite.config.ts`, `robots.txt`, the favicon `aria-label`, and the product name in `Header` and `ErrorBoundary` copy. Update tests that assert the old name. Update README and CONTRIBUTING, and add a one-line note at the top of `REVIEW.md` that it predates the rename. Owner steps, outside the PR: rename the GitHub repo, update the Pages settings, and run `git remote set-url` locally.
 **Req:** FR-61, G9 · **Depends:** — · **DoD:** `npm run build` emits asset URLs under `/wordgames/`; a repo-wide search for "Wordwright" finds only the game name, the legacy `wordwright:` storage keys and historical docs; `npm run test:e2e` green.
 
 ### ✅ T-51 · Storage layout and per-game repositories

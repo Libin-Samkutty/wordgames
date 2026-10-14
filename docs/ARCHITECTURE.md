@@ -72,9 +72,6 @@ wordgames/
 ├── e2e/                           # Playwright specs (ADR-019)
 │   ├── a11y.spec.ts  edge-cases.spec.ts
 │   └── responsive.spec.ts  screenshots.spec.ts
-├── prompts/
-│   ├── implementation.md
-│   └── review.md
 ├── public/
 │   ├── favicon.svg
 │   └── robots.txt

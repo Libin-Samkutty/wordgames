@@ -2,7 +2,7 @@
 
 An offline suite of word games. **Wordwright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
 
-> **Status:** All six games are built, 91 of 91 tasks: Wordwright, WordWeaver, WordStack, WordRange, WordCode and WordShuffle. 1,841 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. Nothing has been deployed from this branch yet. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
+> **Status:** All six games are built, 91 of 91 tasks: Wordwright, WordWeaver, WordStack, WordRange, WordCode and WordShuffle. 1,845 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
 
 ---
 
@@ -64,9 +64,9 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 - Get from a start word to an end word, one letter per rung; every rung must be a real word
 - Letters that already match the end word turn green; there is no yellow
 - 4 or 5 letters (default 4), unlimited puzzles generated on the device, no daily or shared puzzles
-- **Par** is the shortest ladder made of everyday words. A rarer word can finish **under par**
+- **Par** is the shortest ladder made of everyday words. A rarer word can finish **under par**. Par and your move count show above the ladder
 - **Undo** (or Backspace on an empty row), **Give up** (shows one shortest ladder) and **New puzzle**
-- Statistics overall and per length: solved, gave up, par hits, average over par and streaks
+- Statistics overall and per length: solved, gave up, par hits, average over par, best vs par and streaks
 
 ### WordStack
 
@@ -213,7 +213,6 @@ Engine work is test-first. UI work is spec-first. See [`docs/TASKS.md`](./docs/T
 ```
 wordgames/
 ├── docs/                  # Specification set (source of truth)
-├── prompts/               # Prompts for AI coding assistants
 ├── public/                # Static assets served as-is
 ├── src/
 │   ├── engine/            # Pure game rules — no React, no DOM
@@ -240,16 +239,14 @@ Full breakdown in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
 ## Documentation Map
 
-| Document                                                   | What it answers                                                                                                         |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| [`docs/SPEC.md`](./docs/SPEC.md)                           | **What** we are building — PRD, user stories, functional & non-functional requirements, edge cases, acceptance criteria |
-| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)           | **How** it is built — folders, components, state, data flow, storage, engine design, extension points                   |
-| [`docs/TASKS.md`](./docs/TASKS.md)                         | **In what order** — phased, independently completable tasks                                                             |
-| [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md)           | **Working agreements** — coding standards, git & commit conventions, PR checklist                                       |
-| [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md)               | **Definition of Done** — the final validation checklist                                                                 |
-| [`docs/DECISIONS.md`](./docs/DECISIONS.md)                 | **Why** — ADR-style records for every significant choice                                                                |
-| [`prompts/implementation.md`](./prompts/implementation.md) | The build prompt for a coding assistant                                                                                 |
-| [`prompts/review.md`](./prompts/review.md)                 | The review prompt for a coding assistant                                                                                |
+| Document                                         | What it answers                                                                                                         |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| [`docs/SPEC.md`](./docs/SPEC.md)                 | **What** we are building — PRD, user stories, functional & non-functional requirements, edge cases, acceptance criteria |
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | **How** it is built — folders, components, state, data flow, storage, engine design, extension points                   |
+| [`docs/TASKS.md`](./docs/TASKS.md)               | **In what order** — phased, independently completable tasks                                                             |
+| [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md) | **Working agreements** — coding standards, git & commit conventions, PR checklist                                       |
+| [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md)     | **Definition of Done** — the final validation checklist                                                                 |
+| [`docs/DECISIONS.md`](./docs/DECISIONS.md)       | **Why** — ADR-style records for every significant choice                                                                |
 
 Read `SPEC.md` first. When code and docs disagree, the docs win — or the docs get updated in the same PR.
 
@@ -257,7 +254,7 @@ Read `SPEC.md` first. When code and docs disagree, the docs win — or the docs 
 
 ## Roadmap
 
-**Suite V1 and releases R2 to R5 (built on the `suite-v1` branch)**
+**Suite V1 and releases R2 to R5**
 Home and navigation, Wordwright, WordWeaver, the rename to wordgames with no loss of saved data, then WordStack, WordRange, WordCode and WordShuffle. Nothing else is planned: Appendix A of the SPEC lists game ideas that are deliberately not built.
 
 **V2 — Gameplay expansion (not implemented; architecture must not block it)**

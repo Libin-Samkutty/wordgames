@@ -13,7 +13,7 @@ function GameCard({ entry }: { entry: CatalogueEntry }): React.JSX.Element {
         aria-describedby={descriptionId}
         className="flex min-h-11 flex-col gap-1 rounded-lg border-2 border-border-strong bg-surface-raised px-4 py-3 transition-colors hover:border-text-muted"
       >
-        <span aria-hidden="true" className="text-lg font-bold tracking-wide uppercase">
+        <span aria-hidden="true" className="text-lg font-bold">
           {entry.name}
         </span>
         <span id={descriptionId} className="text-sm text-text-muted">

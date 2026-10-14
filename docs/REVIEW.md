@@ -2,7 +2,7 @@
 
 > **Note:** this review predates the rename to wordgames; "Wordwright" below is the game's original project name.
 
-**Date:** 2026-07-26 · **Scope:** full codebase against [`ACCEPTANCE.md`](./ACCEPTANCE.md) · **Method:** [`prompts/review.md`](../prompts/review.md)
+**Date:** 2026-07-26 · **Scope:** full codebase against [`ACCEPTANCE.md`](./ACCEPTANCE.md)
 
 ---
 

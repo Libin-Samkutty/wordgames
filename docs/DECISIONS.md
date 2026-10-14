@@ -263,7 +263,7 @@ Concretely, allowed seams are exactly: `RandomSource`, the dictionary registry m
 
 **Context.** AI coding assistants and human contributors both produce inconsistent results from short prompts, and re-litigate settled questions mid-build.
 
-**Decision.** Write and stabilise the full document set (README, SPEC, ARCHITECTURE, TASKS, CONTRIBUTING, ACCEPTANCE, DECISIONS, prompts) _before_ any implementation. Requirements carry stable IDs (`FR-x`, `AC-x`) so code, tests, tasks, and reviews can cite them.
+**Decision.** Write and stabilise the full document set (README, SPEC, ARCHITECTURE, TASKS, CONTRIBUTING, ACCEPTANCE, DECISIONS) _before_ any implementation. Requirements carry stable IDs (`FR-x`, `AC-x`) so code, tests, tasks, and reviews can cite them.
 
 **Consequences.**
 
