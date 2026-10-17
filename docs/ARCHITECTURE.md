@@ -385,7 +385,7 @@ Actions
   NEW_PUZZLE       { id, puzzle }            // puzzle = { length, start, end, par }
   RESTORE          { state }                 // a validated saved session (FR-93)
   ADD_LETTER       { letter, now }           // ignored once moves ≥ MAX_MOVES
-  REMOVE_LETTER                              // removes a typed letter; on an empty row, undoes the last rung
+  REMOVE_LETTER                              // removes a typed letter; does nothing on an empty row
   SUBMIT_RUNG      { word, now }             // word already passed validateRung
   UNDO                                       // drops the last rung; moves unchanged
   REVEAL_COMPLETE  { now }                   // unlocks input; end word → solved
@@ -399,7 +399,7 @@ NEW_PUZZLE ─▶ playing ──SUBMIT_RUNG──▶ revealing ──REVEAL_COMP
                  └── GIVE_UP ──▶ gave-up
 ```
 
-`SUBMIT_RUNG` increments `moves` (FR-84). `UNDO` does not, and does nothing with no rungs, during a reveal or after the game ends (FR-83, EC-30). Backspace on an empty input row is `REMOVE_LETTER`, which the reducer turns into an undo, so the rule has one tested home. `GIVE_UP` works only while `playing`, including at the move cap (EC-34).
+`SUBMIT_RUNG` increments `moves` (FR-84). `UNDO` does not, and does nothing with no rungs, during a reveal or after the game ends (FR-83, EC-30). Backspace on an empty input row is `REMOVE_LETTER`, which the reducer ignores. Only `UNDO` removes a rung (ADR-036). `GIVE_UP` works only while `playing`, including at the move cap (EC-34).
 
 **Selectors** (`selectors.ts`). `ladderRows(state)` is the board view-model (start, rungs, input, end; labels `Start`, `Rung n`, `Next rung`, `End`). `resultSummary(state)` returns `moves`, `par`, `ladderLength`, `overPar` (can be negative), `parHit` and a label (`Par!`, `Under par by n!`, `+n`, or null unless solved). `weaverRecord(state)` is the FR-92 statistics record, null while in play. Smaller ones: `isGameOver`, `canUndo`, `moveLimitReached`, `previousWord`, `usedWords`, `overPar`, `isParHit`. There is no numeric score (FR-87).
 

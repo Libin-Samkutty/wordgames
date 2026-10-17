@@ -56,8 +56,7 @@ export function WeaverHelpModal({
           does not.
         </p>
         <p>
-          Stuck? Press Backspace on an empty row, or tap Undo, to remove your last rung. Give up
-          shows one shortest ladder.
+          Stuck? Tap Undo to remove your last rung. Give up shows one shortest ladder.
         </p>
         <p>
           Par is the shortest ladder made of everyday words. Every rung you submit counts as a move,

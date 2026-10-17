@@ -290,11 +290,11 @@ describe('WordWeaver', () => {
       expect(rowNames()).toContain('Rung 2');
     });
 
-    it('Backspace on an empty row undoes the last rung, and re-adding it makes 3 moves (AC-33)', async () => {
+    it('Undo removes the last rung, and re-adding it makes 3 moves (AC-33)', async () => {
       const { user } = await openWeaver();
       await play(user, 'CORD', 'CARD');
 
-      await user.keyboard('{Backspace}');
+      await user.click(screen.getByRole('button', { name: 'Undo' }));
       expect(rowNames()).toEqual(['Start', 'Rung 1', 'Next rung', 'End']);
 
       await play(user, 'CARD', 'WARD', 'WARM');
@@ -313,11 +313,20 @@ describe('WordWeaver', () => {
       expect(rowNames()).toEqual(['Start', 'Next rung', 'End']);
     });
 
-    it('removes a typed letter before it undoes a rung', async () => {
+    it('Backspace on an empty row keeps every rung', async () => {
+      const { user } = await openWeaver();
+      await play(user, 'CORD', 'CARD');
+
+      await user.keyboard('{Backspace}{Backspace}');
+
+      expect(rowNames()).toEqual(['Start', 'Rung 1', 'Rung 2', 'Next rung', 'End']);
+    });
+
+    it('Backspace removes typed letters but never a rung', async () => {
       const { user } = await openWeaver();
       await play(user, 'CORD');
 
-      await user.keyboard('C{Backspace}');
+      await user.keyboard('C{Backspace}{Backspace}');
 
       expect(rowNames()).toContain('Rung 1');
     });
@@ -618,7 +627,7 @@ describe('WordWeaver', () => {
     it('restores the ladder, the move count and the typed letters exactly (AC-40)', async () => {
       const { user } = await openWeaver();
       await play(user, 'CORD', 'CARD');
-      await user.keyboard('{Backspace}'); // undo: 2 moves, 1 rung
+      await user.click(screen.getByRole('button', { name: 'Undo' })); // undo: 2 moves, 1 rung
       await user.keyboard('CA'); // typed inside the debounce window
 
       await leaveAndReturn(user);

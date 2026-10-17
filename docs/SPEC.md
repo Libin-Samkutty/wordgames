@@ -393,7 +393,7 @@ else:
 | EC-27 | Storage unavailable at boot                                                           | Import skipped; the app runs in memory (EC-11)                                                                                           |
 | EC-28 | Two tabs open on different games                                                      | Per-game keys stay independent; shared appearance settings sync through `storage` events (EC-16)                                         |
 | EC-29 | WordWeaver rung repeats the start word or an earlier rung                             | `"Already used"`, shake, no move                                                                                                         |
-| EC-30 | Backspace on an empty row with no rungs                                               | Nothing happens, no toast                                                                                                                |
+| EC-30 | Undo with no rungs, or Backspace on an empty row                                      | Nothing happens, no toast                                                                                                                |
 | EC-31 | Player reaches the end word in more moves than par                                    | Solved; the result shows `+n` over par                                                                                                   |
 | EC-32 | No end word falls inside the par band                                                 | Fallback chain in FR-78                                                                                                                  |
 | EC-33 | Restored WordWeaver session is invalid under the current word lists                   | Discarded silently; a fresh puzzle starts (FR-93)                                                                                        |
@@ -482,7 +482,7 @@ Principles: never a raw stack trace in the UI; never a silent failure; every err
 - **AC-30** When I submit `CORD`, `CARD`, `WARD`, `WARM`, then the game is solved with 4 moves, par 4, the result reads "Par!", and stats record one solve and one par hit.
 - **AC-31** Given my last rung is `CORD`, when I submit `CARE` (two letters changed), then I see `Change exactly one letter`, the row shakes, and the move count is unchanged.
 - **AC-32** Given my last rung is `CORD`, when I submit `COLD`, then I see `Already used` and the move count is unchanged.
-- **AC-33** Given rungs `CORD` and `CARD` (2 moves), when I press Backspace on an empty row, then `CARD` is removed and moves stay at 2. When I submit `CARD` again, moves become 3.
+- **AC-33** Given rungs `CORD` and `CARD` (2 moves), when I tap **Undo**, then `CARD` is removed and moves stay at 2. When I submit `CARD` again, moves become 3.
 - **AC-34** Given end word `WARM`, then rung `CARD` evaluates to exactly `[absent, correct, correct, absent]`, and the start row `COLD` to `[absent, absent, absent, absent]`.
 - **AC-35** Given 2 rungs, when I give up and confirm, then the game ends as `gave-up`, the result shows a ladder with `par` steps where every step changes one letter and every word is in the ladder list, and stats show played +1, gave up +1 and current streak 0.
 - **AC-36** Given `seededRandom` and the real 4- and 5-letter lists, then 200 generated puzzles per length each have start ≠ end, both words in the answer list, par inside `PAR_BAND`, and par equal to an independent reference BFS over the ladder list.
@@ -633,7 +633,7 @@ _5-letter pairs are usually far apart, so drawing E from the in-band candidates 
 ### 15.4 Completion, undo and give up
 
 - **FR-82** The puzzle is solved when the player submits the end word itself as a rung. It must pass FR-80 like any other rung, so the end word can only be entered from one of its neighbours. Status becomes `solved`.
-- **FR-83** **Undo** removes the most recent accepted rung. It is triggered by Backspace on an empty input row or by the **Undo** button. The start word cannot be removed. With no rungs, undo does nothing and shows no toast (EC-30). Undo is blocked during a reveal and after the game ends. An undone word may be used again later.
+- **FR-83** **Undo** removes the most recent accepted rung. It is triggered only by the **Undo** button. Backspace on an empty input row does nothing and never removes a rung (ADR-036). The start word cannot be removed. With no rungs, undo does nothing and shows no toast (EC-30). Undo is blocked during a reveal and after the game ends. An undone word may be used again later.
 - **FR-84** Counting:
   - `moves` = every accepted rung submission in the game, **including rungs later undone**. Undo itself is not a move.
   - `ladderLength` = number of rungs in the finished ladder, including the end word.

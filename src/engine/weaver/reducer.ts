@@ -103,8 +103,8 @@ export function weaverReducer(state: WeaverState, action: WeaverAction): WeaverS
         return { ...state, currentInput: state.currentInput.slice(0, -1) };
       }
 
-      // Backspace on an empty row undoes the last rung (FR-83).
-      return undo(state);
+      // Backspace on an empty row does nothing. Only UNDO removes a rung (FR-83).
+      return state;
     }
 
     case 'SUBMIT_RUNG': {
