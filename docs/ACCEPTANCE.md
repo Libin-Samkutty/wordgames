@@ -8,7 +8,7 @@ Legend — **A** = covered by an automated test · **M** = manual verification �
 
 Sections 1–13 cover Wordwright V1. Sections 14–17, and the rows marked Suite V1 in §6, §8 and §10, cover Suite V1. They must all be ticked with evidence before Suite V1 is released (T-73).
 
-Sections 18–23, and the rows marked R2 to R7 in §6, §8, §9 and §10, cover the six later game releases. Each release's rows must be ticked with evidence before that release ships: R2 WordStack (T-79), R3 WordRange (T-83), R4 WordCode (T-87), R5 WordShuffle (T-91), R6 WordDodge (T-95) and R7 WordHunt (T-99).
+Sections 18–24, and the rows marked R2 to R8 in §6, §8, §9 and §10, cover the seven later game releases. Each release's rows must be ticked with evidence before that release ships: R2 WordStack (T-79), R3 WordRange (T-83), R4 WordCode (T-87), R5 WordShuffle (T-91), R6 WordDodge (T-95), R7 WordHunt (T-99) and R8 WordHang (T-103).
 
 ---
 
@@ -476,6 +476,32 @@ Releases R2–R5: each `EC-39 … EC-49` needs the same evidence before its rele
 | 23.19 | WordHunt engine has 100% branch coverage and passes the engine purity lint rules                                                                                                | T    | NFR-19              | ✅  |
 | 23.20 | axe reports zero serious or critical issues on WordHunt in both themes and both palettes                                                                                        | T    | AC-57               | ✅  |
 
+## 24. WordHang (R8)
+
+| #     | Criterion                                                                                                                                                                                       | Type | Ref                 | ✓   |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ------------------- | --- |
+| 24.1  | Home shows the WordHang card in catalogue order; `#/hang` opens it with the title `WordHang · wordgames` and the `<h1>` "WordHang"; before R8 ships, `#/hang` goes Home                         | A    | FR-97, FR-98, AC-45 | ✅  |
+| 24.2  | Header order: **All games**, "WordHang", **How to play**, **New game**, the length selector, **Statistics**, then settings                                                                      | A    | FR-101, US-41       | ✅  |
+| 24.3  | Word length is 4, 5 or 6, default 5, with its own preference, and every game allows 6 misses                                                                                                    | A    | FR-167              | ✅  |
+| 24.4  | The secret is drawn from the answer list with its own per-length ring buffer; on the shipped lists every answer is 4 to 6 letters with at least two different letters                           | A    | FR-168              | ✅  |
+| 24.5  | A letter is guessed by one key press, on the keyboard or on screen, with no Enter and no toast; the on-screen keyboard has no Enter or Backspace                                                | A    | FR-169              | ✅  |
+| 24.6  | A letter already tried is ignored with no toast and no cost, and its key is disabled                                                                                                            | A    | FR-169              | ✅  |
+| 24.7  | A letter in the word reveals every place it appears, and a repeated letter is revealed at once                                                                                                  | A    | FR-170              | ✅  |
+| 24.8  | A letter not in the word is a miss that draws the next part of the figure; the sixth miss loses; the letter that completes the word wins even after five misses                                 | A    | FR-170, AC-60       | ✅  |
+| 24.9  | Each tried key shows whether its letter was in the word, with a tick or a cross as well as its colour, and its name says so                                                                     | A    | FR-170, A11Y-27     | ✅  |
+| 24.10 | The misses show as text, the wrong letters are listed, and the figure is hidden from assistive technology                                                                                       | A    | FR-171, A11Y-27     | ✅  |
+| 24.11 | After a loss the whole word shows, with the letters never found in a different style                                                                                                            | A    | FR-171              | ✅  |
+| 24.12 | Result panel shows won or lost, the misses, the time for a win, the word, **Play again** and **Change length**                                                                                  | A    | FR-172              | ✅  |
+| 24.13 | Leaving and returning restores the letters tried, the misses and the figure; a game whose status does not match its letters, whose secret has left the list, or of another length, is discarded | A    | FR-173              | ✅  |
+| 24.14 | Restarting or switching length after a letter asks to confirm, and an abandoned game is not recorded                                                                                            | A    | FR-173              | ✅  |
+| 24.15 | Statistics overall and per length, including wins by misses, average misses and wins with no miss, match a hand-computed expectation; a loss ends the streak                                    | A    | FR-174              | ✅  |
+| 24.16 | **How to play** explains the letters, the six misses, the figure, repeats and the keys with an example for the length; it never opens by itself                                                 | A    | FR-175              | ✅  |
+| 24.17 | Each letter and the end of a game are announced as in A11Y-27                                                                                                                                   | A    | A11Y-27             | ✅  |
+| 24.18 | Enter on the result panel starts a new game; the letter that ended the game does not                                                                                                            | A    | FR-100, AC-55       | ✅  |
+| 24.19 | WordHang data lives only under `wordgames:v1:hang:*`; resetting its statistics leaves every other game's statistics unchanged                                                                   | A    | FR-99, AC-56        | ✅  |
+| 24.20 | WordHang engine has 100% branch coverage and passes the engine purity lint rules                                                                                                                | T    | NFR-19              | ✅  |
+| 24.21 | axe reports zero serious or critical issues on WordHang in both themes and both palettes                                                                                                        | T    | AC-57               | ✅  |
+
 ---
 
 ## Evidence Summary (2026-07-26)
@@ -806,6 +832,30 @@ An eighth game, find every word hiding in six letters (ADR-040). Rows 23.1 to 23
 
 - Nothing outside this environment: the deployed site was not touched.
 
+### Addendum — R8 WordHang (T-103, 2026-10-18)
+
+A ninth game, Hangman (ADR-041). Rows 24.1 to 24.21 describe it.
+
+**Behaviour**
+
+- A letter is applied the moment it is pressed. There is no word to look up, so the game needs nothing from the dictionary but its answer list.
+- On the shipped lists, a player who knows the whole answer list wins more than half of the games they play at every length, and every sampled 6-letter game. A player who tries letters in a fixed English frequency order and ignores what is revealed wins about one game in ten (8% to 10% over the 700 answers at each length).
+- The misses and the revealed letters are worked out from the secret and the letters tried, and are not saved.
+
+**Tests**
+
+- `src/engine/hang`: **100%** branch coverage. Unit and integration: **104 files, 2,490 tests, all passing.**
+- `e2e/hang.spec.ts`: **60 passed**, on desktop and mobile. It covers a win, a loss, a reload, axe in both themes and both palettes, and layouts from 320 px to 2560 px and 740 x 360 landscape with five misses.
+- The other specs (WordCode, WordRange, WordShuffle, WordStack, WordWeaver, WordDodge, WordHunt, navigation, a11y, responsive and suite): **530 passed, 1 skipped, 1 failed** after the Home card count went to 9. The failure is the WordStack timing test (a Quad guess under 16 ms at p95), which fails at times on this machine with no change to that game. It did the same on the previous master. It is a timing check, and it is left as is.
+
+**Bundle**
+
+- The WordHang view is its own chunk of **5.8 KB gzipped**, and no lists chunk changed. The entry bundle is **81.7 KB gzipped**, up from 81.0 KB, against a limit of 200 KB.
+
+**Not verified**
+
+- Nothing outside this environment: the deployed site was not touched.
+
 ## Sign-off
 
 | Gate                                            | Owner | Date | Notes |
@@ -825,5 +875,6 @@ An eighth game, find every word hiding in six letters (ADR-040). Rows 23.1 to 23
 | R5 WordShuffle (§21 and R5 rows)                |       |      |       |
 | R6 WordDodge (§22 and R6 rows)                  |       |      |       |
 | R7 WordHunt (§23 and R7 rows)                   |       |      |       |
+| R8 WordHang (§24 and R8 rows)                   |       |      |       |
 
 **V1 is done when every box above is ticked. Not before, and nothing more.**

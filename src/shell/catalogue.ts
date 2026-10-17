@@ -123,4 +123,11 @@ export const GAMES: readonly CatalogueEntry[] = [
     route: '#/hunt',
     load: () => import('@/components/hunt/HuntView').then((m) => m.HuntView),
   }),
+  defineGame({
+    id: 'hang',
+    name: 'WordHang',
+    description: 'Guess the word one letter at a time before the figure is drawn.',
+    route: '#/hang',
+    load: () => import('@/components/hang/HangView').then((m) => m.HangView),
+  }),
 ];

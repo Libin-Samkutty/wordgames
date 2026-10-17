@@ -1,6 +1,6 @@
 # wordgames — Architecture
 
-**Scope:** Suite V1 implementation design: the shell, Wordwright and WordWeaver, plus the six games in releases R2–R7 (WordStack, WordRange, WordCode, WordShuffle, WordDodge, WordHunt). Companion to [`SPEC.md`](./SPEC.md) (what) and [`DECISIONS.md`](./DECISIONS.md) (why). The project was previously named Wordwright; that name now means the Wordle-style game. Sections marked _planned_ describe the suite work in TASKS Phases 11–18 and are not built yet.
+**Scope:** Suite V1 implementation design: the shell, Wordwright and WordWeaver, plus the seven games in releases R2–R8 (WordStack, WordRange, WordCode, WordShuffle, WordDodge, WordHunt, WordHang). Companion to [`SPEC.md`](./SPEC.md) (what) and [`DECISIONS.md`](./DECISIONS.md) (why). The project was previously named Wordwright; that name now means the Wordle-style game. Sections marked _planned_ describe the suite work in TASKS Phases 11–18 and are not built yet.
 
 ---
 
@@ -42,6 +42,7 @@ Suite V1 (T-50 … T-73) ships Home, Wordwright and WordWeaver. Four more games 
 | R5      | WordShuffle | `#/shuffle` | Unscramble the letters; any valid anagram wins               | §20  | 032 |
 | R6      | WordDodge   | `#/dodge`   | A Wordle that never picks a word and keeps the most possible | §21  | 039 |
 | R7      | WordHunt    | `#/hunt`    | Find every common word hiding in six letters                 | §22  | 040 |
+| R8      | WordHang    | `#/hang`    | Hangman: guess the word one letter at a time, six misses     | §23  | 041 |
 
 There are no feature flags. A game enters the catalogue in the release that ships it, and until then its route goes Home (FR-97).
 
@@ -50,10 +51,10 @@ Each game has its own engine, reducer, providers, statistics and storage keys. T
 ```
           ┌──────────── Shell (catalogue, routes, header, settings, toasts) ────────────┐
           │                                                                              │
- #/ ──▶ HomeView   #/wordwright   #/weaver      #/stack      #/range      #/code      #/shuffle    #/dodge    #/hunt
+ #/ ──▶ HomeView   #/wordwright   #/weaver      #/stack      #/range      #/code      #/shuffle    #/dodge    #/hunt    #/hang
                         │             │             │            │            │            │
                    engine/       engine/       engine/      engine/      engine/      engine/
-                   (root)        weaver/       stack/       range/       code/        shuffle/     dodge/     hunt/
+                   (root)        weaver/       stack/       range/       code/        shuffle/     dodge/     hunt/     hang/
                         └─────────────┴──── dictionary/ · storage/ ──────┴────────────┘
 ```
 
@@ -135,11 +136,16 @@ wordgames/
 │   │   │   ├── adversary.ts       # chooseReply() — largest group of candidates
 │   │   │   ├── reducer.ts  selectors.ts    # restoreGame(), dodgeRows() …
 │   │   │   └── index.ts  __tests__/
-│   │   └── hunt/                  # WordHunt engine (§3.12)
-│   │       ├── types.ts  constants.ts      # HuntState, MIN_REQUIRED = 8 …
-│   │       ├── puzzle.ts          # requiredFor(), buildPool(), createPuzzle()
-│   │       ├── validate.ts        # validateWord() — FR-161 order
-│   │       ├── reducer.ts  selectors.ts
+│   │   ├── hunt/                  # WordHunt engine (§3.12)
+│   │   │   ├── types.ts  constants.ts      # HuntState, MIN_REQUIRED = 8 …
+│   │   │   ├── puzzle.ts          # requiredFor(), buildPool(), createPuzzle()
+│   │   │   ├── validate.ts        # validateWord() — FR-161 order
+│   │   │   ├── reducer.ts  selectors.ts
+│   │   │   └── index.ts  __tests__/
+│   │   └── hang/                  # WordHang engine (§3.13)
+│   │       ├── types.ts  constants.ts      # HangState, MAX_MISSES = 6
+│   │       ├── reducer.ts         # GUESS_LETTER; win is checked before loss
+│   │       ├── selectors.ts       # misses, maskedWord, letterStates, hangRecord
 │   │       └── index.ts  __tests__/
 │   ├── dictionary/
 │   │   ├── data/
@@ -183,7 +189,8 @@ wordgames/
 │   │   ├── code/                  # CodeProvider, CodeStatsProvider, codeContexts (useCode, useCodeStats)
 │   │   ├── shuffle/               # ShuffleProvider, ShuffleStatsProvider, shuffleContexts (useShuffle, useShuffleStats)
 │   │   ├── dodge/                 # DodgeProvider, DodgeStatsProvider, dodgeContexts (useDodge, useDodgeStats)
-│   │   └── hunt/                  # HuntProvider, HuntStatsProvider, huntContexts (useHunt, useHuntStats)
+│   │   ├── hunt/                  # HuntProvider, HuntStatsProvider, huntContexts (useHunt, useHuntStats)
+│   │   └── hang/                  # HangProvider, HangStatsProvider, hangContexts (useHang, useHangStats)
 │   ├── shell/                     # suite shell (§1.1, §6.4)
 │   │   ├── catalogue.ts           # GAMES: ordered, read-only, lazy Views; defineGame, GameLoadError (ADR-028)
 │   │   ├── GameFrame.tsx          # loads one catalogue game: Suspense fallback, load-failure panel (EC-50)
@@ -217,6 +224,8 @@ wordgames/
 │   │   ├── dodge/     DodgeView (shared Board and Keyboard, words-left count, Give up),
 │   │   │              DodgeResultPanel, help and stats dialogs
 │   │   ├── hunt/      HuntView, HuntBoard (slots, word row, tray), huntLabels,
+│   │   │              result, help and stats dialogs
+│   │   ├── hang/      HangView, HangFigure (SVG), HangWord, HangKeyboard (letters only), hangLabels,
 │   │   │              result, help and stats dialogs
 │   │   └── index.ts
 │   ├── hooks/
@@ -707,6 +716,36 @@ type HuntAction =
 
 ---
 
+### 3.13 WordHang engine
+
+`src/engine/hang/`, T-100 to T-103. Rules in SPEC §23; rationale in ADR-041.
+
+```ts
+interface HangState {
+  readonly id: string;
+  readonly wordLength: WordLength; // 4 | 5 | 6, default 5
+  readonly secret: string;
+  readonly tried: string; // every letter guessed, in order, each once
+  readonly status: 'playing' | 'won' | 'lost';
+  readonly startedAt: number | null;
+  readonly finishedAt: number | null;
+}
+
+type HangAction =
+  | START         { id, wordLength, secret }
+  | RESTORE       { state }
+  | GUESS_LETTER  { letter, now }
+```
+
+- **Derived, not stored.** The misses, the revealed letters and the key states are selectors over `secret` and `tried`: `missedLetters`, `misses`, `missesLeft`, `maskedWord`, `isSolved`, `occurrences` and `letterStates` (each tried letter as `correct` or `absent`).
+- **Reducer.** `GUESS_LETTER` ignores a finished game, anything that is not A to Z, and a letter already tried, returning the same state. Otherwise it adds the letter, starts the clock on the first, and ends the game: `won` if every letter of the secret is tried, else `lost` at `MAX_MISSES = 6`. A win is checked first. There is no validation action, because a letter needs no dictionary.
+- **Record.** `hangRecord` (the FR-174 stats record) has the misses and the time.
+- **Provider.** `HangProvider` loads one dictionary for the selected length, draws the secret with `pickAnswer` and a ring buffer per length, and restores a saved game of the current length whose secret is still an answer. `guessLetter` works out the next state to word the announcement, so a letter that is ignored is not announced. Storage checks that a saved game's status is the one its letters give.
+- **View.** `HangFigure` is an SVG of six parts, hidden from assistive technology. `HangWord` is one labelled group of tiles. `HangKeyboard` reuses the shared QWERTY layout without Enter and Backspace. `HangView` replaces the keyboard with `HangResultPanel` when the game ends.
+- **Reuses** `pickAnswer`, the `KEYBOARD_ROWS` layout, `usePhysicalKeyboard` (with Enter and Backspace ignored) and `useEnterToContinue`.
+
+---
+
 ## 4. Component Hierarchy
 
 The suite tree as built (`src/App.tsx`, `src/shell/AppShell.tsx`). §4.1 has the reasoning and the game-by-game table.
@@ -771,6 +810,7 @@ Each `View` module wraps its own provider pair around its view. The shell never 
 | `#/shuffle`    | `ShuffleStatsProvider` › `ShuffleProvider` (reducer, dictionary, anagram index, length pref) › `ShuffleView`            |
 | `#/dodge`      | `DodgeStatsProvider` › `DodgeProvider` (reducer, dictionary, replay on restore, length pref) › `DodgeView`              |
 | `#/hunt`       | `HuntStatsProvider` › `HuntProvider` (reducer, three dictionaries, word sources and pool) › `HuntView`                  |
+| `#/hang`       | `HangStatsProvider` › `HangProvider` (reducer, dictionary, length pref) › `HangView`                                    |
 
 - The header `<h1>` and page title come from the catalogue entry, so they render before the chunk resolves. Focus moves to the `<h1>` on a route change as before (A11Y-15).
 - A game that has not shipped has no catalogue entry, so its route goes Home (FR-97, EC-22).
@@ -845,6 +885,9 @@ Releases R2–R5 add one set of slices per game. The persisted ones map to the k
 | WordHunt word sources   | `HuntProvider` (cached, per session)   | No (built from bundled lists)                     | per length: common set + anagram index; seed pool       |
 | WordHunt meta           | `HuntProvider`                         | Yes, immediate                                    | `{ recentAnswers }`, one buffer; no prefs               |
 | WordHunt statistics     | `HuntStatsProvider` (`useReducer`)     | Yes, immediate                                    | one set + last 50 (FR-165)                              |
+| WordHang game           | `HangProvider` (`useReducer`)          | Yes, debounced 150 ms + page hide + unmount flush | `HangState`: secret and letters tried (§3.13)           |
+| WordHang prefs, meta    | `HangProvider`                         | Yes, immediate                                    | `{ defaultWordLength }`; `{ recentAnswers }` per length |
+| WordHang statistics     | `HangStatsProvider` (`useReducer`)     | Yes, immediate                                    | overall + per length + last 50 (FR-174)                 |
 
 Each game's slices are independent of every other game's. Nothing in one game's tree reads another game's state (FR-99, AC-56).
 
@@ -1045,6 +1088,7 @@ Only the key names are shared. Each game keeps its own validators, defaults and 
 | WordShuffle (`shuffle`) | `{ defaultWordLength }`, default 5       | `{ recentAnswers: { 4: [], 5: [], 6: [] } }` | FR-146 / `ShuffleState` (FR-147)         |
 | WordDodge (`dodge`)     | `{ defaultWordLength }`, default 5       | not used: no secret is drawn                 | FR-155 / `DodgeSession` (FR-153)         |
 | WordHunt (`hunt`)       | not used: one fixed size                 | `{ recentAnswers: string[] }`, seeds         | FR-165 / `HuntState` (FR-164)            |
+| WordHang (`hang`)       | `{ defaultWordLength }`, default 5       | `{ recentAnswers: { 4: [], 5: [], 6: [] } }` | FR-174 / `HangState` (FR-173)            |
 
 - Each game's ring buffer lives in its own `meta`, so playing one game never changes another game's answer rotation.
 - Restore rules follow FR-32 and FR-33: a saved session is discarded silently if any answer, secret or target has left the answer list (FR-112, FR-125).
@@ -1130,6 +1174,7 @@ The four new games add no loader, no registry entry and no data chunk (NFR-18). 
 | WordShuffle | `lists-4`, `-5`, `-6` | the target (FR-138)                                          | validation and the scramble check (FR-138, FR-140) | builds the anagram index (FR-141, FR-144) |
 | WordDodge   | `lists-4`, `-5`, `-6` | the candidates (FR-149)                                      | validation (FR-151)                                | not used                                  |
 | WordHunt    | `lists-4`, `-5`, `-6` | with the shuffle list, the required words and seeds (FR-159) | validation (FR-161)                                | builds the anagram index (FR-159)         |
+| WordHang    | `lists-4`, `-5`, `-6` | the secret (FR-168)                                          | not used                                           | not used                                  |
 
 - `Dictionary` holds `guesses` only as a `Set` today (`src/dictionary/types.ts`). WordRange and WordShuffle need the sorted array as well, so `Dictionary` gains a read-only `guessList` field that points at the module's existing array. Nothing is copied.
 - The lists are already sorted, uppercase and unique, and `answers ⊆ guesses` (§8.3). WordRange relies on this: string order is list order, so bounds compare as strings and heat is a difference of indices (ADR-030).

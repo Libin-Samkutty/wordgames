@@ -20,7 +20,7 @@ function toPosix(path: string): string {
 }
 
 /** Engine folders beyond the root: one per game (ARCHITECTURE §2). Add each as it lands. */
-const GAME_ENGINE_DIRS = ['weaver', 'stack', 'range', 'code', 'shuffle', 'dodge', 'hunt'];
+const GAME_ENGINE_DIRS = ['weaver', 'stack', 'range', 'code', 'shuffle', 'dodge', 'hunt', 'hang'];
 
 function engineSourceFiles(): readonly string[] {
   return [ENGINE_DIR, ...GAME_ENGINE_DIRS.map((dir) => join(ENGINE_DIR, dir))].flatMap((dir) =>
