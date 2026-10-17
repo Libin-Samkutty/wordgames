@@ -42,6 +42,7 @@ The project was previously named Wordwright. ADR-001 to ADR-020 were written und
 | [032](#adr-032--wordshuffle-untimed-any-valid-anagram-wins)                                    | WordShuffle: untimed, any valid anagram wins         | Accepted               |
 | [033](#adr-033--reset-actions-live-in-each-games-statistics-dialog)                            | Reset actions live in each game's Statistics dialog  | Accepted (refines 024) |
 | [034](#adr-034--game-controls-reach-the-shell-header-through-a-portal-slot)                    | Game controls reach the header through a portal slot | Accepted (refines 021) |
+| [036](#adr-036--wordweaver-backspace-no-longer-undoes)                                         | WordWeaver: Backspace no longer undoes               | Accepted (refines 026) |
 
 ---
 
@@ -782,3 +783,22 @@ This is not a plugin system. There is no runtime registration and no shared inte
 - Stack and Weaver record time from the reducer's `finishedAt`, which a reload mid-reveal sets to the reload time. That solve can be a few seconds long, and is clamped by `clampDuration` like WordWright's.
 
 **Alternatives.** (a) Store a `schemaVersion` in each blob and add migrations. Rejected: a bigger change that the existing path has never exercised, and the global version would bump for every game at once. (b) Reset statistics when a field is missing. Rejected: it throws away the player's history for a cosmetic addition.
+
+---
+
+## ADR-036 — WordWeaver: Backspace no longer undoes
+
+**Context.** ADR-026 let Backspace on an empty row undo the last rung. Undo costs a move that is never refunded, and a player clearing a word often presses Backspace more times than there are letters. The extra presses removed a rung by accident and left the move on the counter.
+
+**Decision.**
+
+- Backspace removes typed letters only. On an empty row it does nothing.
+- The **Undo** button is the only way to remove a rung.
+- The move rules are unchanged: `moves` still counts every accepted rung, including undone ones (FR-84, AC-33).
+
+**Consequences.**
+
+- Holding or tapping Backspace can no longer cost a rung or leave a hidden move on the counter.
+- Undo from a physical keyboard now needs the button. The help dialog says so.
+
+**Alternatives.** (a) Keep the behaviour. Rejected: it caused the accidental undo. (b) Undo on Backspace, but not on key repeat. Rejected: a separate, deliberate press still undoes by accident, and the rule is harder to explain.

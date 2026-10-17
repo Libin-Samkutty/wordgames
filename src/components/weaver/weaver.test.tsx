@@ -294,7 +294,7 @@ describe('WeaverHelpModal (T-70: FR-95, US-31, AC-42, A11Y-13)', () => {
     expect(dialog).toHaveTextContent(/exactly one letter/);
     expect(dialog).toHaveTextContent(/5 letter word/);
     expect(dialog).toHaveTextContent(/green/);
-    expect(dialog).toHaveTextContent(/Backspace on an empty row/);
+    expect(dialog).toHaveTextContent(/Tap Undo/);
     expect(dialog).toHaveTextContent(/Give up/);
     expect(dialog).toHaveTextContent(/Par is the shortest ladder/);
   });

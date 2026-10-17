@@ -76,7 +76,7 @@ export interface WeaverContextValue {
   /** Latest polite announcement for the live region (A11Y-17). */
   readonly announcement: WeaverAnnouncement;
   readonly addLetter: (letter: string) => void;
-  /** Removes a typed letter; on an empty row, undoes the last rung (FR-83). */
+  /** Removes the last typed letter. It does nothing on an empty row (FR-83). */
   readonly removeLetter: () => void;
   /** Returns false when the rung was rejected, so the view can shake. */
   readonly submitRung: () => boolean;

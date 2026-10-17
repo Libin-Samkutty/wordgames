@@ -149,10 +149,10 @@ describe('REMOVE_LETTER', () => {
     expect(state.currentInput).toBe('CO');
   });
 
-  it('on an empty row undoes the last rung (FR-83)', () => {
-    const state = run(play(fresh(), 'CORD', 'CARD'), { type: 'REMOVE_LETTER' });
+  it('on an empty row leaves the rungs alone and returns the same state (FR-83)', () => {
+    const state = play(fresh(), 'CORD', 'CARD');
 
-    expect(state.rungs.map((r) => r.word)).toEqual(['CORD']);
+    expect(weaverReducer(state, { type: 'REMOVE_LETTER' })).toBe(state);
   });
 
   it('on an empty row with no rungs does nothing at all (EC-30)', () => {
@@ -161,7 +161,7 @@ describe('REMOVE_LETTER', () => {
     expect(weaverReducer(state, { type: 'REMOVE_LETTER' })).toBe(state);
   });
 
-  it('removes a letter before it undoes a rung', () => {
+  it('removes a typed letter and keeps the rungs', () => {
     const state = run(play(fresh(), 'CORD'), ...type('CA'), { type: 'REMOVE_LETTER' });
 
     expect(state.currentInput).toBe('C');
