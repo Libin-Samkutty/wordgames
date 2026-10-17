@@ -134,6 +134,7 @@ wordgames/
 │   │   ├── dodge/                 # WordDodge engine (§3.11)
 │   │   │   ├── types.ts  constants.ts      # DodgeState, distribution rows …
 │   │   │   ├── adversary.ts       # chooseReply() — largest group of candidates
+│   │   │   ├── pool.ts            # candidatePool() — answers + shuffle list
 │   │   │   ├── reducer.ts  selectors.ts    # restoreGame(), dodgeRows() …
 │   │   │   └── index.ts  __tests__/
 │   │   ├── hunt/                  # WordHunt engine (§3.12)
@@ -654,7 +655,7 @@ interface DodgeSession {
 }
 
 interface DodgeState extends DodgeSession {
-  readonly candidates: readonly string[]; // every answer still possible, in list order
+  readonly candidates: readonly string[]; // every word still possible, in alphabetical order
 }
 
 type DodgeAction =
@@ -669,9 +670,9 @@ type DodgeAction =
 
 - **The adversary.** `chooseReply(guess, candidates)` in `adversary.ts` groups the candidates by `evaluateGuess(guess, c)`, keeps the largest group, and returns its colours and words. A tie goes to fewer hits (two for green, one for yellow), then to the smaller pattern key (`c`, `p`, `a` per letter). It throws on an empty list, which no game reaches.
 - **Reducer.** `SUBMIT_GUESS` appends the guess with the chosen colours, narrows `candidates` and goes to `revealing`, like Wordwright (§3.2). `REVEAL_COMPLETE` makes the game `won` if the last reply was all green, and otherwise `playing` again. `GIVE_UP` needs a game in play with a guess made.
-- **Save and restore.** `dodgeSession(state)` drops the candidates. `restoreGame(session, answers)` replays the guesses against the answers and returns null if any reply differs, so the provider starts a new game (FR-153).
+- **Save and restore.** `dodgeSession(state)` drops the candidates. `restoreGame(session, pool)` replays the guesses against the same pool and returns null if any reply differs, so the provider starts a new game (FR-153).
 - **Selectors.** `dodgeRows` (a row per guess plus the row being typed, as `RowView[]` for the shared `Board`), `wordsLeft`, `canGiveUp`, `revealedWord`, `isGameOver`, `dodgeRecord` (the FR-155 stats record), and `distributionIndex` / `distributionLabels` for the grouped chart.
-- **Provider.** `DodgeProvider` loads the dictionary for the selected length, starts a game from its `answers`, restores a saved game of the current length that replays, and saves everything but a game that is revealing. It announces a guess in `completeReveal`, once the flip is done. There is no ring buffer and no meta repository.
+- **Provider.** `DodgeProvider` loads the dictionary for the selected length, starts a game from `candidatePool(answers, shuffle)` (ADR-042), restores a saved game of the current length that replays, and saves everything but a game that is revealing. It announces a guess in `completeReveal`, once the flip is done. There is no ring buffer and no meta repository.
 - **View.** `DodgeView` reuses `Board`, `Keyboard`, `useRevealTimeline` and `usePhysicalKeyboard`. The board sits in a scrollable, keyboard-reachable group that scrolls to its newest row. Above it are the words-left count and **Give up**.
 - **Reuses** `evaluateGuess`, `validateGuess`, `deriveKeyStates`, `RowView` and `WordLength`.
 
@@ -1172,7 +1173,7 @@ The four new games add no loader, no registry entry and no data chunk (NFR-18). 
 | WordRange   | `lists-5`             | the secret (FR-115)                                          | validation (FR-117)                                | list distance for heat (FR-120)           |
 | WordCode    | `lists-4`, `-5`, `-6` | the secret (FR-127)                                          | validation (FR-128)                                | not used                                  |
 | WordShuffle | `lists-4`, `-5`, `-6` | the target (FR-138)                                          | validation and the scramble check (FR-138, FR-140) | builds the anagram index (FR-141, FR-144) |
-| WordDodge   | `lists-4`, `-5`, `-6` | the candidates (FR-149)                                      | validation (FR-151)                                | not used                                  |
+| WordDodge   | `lists-4`, `-5`, `-6` | with the shuffle list, the candidates (FR-149)               | validation (FR-151)                                | not used                                  |
 | WordHunt    | `lists-4`, `-5`, `-6` | with the shuffle list, the required words and seeds (FR-159) | validation (FR-161)                                | builds the anagram index (FR-159)         |
 | WordHang    | `lists-4`, `-5`, `-6` | the secret (FR-168)                                          | not used                                           | not used                                  |
 

@@ -429,27 +429,28 @@ Releases R2–R5: each `EC-39 … EC-49` needs the same evidence before its rele
 
 ## 22. WordDodge (R6)
 
-| #     | Criterion                                                                                                                                                                    | Type | Ref                  | ✓   |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------------- | --- |
-| 22.1  | Home shows the WordDodge card in catalogue order; `#/dodge` opens it with the title `WordDodge · wordgames` and the `<h1>` "WordDodge"; before R6 ships, `#/dodge` goes Home | A    | FR-97, FR-98, AC-45  | ✅  |
-| 22.2  | Header order: **All games**, "WordDodge", **How to play**, **New game**, the length selector, **Statistics**, then settings                                                  | A    | FR-101, US-39        | ✅  |
-| 22.3  | Word length is 4, 5 or 6, default 5, with its own preference, and there is no guess limit                                                                                    | A    | FR-148               | ✅  |
-| 22.4  | Every reply is the colours of the largest group of remaining words; a tie goes to fewer hits, then the smaller pattern; repeated letters follow the Wordle scorer            | A    | FR-149, AC-58        | ✅  |
-| 22.5  | The game is won only when the guess is the last word left; on the shipped lists a player who guesses well wins within 12 guesses at every length                             | A    | FR-149, AC-58        | ✅  |
-| 22.6  | The board has a row per guess plus the row being typed, grows without a limit, keeps the newest row in view, and shows the words left as text                                | A    | FR-150               | ✅  |
-| 22.7  | Input, validation and rejection toasts follow Wordwright, a rejected guess costs nothing, and a repeated guess is allowed                                                    | A    | FR-151               | ✅  |
-| 22.8  | The keyboard colours follow the replies given, and the result stays hidden until the reveal ends                                                                             | A    | FR-151, FR-52, FR-53 | ✅  |
-| 22.9  | **Give up** is disabled before the first guess, asks to confirm, shows the first word still possible and how many others were, counts as a loss and ends the streak          | A    | FR-152               | ✅  |
-| 22.10 | Leaving and returning restores the guesses, the row being typed and the words left, rebuilt by replay; a game that no longer replays, or of another length, is discarded     | A    | FR-153               | ✅  |
-| 22.11 | Restarting or switching length after a guess asks to confirm, and an abandoned game is not recorded                                                                          | A    | FR-153               | ✅  |
-| 22.12 | Result panel shows found or gave up, the word, guesses, time, **Play again** and **Change length**                                                                           | A    | FR-154               | ✅  |
-| 22.13 | Statistics overall and per length, including average and fewest guesses and the grouped distribution, match a hand-computed expectation; a give up ends the streak           | A    | FR-155               | ✅  |
-| 22.14 | **How to play** explains the adversary, the colours, the count and Give up with an example for the length; it never opens by itself                                          | A    | FR-156               | ✅  |
-| 22.15 | Each guess is announced after its reveal with the colours in words and the words left, and the end of a game is announced                                                    | A    | A11Y-25              | ✅  |
-| 22.16 | Enter on the result panel starts a new game; the Enter that submitted the winning guess does not                                                                             | A    | FR-100, AC-55        | ✅  |
-| 22.17 | WordDodge data lives only under `wordgames:v1:dodge:*`; resetting its statistics leaves every other game's statistics unchanged                                              | A    | FR-99, AC-56         | ✅  |
-| 22.18 | WordDodge engine has 100% branch coverage and passes the engine purity lint rules                                                                                            | T    | NFR-19               | ✅  |
-| 22.19 | axe reports zero serious or critical issues on WordDodge in both themes and both palettes                                                                                    | T    | AC-57                | ✅  |
+| #     | Criterion                                                                                                                                                                                            | Type | Ref                     | ✓   |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ----------------------- | --- |
+| 22.1  | Home shows the WordDodge card in catalogue order; `#/dodge` opens it with the title `WordDodge · wordgames` and the `<h1>` "WordDodge"; before R6 ships, `#/dodge` goes Home                         | A    | FR-97, FR-98, AC-45     | ✅  |
+| 22.2  | Header order: **All games**, "WordDodge", **How to play**, **New game**, the length selector, **Statistics**, then settings                                                                          | A    | FR-101, US-39           | ✅  |
+| 22.3  | Word length is 4, 5 or 6, default 5, with its own preference, and there is no guess limit                                                                                                            | A    | FR-148                  | ✅  |
+| 22.4  | Every reply is the colours of the largest group of remaining words; a tie goes to fewer hits, then the smaller pattern; repeated letters follow the Wordle scorer                                    | A    | FR-149, AC-58           | ✅  |
+| 22.5  | The game is won only when the guess is the last word left; on the shipped lists a player who guesses well wins within 12 guesses at every length                                                     | A    | FR-149, AC-58           | ✅  |
+| 22.6  | The board has a row per guess plus the row being typed, grows without a limit, keeps the newest row in view, and shows the words left as text                                                        | A    | FR-150                  | ✅  |
+| 22.7  | Input, validation and rejection toasts follow Wordwright, a rejected guess costs nothing, and a repeated guess is allowed                                                                            | A    | FR-151                  | ✅  |
+| 22.8  | The keyboard colours follow the replies given, and the result stays hidden until the reveal ends                                                                                                     | A    | FR-151, FR-52, FR-53    | ✅  |
+| 22.9  | **Give up** is disabled before the first guess, asks to confirm, shows the first word still possible and how many others were, counts as a loss and ends the streak                                  | A    | FR-152                  | ✅  |
+| 22.10 | Leaving and returning restores the guesses, the row being typed and the words left, rebuilt by replay; a game that no longer replays, or of another length, is discarded                             | A    | FR-153                  | ✅  |
+| 22.11 | Restarting or switching length after a guess asks to confirm, and an abandoned game is not recorded                                                                                                  | A    | FR-153                  | ✅  |
+| 22.12 | Result panel shows found or gave up, the word, guesses, time, **Play again** and **Change length**                                                                                                   | A    | FR-154                  | ✅  |
+| 22.13 | Statistics overall and per length, including average and fewest guesses and the grouped distribution, match a hand-computed expectation; a give up ends the streak                                   | A    | FR-155                  | ✅  |
+| 22.14 | **How to play** explains the adversary, the colours, the count and Give up with an example for the length; it never opens by itself                                                                  | A    | FR-156                  | ✅  |
+| 22.15 | Each guess is announced after its reveal with the colours in words and the words left, and the end of a game is announced                                                                            | A    | A11Y-25                 | ✅  |
+| 22.16 | Enter on the result panel starts a new game; the Enter that submitted the winning guess does not                                                                                                     | A    | FR-100, AC-55           | ✅  |
+| 22.17 | WordDodge data lives only under `wordgames:v1:dodge:*`; resetting its statistics leaves every other game's statistics unchanged                                                                      | A    | FR-99, AC-56            | ✅  |
+| 22.18 | WordDodge engine has 100% branch coverage and passes the engine purity lint rules                                                                                                                    | T    | NFR-19                  | ✅  |
+| 22.19 | axe reports zero serious or critical issues on WordDodge in both themes and both palettes                                                                                                            | T    | AC-57                   | ✅  |
+| 22.20 | The game starts from the answer and shuffle lists, each word once: 1,412, 1,844 and 1,751 words at 4, 5 and 6 letters; a game saved when it used the answers alone no longer replays, and is dropped | A    | FR-149, FR-153, ADR-042 | ✅  |
 
 ## 23. WordHunt (R7)
 
@@ -855,6 +856,16 @@ A ninth game, Hangman (ADR-041). Rows 24.1 to 24.21 describe it.
 **Not verified**
 
 - Nothing outside this environment: the deployed site was not touched.
+
+### Addendum — WordDodge draws on the shuffle list too (ADR-042, 2026-10-18)
+
+WordDodge was too easy with 700 words. Its candidates are now the answer list and the shuffle list. Row 22.20 describes it.
+
+- The pool is 1,412, 1,844 and 1,751 words at 4, 5 and 6 letters, 2.0 to 2.6 times as many. Every word comes from the two fairness-filtered lists, so a give up or a win never shows an obscure or offensive word.
+- Measured on the shipped lists, with a player who picks a random word that is still possible: 4.6 to 7.1 guesses before, and 6.0 to 7.6 after (averages over eight games per length). A player who picks well, from the first 40 possible words, needs 4 to 5 guesses before and 4 to 6 after. A real-list test still checks a win within 12 guesses at every length.
+- A game saved before this change no longer replays against the larger pool, so it is dropped and a new game starts. Statistics and preferences are untouched.
+- Unit and integration: **105 files, 2,500 tests, all passing.** `src/engine/**` branch coverage is 100%. `e2e/dodge.spec.ts`: **62 passed.**
+- The WordDodge view chunk is 6.3 KB gzipped. The entry bundle is 81.7 KB gzipped, unchanged.
 
 ## Sign-off
 

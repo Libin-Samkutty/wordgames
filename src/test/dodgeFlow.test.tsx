@@ -6,7 +6,7 @@ import { App } from '@/App';
 import { resetDictionaryCache } from '@/dictionary';
 import { gameKeys } from '@/storage';
 
-import { WINNING_FIVE, useDodgeFixtures } from './dodgeFixtures';
+import { WINNING_FIVE, useDodgeFixtures, useDodgeShuffle } from './dodgeFixtures';
 
 /**
  * WordDodge end to end through the real providers (T-93, T-94: FR-148 to
@@ -161,6 +161,57 @@ describe('WordDodge', () => {
       const keyboard = screen.getByLabelText('Keyboard');
       expect(within(keyboard).getByRole('button', { name: /^P/ }).className).toMatch(/correct/);
       expect(within(keyboard).getByRole('button', { name: /^K/ }).className).toMatch(/absent/);
+    });
+  });
+
+  describe('the pool of words (FR-149, ADR-042)', () => {
+    it('starts with the answers and the shuffle list, each word once', async () => {
+      // PLANT is in both lists, and CRANE only in the shuffle list.
+      useDodgeShuffle(['CRANE', 'PLANT']);
+      await openDodge();
+
+      expect(wordsLeft()).toBe('6 words left');
+    });
+
+    it('answers a guess from the whole pool, so the shuffle words count too', async () => {
+      // PLANK would give all grey to these three, which makes the grey group the largest.
+      useDodgeShuffle(['GUEST', 'QUEST', 'QUIET']);
+      const { user } = await openDodge();
+      expect(wordsLeft()).toBe('8 words left');
+
+      await guess(user, 'PLANK');
+
+      expect(wordsLeft()).toBe('5 words left');
+      const cells = within(rows()[0] as HTMLElement).getAllByRole('gridcell');
+      expect(cells.every((cell) => /not in word/.test(cell.getAttribute('aria-label') ?? ''))).toBe(
+        true,
+      );
+    });
+
+    it('drops a game saved under the old answers-only rule, which no longer replays', async () => {
+      useDodgeShuffle(['GUEST', 'QUEST', 'QUIET']);
+      localStorage.setItem(
+        gameKeys('dodge').session,
+        JSON.stringify({
+          id: 'old',
+          wordLength: 5,
+          guesses: [
+            {
+              word: 'PLANK',
+              evaluation: ['correct', 'correct', 'correct', 'correct', 'absent'],
+            },
+          ],
+          currentInput: '',
+          status: 'playing',
+          startedAt: 1,
+          finishedAt: null,
+        }),
+      );
+
+      await openDodge();
+
+      expect(rows()).toHaveLength(1);
+      expect(wordsLeft()).toBe('8 words left');
     });
   });
 

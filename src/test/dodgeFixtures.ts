@@ -53,3 +53,12 @@ export function useDodgeFixtures(): void {
     vi.spyOn(registry, length).mockResolvedValue(DODGE_FIXTURE_LISTS[length]);
   }
 }
+
+/**
+ * Gives the 5-letter fixture list a shuffle list, which the game adds to its
+ * candidates (ADR-042). Call after `useDodgeFixtures`.
+ */
+export function useDodgeShuffle(words: readonly string[]): void {
+  const registry = DICTIONARY_REGISTRY as Record<WordLength, () => Promise<unknown>>;
+  vi.spyOn(registry, 5).mockResolvedValue({ ...DODGE_FIXTURE_LISTS[5], shuffle: words });
+}

@@ -4,6 +4,7 @@ import { DICTIONARY_REGISTRY } from '@/dictionary/registry';
 
 import type { WordLength } from '../../types';
 import { chooseReply, isAllCorrect } from '../adversary';
+import { candidatePool } from '../pool';
 
 /**
  * WordDodge against the real lists (T-92: AC-58, FR-148, FR-149). The one place
@@ -46,13 +47,16 @@ function guessesToWin(answers: readonly string[]): number {
 
 describe('the real lists', () => {
   it.each([4, 5, 6] as const)(
-    'at length %i every answer is a valid guess, so the last word can always be played',
+    'at length %i the pool is the answers and the shuffle list, and every word in it is a valid guess',
     async (length: WordLength) => {
       const lists = await DICTIONARY_REGISTRY[length]();
       const guesses = new Set(lists.guesses);
+      const pool = candidatePool(lists.answers, lists.shuffle);
 
-      expect(lists.answers.length).toBe(700);
-      expect(lists.answers.every((word) => guesses.has(word))).toBe(true);
+      expect(pool.length).toBe({ 4: 1412, 5: 1844, 6: 1751 }[length]);
+      expect(pool.length).toBeGreaterThan(2 * lists.answers.length);
+      expect(pool.every((word) => guesses.has(word))).toBe(true);
+      expect(pool).toEqual([...pool].sort());
     },
   );
 
@@ -61,7 +65,7 @@ describe('the real lists', () => {
     async (length: WordLength) => {
       const lists = await DICTIONARY_REGISTRY[length]();
 
-      const guesses = guessesToWin(lists.answers);
+      const guesses = guessesToWin(candidatePool(lists.answers, lists.shuffle));
 
       expect(guesses).toBeGreaterThan(1);
       expect(guesses).toBeLessThanOrEqual(12);
@@ -73,11 +77,12 @@ describe('the real lists', () => {
     'at length %i the first guess leaves fewer words than there were',
     async (length: WordLength) => {
       const lists = await DICTIONARY_REGISTRY[length]();
-      const first = lists.answers[0] as string;
+      const pool = candidatePool(lists.answers, lists.shuffle);
+      const first = pool[0] as string;
 
-      const reply = chooseReply(first, lists.answers);
+      const reply = chooseReply(first, pool);
 
-      expect(reply.candidates.length).toBeLessThan(lists.answers.length);
+      expect(reply.candidates.length).toBeLessThan(pool.length);
       expect(reply.candidates.length).toBeGreaterThan(0);
     },
   );
