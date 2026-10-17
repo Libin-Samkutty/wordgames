@@ -23,6 +23,10 @@ describe('listProblems', () => {
     expect(listProblems(SOUND, 4)).toEqual([]);
   });
 
+  it('accepts a sound shuffle list', () => {
+    expect(listProblems({ ...SOUND, shuffle: ['CARD', 'WORD'] }, 4)).toEqual([]);
+  });
+
   it('accepts lists with no ladder, as for 6 letters', () => {
     const withoutLadder: RawLists = { answers: SOUND.answers, guesses: SOUND.guesses };
 
@@ -66,6 +70,18 @@ describe('listProblems', () => {
       { ...SOUND, answers: ['COLD', 'WARM', 'ZZZZ'] },
       'an answer is not a guess',
     ],
+    [
+      'a shuffle word missing from the guesses',
+      { ...SOUND, shuffle: ['WORD', 'ZZZZ'] },
+      'a shuffle word is not a guess',
+    ],
+    [
+      'an answer in the shuffle list',
+      { ...SOUND, shuffle: ['COLD', 'WORD'] },
+      'a shuffle word is also an answer',
+    ],
+    ['an empty shuffle list', { ...SOUND, shuffle: [] }, 'shuffle is empty'],
+    ['an unsorted shuffle list', { ...SOUND, shuffle: ['WORD', 'CARD'] }, 'shuffle is not sorted'],
     [
       'an unsorted guess list',
       { ...SOUND, guesses: ['WARM', 'CARD', 'COLD', 'CORD', 'WARD', 'WORD'] },

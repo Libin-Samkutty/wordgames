@@ -15,7 +15,10 @@ import type { WordLength } from '@/engine';
  *
  * 5 letters. A single chain: CRANE, CRATE, GRATE, GRAPE, GRAPH (par 4).
  */
-export const WEAVER_FIXTURE_LISTS: Record<4 | 5, Required<RawLists>> = {
+export const WEAVER_FIXTURE_LISTS: Record<
+  4 | 5,
+  Required<Pick<RawLists, 'answers' | 'ladder' | 'guesses'>>
+> = {
   4: {
     answers: ['COLD', 'WARM'],
     ladder: ['BOLD', 'CARD', 'COLD', 'CORD', 'WARD', 'WARM', 'WORD', 'WORM'],

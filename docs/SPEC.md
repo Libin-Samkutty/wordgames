@@ -766,8 +766,8 @@ Unscramble a word. The letters arrive shuffled, and any real word that uses exac
 
 ### 20.1 Rules
 
-- **FR-137** Word length is 4, 5 or 6, default 5, with its own length preference. There is no guess limit and no timer.
-- **FR-138** The target is drawn from the answer list for that length with its own no-repeat ring buffer (FR-4 rule). The scramble is a random ordering of its letters that differs from the target and is not itself in the guess list. If no such ordering exists, another target is drawn.
+- **FR-137** Word length is 4, 5 or 6, default 5, with its own length preference. There is no guess limit. A clock counts up from the first letter and shows `m:ss`. It never ends the puzzle, it is not part of a score, and it keeps running if the player leaves and comes back, as the solve time recorded for statistics does (ADR-038).
+- **FR-138** The target is drawn from the **shuffle list** for that length, with its own no-repeat ring buffer (FR-4 rule). That list is the next most common fair words after the answer list, so a target is a word players know but meet less often than an answer (ADR-038). The scramble is an ordering of its letters that differs from the target, is not itself in the guess list, and leaves as few letters as possible in the place the target has them. That is none, for all but the words whose repeated letters force one. Among the orderings that qualify, each is equally likely. If no such ordering exists, another target is drawn.
 - **FR-139** The letters sit in a **tray**. The player builds an answer by typing or by tapping tray letters; each letter can be used as many times as it appears in the tray. A typed letter that isn't left in the tray is ignored with no toast. Backspace returns the last letter to the tray.
 - **FR-140** A submitted answer is checked in this order. A rejected answer shakes the row, shows the toast and has no other cost.
   1. Not all letters used → `Not enough letters`.
@@ -775,19 +775,19 @@ Unscramble a word. The letters arrive shuffled, and any real word that uses exac
   3. Not in the guess list → `Not in word list`.
 - **FR-141** Any guess-list word that uses exactly the tray letters and keeps every hinted letter in place solves the puzzle, even when it isn't the drawn target. For example, the scramble of `LISTEN` is solved by any of `LISTEN`, `SILENT`, `ENLIST`, `INLETS`, `TINSEL` or `ELINTS`.
 - **FR-142** **Hints.** Up to 2 per puzzle. Each hint fixes one more letter of the drawn target in its correct position, choosing the leftmost position not already fixed. A hinted letter is placed and locked in the answer row and taken out of the tray. Typed and tapped letters fill the remaining positions from left to right, skipping locked ones, and Backspace never removes a locked letter. Taking a hint first returns every unlocked letter in the answer row to the tray, so the hinted letter is always available and never collides with a typed one.
-- **FR-143** **Reshuffle** reorders the letters left in the tray. It is free and unlimited.
+- **FR-143** **Reshuffle** reorders the letters left in the tray. It is free and unlimited. The new order is never the current one, is never a word, and, as with the first scramble, leaves as few letters as possible where the target has them. After a hint, that means the letters still to place, in the target's order (ADR-038).
 - **FR-144** **Give up** asks for confirmation, ends the puzzle as given up, and shows the target plus every other valid anagram.
 
 ### 20.2 Interface
 
-- **FR-145** The result panel shows solved or given up, the word found, hints used, the other valid anagrams, and **Play again** and **Change length**.
+- **FR-145** The result panel shows solved or given up, the word found, the time it took, hints used, the other valid anagrams, and **Play again** and **Change length**. A solve is announced with its time in words, such as "in 42 seconds" (A11Y-24).
 - **FR-146** Statistics are kept overall and per length, and recorded once per game:
   - played, solved, given up, solve % (derived)
   - solved without hints, and average hints per solve
   - current and best streak: a solve adds one, a give up resets to 0
   - the last 50 games `{ id, playedAt, length, target, found, hintsUsed, solved }`
   - added later (ADR-035): average and fastest solve time, a chart of solves by time (under 10 s, 30 s, 1 min, 2 min, longer), a chart of solves by hints used, and how often another anagram was found in puzzles that had several answers. Each record carries `solveMs` and `anagramCount`, and the recent list shows the word found.
-- **FR-147** The in-progress puzzle (target, scramble, tray, answer row, hints) is saved and restored as in FR-32, FR-33 and FR-65. Starting a new puzzle or switching length after any input asks for confirmation. The How to play dialog explains the tray, reshuffle, hints and that any valid anagram wins.
+- **FR-147** The in-progress puzzle (target, scramble, tray, answer row, hints) is saved and restored as in FR-32, FR-33 and FR-65. Starting a new puzzle or switching length after any input asks for confirmation. The How to play dialog explains the tray, reshuffle, hints, the clock and that any valid anagram wins.
 
 ---
 
@@ -799,7 +799,7 @@ Version 2.0 listed four candidate games here. Version 2.1 adopts them as WordSta
 | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | **Waffle-style grid**: a grid of crossing words with shuffled letters, fixed by swapping tiles within a swap limit | Needs a crossword-grid generator and a drag or tap-to-swap interaction. WordShuffle covers unscrambling. |
 | **Jotto**: each guess reports only the number of shared letters                                                    | WordCode's bulls and cows give the same deduction with clearer feedback.                                 |
-| **Timed unscramble**: solve as many words as possible in 60 seconds                                                | Adds a timer and scoring model; WordShuffle is untimed by choice.                                        |
+| **Timed unscramble**: solve as many words as possible in 60 seconds                                                | Adds a time limit and scoring model; WordShuffle has a count-up clock only, with no limit (ADR-038).     |
 | **WordStack with 8 or 16 boards** (Octordle, Sedecordle)                                                           | Does not fit a phone screen alongside the keyboard.                                                      |
 
 **Not feasible offline:** meaning-based Hot & Cold (like hotandcold.app or Semantle) ranks guesses by how close their meaning is to the secret word. That needs word embeddings, typically tens of megabytes of vectors or a server, which conflicts with NFR-1, NFR-5 and NFR-10. WordRange is the offline alternative.

@@ -34,7 +34,7 @@ export async function loadDictionary(wordLength: WordLength): Promise<Dictionary
   const load = (async (): Promise<Dictionary> => {
     try {
       const importLists = DICTIONARY_REGISTRY[wordLength];
-      const { answers, guesses, ladder } = await importLists();
+      const { answers, guesses, ladder, shuffle } = await importLists();
 
       const dictionary: Dictionary = {
         wordLength,
@@ -43,6 +43,7 @@ export async function loadDictionary(wordLength: WordLength): Promise<Dictionary
         guesses: new Set(guesses),
         guessList: guesses,
         ...(ladder ? { ladder } : {}),
+        ...(shuffle ? { shuffle } : {}),
       };
 
       cache.set(wordLength, dictionary);

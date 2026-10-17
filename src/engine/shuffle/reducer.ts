@@ -63,7 +63,8 @@ function sameLetters(a: readonly string[], b: readonly string[]): boolean {
 
 /**
  * The WordShuffle state machine. Pure, synchronous and total. There is no
- * reveal state, no guess limit and no clock beyond the first keystroke.
+ * reveal state and no guess limit. It stores only the two times the view's clock
+ * reads (ADR-038).
  *
  * Unknown or illegal actions return the *same reference*, so React skips the
  * re-render and callers can rely on identity comparison.

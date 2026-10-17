@@ -9,7 +9,9 @@ import {
   hintsUsed,
   otherAnagrams,
 } from '@/engine/shuffle';
+import { useElapsed } from '@/hooks/useElapsed';
 import { usePhysicalKeyboard } from '@/hooks/usePhysicalKeyboard';
+import { formatDuration } from '@/lib/format';
 import { useSettings } from '@/state';
 import { ShuffleProvider, ShuffleStatsProvider, useShuffle } from '@/state/shuffle';
 
@@ -52,6 +54,7 @@ function ShuffleScreen(): React.JSX.Element {
     retryDictionary,
   } = useShuffle();
   const { prefersReducedMotion } = useSettings();
+  const elapsed = useElapsed(state.startedAt, state.finishedAt);
 
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [isStatsOpen, setStatsOpen] = useState(false);
@@ -143,6 +146,18 @@ function ShuffleScreen(): React.JSX.Element {
   } else {
     body = (
       <>
+        {isGameOver ? null : (
+          // A count-up clock (ADR-038). It is a timer role, which a screen reader does not
+          // announce on every tick, and the solve message gives the time at the end.
+          <p
+            role="timer"
+            aria-label="Time"
+            className="font-mono text-lg font-bold tracking-wider text-text-muted tabular-nums"
+          >
+            {formatDuration(elapsed)}
+          </p>
+        )}
+
         <ShuffleBoard
           state={state}
           shake={shake}
@@ -157,6 +172,7 @@ function ShuffleScreen(): React.JSX.Element {
             length={length}
             word={state.found ?? state.target}
             hintsUsed={hintsUsed(state)}
+            elapsedMs={state.startedAt === null ? null : elapsed}
             others={otherAnagrams(state)}
             onPlayAgain={restart}
             onChangeLength={setLength}

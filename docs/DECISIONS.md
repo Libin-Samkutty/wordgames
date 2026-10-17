@@ -44,6 +44,7 @@ The project was previously named Wordwright. ADR-001 to ADR-020 were written und
 | [034](#adr-034--game-controls-reach-the-shell-header-through-a-portal-slot)                    | Game controls reach the header through a portal slot | Accepted (refines 021) |
 | [036](#adr-036--wordweaver-backspace-no-longer-undoes)                                         | WordWeaver: Backspace no longer undoes               | Accepted (refines 026) |
 | [037](#adr-037--wordrange-plays-4-5-and-6-letters)                                             | WordRange plays 4, 5 and 6 letters                   | Accepted (refines 030) |
+| [038](#adr-038--wordshuffle-rarer-targets-no-letter-in-place-a-visible-clock)                  | WordShuffle: harder targets, scramble, a clock       | Accepted (refines 032) |
 
 ---
 
@@ -826,3 +827,28 @@ This is not a plugin system. There is no runtime registration and no shared inte
 - The heat bands for 4 and 6 letters are constants and can be tuned after play-testing, as ADR-030 allows for the 5-letter ones.
 
 **Alternatives.** (a) One limit of 15 for every length. Rejected: it makes 4 and 5 letters easier than the data requires. (b) Absolute heat bands for every length. Rejected: the heat would read differently at each length. (c) Keep one flat statistics bucket and add a length field to each game. Rejected: win rate and streaks would mix lengths with different limits.
+
+---
+
+## ADR-038 — WordShuffle: rarer targets, no letter in place, a visible clock
+
+**Context.** WordShuffle was too easy. Every target was one of the 700 most common words, the same pool as the answers of the other games. The scramble was a uniform random order, so on average one letter started where it belongs, and a 4-letter scramble was one swap from the answer 29% of the time. A reshuffle could put the tray back near the target's order, or onto a word. ADR-032 chose an untimed game, and SPEC §3 lists hard mode as a non-goal.
+
+**Decision.**
+
+- **Rarer targets.** The generator adds a `shuffle` list to each `lists-<n>.ts`: the 1,500 candidates ranked just below the answers, filtered like answers plus two shuffle-only rules. A hand-read `SHUFFLE_BLOCKLIST` drops names, foreign and archaic words, interjections, slang and crude or distressing words, because the pool reaches into a range full of them. A rule drops -ED and -ING forms whose stem is a word, because the ending gives the shape away. This leaves 712, 1,144 and 1,051 words at 4, 5 and 6 letters. The list shares no word with `answers`, and every word stays a valid guess and a valid anagram.
+- **No letter in place.** Among the orders that are not a word, the first scramble keeps those with the fewest letters where the target has the same letter, and picks one at random. That is zero for nearly every word. A word with repeated letters, such as `AAB`, can force one, and then the fewest possible is used.
+- **Reshuffle follows the same rule.** It never returns the current order, never a word, and keeps the fewest letters where the target has them, counting only the letters a hint has not locked.
+- **A visible count-up clock.** It starts at the first letter and stops at the solve or give up. It shows `m:ss` while playing, and the result panel and the solve announcement give the time. It never ends a puzzle and is not a score. It reads the saved `startedAt`, so a game restored after leaving keeps counting, as the recorded solve time does.
+- This is a change to the one game, not a difficulty setting. There is no toggle and no new mode.
+
+**Consequences.**
+
+- A saved game from before the change has an answer as its target. The restore check accepts the answers and the shuffle list, so nobody loses a game.
+- Each lists chunk grows by its shuffle list. The 4-letter list has fewer candidates, so its pool is smaller.
+- The shuffle list is hand-curated. A new word list or a regeneration needs the blocklist read again. The data tests check that it has no answer in it, that every word is a guess, and that a spot-check of offensive words is absent.
+- Statistics are unchanged. They already held solve time and hints (ADR-035), so the new clock adds no field.
+- A count-up clock adds pressure without a fail state. ADR-032's "no timer" is replaced by "no time limit". Appendix A's timed unscramble stays not planned, because it needs a limit and a score.
+- WordShuffle's tests that pinned the first scramble moved to the new first scramble: ANLTP for PLANT and ELINST for LISTEN.
+
+**Alternatives.** (a) A Normal / Hard toggle. Rejected: more work, a spec change for a hard mode, and statistics per mode, for a game that was simply too easy. (b) Only one answer per target. Rejected: it reverses ADR-032's "any valid anagram wins" for little gain. (c) One hint instead of two. Rejected: the other changes already raise the difficulty, and hints are optional. (d) A countdown timer. Rejected: it needs a loss state, a pause when the tab is hidden, and a change to streaks. (e) Several words a round. Rejected: new round state, session save and statistics, the largest change of the three. (f) Pick the pool by frequency rank only. Rejected: the range below the answers is full of names and slang, which the blocklist removes.

@@ -407,23 +407,25 @@ Releases R2–R5: each `EC-39 … EC-49` needs the same evidence before its rele
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------------- | --- |
 | 21.1  | Home shows the WordShuffle card in catalogue order; `#/shuffle` opens it with the title `WordShuffle · wordgames` and the `<h1>` "WordShuffle"; before R5 ships, `#/shuffle` goes Home                        | A    | FR-97, FR-98, AC-45  | ✅  |
 | 21.2  | Header order: **All games**, "WordShuffle", **How to play**, the length selector, **Statistics**, then settings                                                                                               | A    | FR-101, US-38        | ✅  |
-| 21.3  | Word length is 4, 5 or 6, default 5, with its own preference; there is no guess limit and no timer                                                                                                            | A    | FR-137               | ✅  |
-| 21.4  | The scramble differs from the target and is never itself a word; if no such order exists another target is drawn                                                                                              | A    | FR-138, EC-49        | ✅  |
+| 21.3  | Word length is 4, 5 or 6, default 5, with its own preference; there is no guess limit, and a count-up clock never ends the puzzle                                                                             | A    | FR-137               | ✅  |
+| 21.4  | The scramble differs from the target, is never itself a word and leaves no letter in the target's place unless it cannot; if no such order exists another target is drawn                                     | A    | FR-138, EC-49        | ✅  |
 | 21.5  | Typing and tapping tray letters build the same answer; a letter not left in the tray is ignored with no toast; Backspace returns the last letter                                                              | A    | FR-139, EC-46        | ✅  |
 | 21.6  | Rejections run in the FR-140 order with the exact toast copy and no other cost                                                                                                                                | A    | FR-140               | ✅  |
 | 21.7  | Any guess-list anagram that keeps the hinted letters solves; with target `LISTEN`, `SILENT` solves and the result lists the other anagrams                                                                    | A    | FR-141, EC-47, AC-53 | ✅  |
 | 21.8  | Up to 2 hints, each fixing the leftmost unfixed letter of the target; hinted letters are locked in place, typing skips them and Backspace never removes them, and the engine rejects an answer that moves one | A    | FR-142, EC-48, AC-54 | ✅  |
-| 21.9  | **Reshuffle** reorders only the letters left in the tray, as often as the player likes                                                                                                                        | A    | FR-143               | ✅  |
+| 21.9  | **Reshuffle** reorders only the letters left in the tray, as often as the player likes, never to a word and never with a letter where the target has it                                                       | A    | FR-143               | ✅  |
 | 21.10 | **Give up** asks to confirm, ends as given up, and shows the target and every other valid anagram                                                                                                             | A    | FR-144, US-37        | ✅  |
-| 21.11 | Result panel shows solved or given up, the word found, hints used, the other anagrams, **Play again** and **Change length**                                                                                   | A    | FR-145               | ✅  |
+| 21.11 | Result panel shows solved or given up, the word found, the time, hints used, the other anagrams, **Play again** and **Change length**                                                                         | A    | FR-145               | ✅  |
 | 21.12 | Statistics overall and per length, including solved without hints and average hints per solve, match a hand-computed expectation; a give up resets the streak                                                 | A    | FR-146               | ✅  |
 | 21.13 | Leaving and returning restores the target, scramble, tray, answer row and hints; a new puzzle or length switch after any input asks to confirm                                                                | A    | FR-147               | ✅  |
-| 21.14 | **How to play** explains the tray, reshuffle, hints and that any valid anagram wins; it never opens by itself                                                                                                 | A    | FR-147               | ✅  |
+| 21.14 | **How to play** explains the tray, reshuffle, hints, the clock and that any valid anagram wins; it never opens by itself                                                                                      | A    | FR-147               | ✅  |
 | 21.15 | Enter on the result panel starts a new puzzle; the Enter that submitted the solving answer does not                                                                                                           | A    | FR-100, AC-55        | ✅  |
 | 21.16 | WordShuffle data lives only under `wordgames:v1:shuffle:*`; resetting its statistics leaves every other game's statistics unchanged                                                                           | A    | FR-99, AC-56         | ✅  |
 | 21.17 | The WordShuffle row of the SPEC §11 error table appears with its exact copy                                                                                                                                   | A    | §11                  | ✅  |
 | 21.18 | WordShuffle engine has 100% branch coverage and passes the engine purity lint rules                                                                                                                           | T    | NFR-19               | ✅  |
 | 21.19 | axe reports zero serious or critical issues on WordShuffle in both themes and both palettes                                                                                                                   | T    | AC-57                | ✅  |
+| 21.20 | Targets come from the shuffle list, which holds no answer and no offensive word; an old saved game whose target is an answer still restores                                                                   | A    | FR-138, ADR-038      | ✅  |
+| 21.21 | A count-up clock reads 0:00 until the first letter, runs from it, stops at the solve or give up, and survives leaving and returning; the result shows the time                                                | A    | FR-137, FR-145       | ✅  |
 
 ---
 
@@ -682,6 +684,26 @@ WordShuffle is built and verified in this environment. Nothing has been deployed
 - Lighthouse was not re-run after R2 to R5, so the Lighthouse scores in the Evidence Summary are from Suite V1.
 - Firefox, WebKit and a real device. All browser runs here are Chromium.
 - No screen reader was driven by a person. Labels, live regions and announcements are asserted in tests and axe reports clean.
+
+### Addendum — WordRange lengths and a harder WordShuffle (ADR-037, ADR-038, 2026-10-17)
+
+Two changes after R5. Rows 19.2 to 19.4, 19.9, 19.10, 19.14 and 19.15 and rows 21.3, 21.4, 21.9, 21.11 and 21.14, with the new rows 21.20 and 21.21, describe them.
+
+**WordRange at 4, 5 and 6 letters (ADR-037)**
+
+- The guess limits are 13, 14 and 15, which is floor(log2 N) + 1 for the 6,142, 13,746 and 24,637-word guess lists. A real-list test checks the list sizes, that each sentinel sits outside its list, and that a perfect halving finds 50 answers within the limit at every length.
+- The 4 and 6-letter heat bands scale the 5-letter ones by list size over 13,746. A test checks each band against that ratio.
+- A saved game, statistics blob, answer buffer and preferences from before the change load as 5-letter data. Tests cover each, and a flow test restores an old game with its statistics through the real providers.
+- `e2e/range.spec.ts`: **58 passed.** The 6-letter game fits at 320 x 568 with the length selector in the header.
+- The shared length selector is 36 px tall in every game that uses it, below the 44 px of FR-58. This is not new, and no spec checks it. It is open.
+
+**WordShuffle (ADR-038)**
+
+- The new `shuffle` list holds 712, 1,144 and 1,051 words at 4, 5 and 6 letters. Every word was read by hand. Data tests check that it has no answer, that every word is a guess, that a spot-check of offensive words is absent, and that no -ED or -ING form with a word stem is in it.
+- Over the whole real pool, fewer than 5% of scrambles keep a letter in the target's place. Reshuffle keeps the same rule, never lands on a word, and works from the letters not locked by a hint.
+- The clock reads 0:00 until the first letter, ticks once a second, stops at the solve or give up, and keeps counting after leaving and returning. `e2e/shuffle.spec.ts`: **68 passed**, with the layouts at 320 px and 740 x 360 landscape unchanged.
+- The lists chunks grew by 1.5, 2.4 and 3.5 KB gzipped (20.6, 53.5 and 76.3 KB), against a limit of 15 KB each. The entry bundle is **79.1 KB gzipped**.
+- Unit and integration: **83 files, 2,027 tests, all passing.** `src/engine/**` branch coverage is 99.02%, the same shortfall as before this work (selectors in the code, range and stack engines). Every WordShuffle engine file is at 100%.
 
 ## Sign-off
 

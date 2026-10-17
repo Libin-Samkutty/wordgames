@@ -46,8 +46,10 @@ export function ShuffleHelpModal({ isOpen, onClose }: ShuffleHelpModalProps): Re
           moved.
         </p>
         <p>
-          There is no clock and no limit on tries. <strong className="font-bold">Give up</strong>{' '}
-          shows the word and every other word with the same letters.
+          A clock counts up from your first letter. It never ends the puzzle, and there is no limit
+          on tries. It keeps running if you leave and come back.{' '}
+          <strong className="font-bold">Give up</strong> shows the word and every other word with
+          the same letters.
         </p>
 
         <section>

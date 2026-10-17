@@ -1,4 +1,5 @@
 import { hintsLeft, hintsUsed, type ShuffleState } from '@/engine/shuffle';
+import { clampDuration } from '@/lib/clock';
 
 function plural(count: number, one: string, many: string): string {
   return `${String(count)} ${count === 1 ? one : many}`;
@@ -30,12 +31,28 @@ export function reshuffleAnnouncement(state: ShuffleState): string {
   return `Letters reshuffled: ${state.tray.join(', ')}.`;
 }
 
-/** The polite message when the puzzle is solved (A11Y-24, A11Y-3). */
+/** A duration in words, for a screen reader: "42 seconds", "1 minute 5 seconds". */
+function spokenDuration(ms: number): string {
+  const total = Math.floor(clampDuration(ms) / 1000);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+
+  if (total === 0) return 'under a second';
+  if (minutes === 0) return plural(seconds, 'second', 'seconds');
+  if (seconds === 0) return plural(minutes, 'minute', 'minutes');
+  return `${plural(minutes, 'minute', 'minutes')} ${plural(seconds, 'second', 'seconds')}`;
+}
+
+/** The polite message when the puzzle is solved (A11Y-24, A11Y-3), with the time it took. */
 export function solveAnnouncement(state: ShuffleState): string {
   const used = hintsUsed(state);
+  const took =
+    state.startedAt !== null && state.finishedAt !== null
+      ? ` in ${spokenDuration(state.finishedAt - state.startedAt)}`
+      : '';
 
   return (
-    `Solved with ${state.found ?? ''}. ` +
+    `Solved with ${state.found ?? ''}${took}. ` +
     (used === 0 ? 'No hints used.' : `${plural(used, 'hint', 'hints')} used.`)
   );
 }

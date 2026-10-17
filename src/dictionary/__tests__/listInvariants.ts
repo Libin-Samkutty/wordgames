@@ -14,6 +14,7 @@ export function listProblems(lists: RawLists, length: number): string[] {
     ['guesses', lists.guesses],
   ];
   if (lists.ladder) named.push(['ladder', lists.ladder]);
+  if (lists.shuffle) named.push(['shuffle', lists.shuffle]);
 
   for (const [name, words] of named) {
     if (words.length === 0) problems.push(`${name} is empty`);
@@ -36,6 +37,16 @@ export function listProblems(lists: RawLists, length: number): string[] {
       problems.push('an answer is not in ladder');
     if (lists.ladder.some((word) => !guesses.has(word))) {
       problems.push('a ladder word is not a guess');
+    }
+  }
+
+  if (lists.shuffle) {
+    const answers = new Set(lists.answers);
+    if (lists.shuffle.some((word) => !guesses.has(word))) {
+      problems.push('a shuffle word is not a guess');
+    }
+    if (lists.shuffle.some((word) => answers.has(word))) {
+      problems.push('a shuffle word is also an answer');
     }
   }
 

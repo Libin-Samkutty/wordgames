@@ -105,6 +105,47 @@ describe.each(WORD_LENGTHS)('lists-%i', (length: WordLength) => {
   });
 });
 
+describe.each(WORD_LENGTHS)('shuffle list, %i letters (ADR-038)', (length: WordLength) => {
+  let lists: RawLists;
+
+  beforeAll(async () => {
+    lists = await DICTIONARY_REGISTRY[length]();
+  });
+
+  it('exists, and is big enough to play from for a long time', () => {
+    expect(lists.shuffle).toBeDefined();
+    expect(lists.shuffle?.length).toBeGreaterThanOrEqual(500);
+  });
+
+  it('holds every list invariant, including shuffle ⊆ guesses and no answer in it', () => {
+    expect(listProblems(lists, length)).toEqual([]);
+  });
+
+  it('keeps offensive words out of the pool, though they stay guessable (ADR-038)', () => {
+    const banned = ['DAMN', 'CRAP', 'SEXY', 'NAKED', 'MURDER', 'CANCER', 'CORPSE', 'PORN', 'IDIOT'];
+    const shuffle = new Set(lists.shuffle);
+
+    expect(banned.filter((word) => shuffle.has(word))).toEqual([]);
+  });
+
+  it('leaves out -ED and -ING forms whose stem is a word, which give the shape away', () => {
+    const guesses = new Set(lists.guesses);
+    const forms = (lists.shuffle ?? []).filter(
+      (word) =>
+        (word.endsWith('ING') && word.length > 5 && guesses.has(word.slice(0, -3) + 'E')) ||
+        (word.endsWith('ED') && word.length > 4 && guesses.has(word.slice(0, -2))),
+    );
+
+    expect(forms).toEqual([]);
+  });
+
+  it('is drawn from words that are less common than the answers, not the same ones', () => {
+    const answers = new Set(lists.answers);
+
+    expect((lists.shuffle ?? []).filter((word) => answers.has(word))).toEqual([]);
+  });
+});
+
 describe.each([4, 5] as const)('ladder list, %i letters (FR-75, T-58)', (length) => {
   let lists: RawLists;
 

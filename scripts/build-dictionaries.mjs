@@ -36,6 +36,14 @@ const WORD_LENGTHS = [4, 5, 6];
 export const ANSWER_TARGET = 700;
 
 /**
+ * How many words follow the answers in frequency order to make the WordShuffle
+ * pool, per length (ADR-038). These are the next most familiar fair words after
+ * the answers, so a scramble is a real word the player knows but has not met in
+ * the other games.
+ */
+export const SHUFFLE_POOL_SIZE = 1500;
+
+/**
  * How many of the most frequent pool words join the ladder list, per length
  * (FR-75, FR-77). Only the lengths WordWeaver plays have one. Fixed by
  * `scripts/measure-par.mjs`; re-measure whenever the lists are regenerated.
@@ -137,6 +145,89 @@ const CLIPPED_FORMS = new Set(
     .filter(Boolean)
     .map((w) => w.toUpperCase()),
 );
+
+/**
+ * Extra words barred from the WORDSHUFFLE pool only (ADR-038).
+ *
+ * The pool reaches past the answers into less common words, and that range is
+ * full of first names, surnames, places, brands, foreign words, archaic forms,
+ * interjections, slang and crude or distressing words. A shuffle puzzle shows the
+ * target in the result panel and a screen reader reads it out, so every word was
+ * read by hand. They stay valid guesses and valid anagrams; only target
+ * selection skips them. The groups below are for the next person to read.
+ */
+const SHUFFLE_BLOCKLIST = new Set(
+  `
+   agin ahem ahoy dolt kink alec alma amin anon auld awol axel babu bach barf beck bene berg biff blam
+   bong bora bozo bree bren brin bris brit bura burp caff cain carb carr casa chez cobb coca
+   coed coke conk conn cory cris croc cuss cyst dahl dang darn dato davy deco deke dike dink
+   ditz dong dope dost doth duce dung eros eyre fess fido fink gaby geez gory hadj hast hath
+   heil helo hemp hora howe huck hump hunh hypo jeez jefe jess kane kaon keno kern kirk kobo
+   kris lear lech leno lent lewd lier lima ling loca loco lowe lube luce luna lutz mach mack
+   maim mano maxi maya merl milo milt mina moll moly mort muff nada narc nary ness neve nite
+   noel noir nome nope oyez palp peed pele peon pfft phew pimp pina pong poof pooh prof psst
+   puce pyre quad rath ritz rolf roto sabe sade saki sark saul scag scot scow scry scum sera
+   shah shay shea shiv shoo simp slay snot sook spaz spew stab syne tach tate teed tiki ting
+   toby toke toon toro tory tosh tung turk tush vail vera vill vino viva vive wack weed whee
+   whew wuss wynn yang yech yuan
+
+   idiot actin ahold alamo allee aloha amigo argon ariel arson ascot aught barre bawdy beery begat
+   belle benny bigot bijou bimbo blume boned booby booze bosom bowel brava brent brill britt
+   brock buffy burbs burke butch carbo chang chemo chevy chico chink chino cocky colic colon
+   comer condo coney corky coven crass creme crier cuddy culpa cuppa curie dater devon dicky
+   dilly dolce dozer edema emery enema erect erica ethyl fanny fatso feces felon femme fetal
+   fitch fiver fosse fritz ganja garth gault gemma genoa gimme ginny goner gonzo griff groin
+   grope gulag gypsy harem haute heigh hertz hocus hogan hokey homey hooch hooky hullo hunky
+   hurst hussy iliad infra jenny jesse jihad judas junky kappa kasha kendo kinky kissy kooky
+   kraft lacey laird laker lazar leary legit leper liane lifer limey logan loran lotte louie
+   lupus mache madre mafia mamie marge massa mavis mayan mecca mensa merle midge missy modus
+   molly molto momma monde mondo monte moron morse mucus nance nappy nelly nitty nudie nymph
+   obese oomph opium padre paddy palsy pansy panty pappy pedro petit pilar pinot playa pokey
+   polio poppa porky potty prima primo pubic punky pygmy quoth rabid rajah ramus recon reeve
+   rehab renal riley rioja ritzy romeo rowan sabin sahib saith sally santo saran sarge satyr
+   savin sayer senor shalt shawn shiva sicko silva sinus sissy snook sonny sorel spank spitz
+   squaw stang steno strep sutra swami swede synch takin tammy telex telly terra thine tibia
+   toddy torah tushy tutti ulcer vesta vodka voila vomit wacko wahoo walla wally washy weber
+   welch wench woops xerox youse
+
+   orally snatch unborn wiener advert anemia angina apollo argyle arroyo asthma autism bailey balboa barlow batman bertha
+   billie biopsy bombed bomber bonnie booker bourne bullet burial buried burley burton caesar
+   canton capote carlin carmen carney cayman condom conner contra corset crappy crotch curran
+   cystic cutler dalton damned daphne deadly decker demise dobson doomed dorado embryo eczema
+   felony fowler fuller geneva ghetto gibson gloria glover grange grieve gunmen gunner harper
+   hector heller hernia herpes hetero hickey holden hombre hookup hurley inbred infect
+   injure inmate jagger jasper jesuit kaiser kroner latino lethal libido liquor lumbar madden
+   maniac manure marcel martyr medusa merlot mickey midget morbid moulin muller nausea nellie
+   nigger nipple nudist nudity occult orgies palmer parton patten pelvic perish phobia phoebe
+   pistol pointe psycho quaker racial racism ransom regina ripper ritter robber roscoe salaam
+   salina saliva savage sawyer scotch scotia seaman septic sewage shalom sheila shelly shitty
+   shorty shroud slater slayer sleazy slutty smoker smokey sniper snoopy speedo spence squirt
+   stella stoned stoner stoney sucked sucker tanner tarzan thorpe touche tucker undead undies
+   verily warsaw weiner
+  `
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.toUpperCase()),
+);
+
+/**
+ * True for a past-tense or -ing form whose stem is also a word (BAKED, BAGGED,
+ * HIKING). The ending gives the shape away, which is the same problem as the
+ * plural rule for answers, and a puzzle made of suffixes is not a hard one. The
+ * word stays a valid guess; only the WordShuffle pool skips it (ADR-038).
+ */
+function isInflected(word, allWords) {
+  const stemOf = (suffix) => word.slice(0, -suffix.length);
+  const reads = (stem) =>
+    allWords.has(stem) ||
+    allWords.has(stem + 'E') ||
+    // A doubled final consonant: BAGGED -> BAGG -> BAG.
+    (stem.length > 2 && stem.at(-1) === stem.at(-2) && allWords.has(stem.slice(0, -1)));
+
+  if (word.endsWith('ING') && word.length > 5) return reads(stemOf('ING'));
+  if (word.endsWith('ED') && word.length > 4) return reads(stemOf('ED'));
+  return false;
+}
 
 /** Fetch with an on-disk cache so re-runs need no network. */
 async function fetchCached(name, url) {
@@ -247,7 +338,7 @@ export async function loadSources() {
 /**
  * The guess list and answer list for one length (ADR-004).
  *
- * @returns {{ guesses: string[], answers: string[] }}
+ * @returns {{ guesses: string[], answers: string[], shuffle: string[] }}
  */
 export function buildLists(length, { allWords, popular, ranks }) {
   // Guess list: every word of this length from the merged sources (FR-25).
@@ -265,7 +356,15 @@ export function buildLists(length, { allWords, popular, ranks }) {
     .sort((a, b) => ranks.get(a) - ranks.get(b));
 
   const answers = candidates.slice(0, ANSWER_TARGET).sort();
-  return { guesses, answers };
+
+  // WordShuffle targets: the candidates ranked just below the answers, under the
+  // same fairness filters plus the shuffle-only ones. They never overlap `answers`
+  // (ADR-038).
+  const shuffle = candidates
+    .slice(ANSWER_TARGET, ANSWER_TARGET + SHUFFLE_POOL_SIZE)
+    .filter((word) => !SHUFFLE_BLOCKLIST.has(word) && !isInflected(word, allWords))
+    .sort();
+  return { guesses, answers, shuffle };
 }
 
 /**
@@ -304,7 +403,7 @@ async function main() {
   const summary = [];
 
   for (const length of WORD_LENGTHS) {
-    const { guesses, answers } = buildLists(length, sources);
+    const { guesses, answers, shuffle } = buildLists(length, sources);
 
     // The ladder list exists only for the lengths WordWeaver plays (FR-74).
     const ladderSize = LADDER_POOL_SIZE[length];
@@ -328,7 +427,12 @@ async function main() {
         if (!guessSet.has(word)) throw new Error(`Ladder word ${word} missing from guesses`);
       }
     }
-    for (const word of [...answers, ...guesses, ...(ladder ?? [])]) {
+    const answerSet = new Set(answers);
+    for (const word of shuffle) {
+      if (!guessSet.has(word)) throw new Error(`Shuffle word ${word} missing from guesses`);
+      if (answerSet.has(word)) throw new Error(`Shuffle word ${word} is also an answer`);
+    }
+    for (const word of [...answers, ...guesses, ...shuffle, ...(ladder ?? [])]) {
       if (!/^[A-Z]+$/.test(word) || word.length !== length) {
         throw new Error(`Invalid entry: ${word}`);
       }
@@ -337,18 +441,33 @@ async function main() {
       throw new Error(`Only ${answers.length} answers for length ${length}`);
     if (guesses.length < 1500)
       throw new Error(`Only ${guesses.length} guesses for length ${length}`);
+    if (shuffle.length < 500)
+      throw new Error(`Only ${shuffle.length} shuffle words for length ${length}`);
 
     const checksum = createHash('sha256')
-      .update(`${answers.join(',')}|${guesses.join(',')}${ladder ? `|${ladder.join(',')}` : ''}`)
+      .update(
+        `${answers.join(',')}|${guesses.join(',')}${ladder ? `|${ladder.join(',')}` : ''}|${shuffle.join(',')}`,
+      )
       .digest('hex')
       .slice(0, 12);
 
     const file = join(OUT_DIR, `lists-${length}.ts`);
-    await writeFile(file, renderModule({ length, answers, guesses, ladder, checksum }), 'utf8');
+    await writeFile(
+      file,
+      renderModule({ length, answers, guesses, shuffle, ladder, checksum }),
+      'utf8',
+    );
 
-    summary.push({ length, answers: answers.length, guesses: guesses.length, checksum });
+    summary.push({
+      length,
+      answers: answers.length,
+      guesses: guesses.length,
+      shuffle: shuffle.length,
+      checksum,
+    });
     process.stdout.write(
       `lists-${length}.ts  answers=${answers.length}  guesses=${guesses.length}` +
+        `  shuffle=${shuffle.length}` +
         `${ladder ? `  ladder=${ladder.length}` : ''}  sha=${checksum}\n`,
     );
   }
@@ -357,7 +476,7 @@ async function main() {
   return summary;
 }
 
-function renderModule({ length, answers, guesses, ladder, checksum }) {
+function renderModule({ length, answers, guesses, shuffle, ladder, checksum }) {
   const format = (words) =>
     words
       .map((w) => `  '${w}',`)
@@ -365,7 +484,7 @@ function renderModule({ length, answers, guesses, ladder, checksum }) {
       .trimStart();
 
   return `// @generated by scripts/build-dictionaries.mjs — do not edit by hand.
-// Word length: ${length} · answers: ${answers.length} · guesses: ${guesses.length}${ladder ? ` · ladder: ${ladder.length}` : ''} · sha256: ${checksum}
+// Word length: ${length} · answers: ${answers.length} · guesses: ${guesses.length} · shuffle: ${shuffle.length}${ladder ? ` · ladder: ${ladder.length}` : ''} · sha256: ${checksum}
 //
 // Sources (see src/dictionary/data/README.md for provenance and licensing):
 //   ENABLE1 and the Unix /usr/share/dict/words list (both public domain, via
@@ -399,6 +518,15 @@ export const answers: readonly string[] = [
 /** Words accepted as a valid guess. Superset of \`answers\` (FR-26). */
 export const guesses: readonly string[] = [
   ${format(guesses)}
+];
+
+/**
+ * Words WordShuffle draws its targets from: the next most familiar fair words
+ * after \`answers\`, a subset of \`guesses\` that shares no word with \`answers\`
+ * (ADR-038).
+ */
+export const shuffle: readonly string[] = [
+  ${format(shuffle)}
 ];
 ${
   ladder

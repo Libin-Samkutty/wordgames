@@ -101,6 +101,15 @@ function anagramIndexFor(dictionary: Dictionary): AnagramIndex {
   return index;
 }
 
+/**
+ * The words a puzzle's target is drawn from: the shuffle list, which is less
+ * common than the answers (ADR-038). A dictionary without one, as a test fixture
+ * may be, falls back to the answers.
+ */
+function targetsOf(dict: Dictionary): readonly string[] {
+  return dict.shuffle ?? dict.answers;
+}
+
 /** Placeholder until the dictionary resolves and a real puzzle starts. */
 function placeholderGame(length: WordLength): ShuffleState {
   return createShuffleGame('pending', length, 'A'.repeat(length), 'A'.repeat(length));
@@ -145,7 +154,7 @@ export function ShuffleProvider({ children }: { children: ReactNode }): React.JS
     (dict: Dictionary, forLength: WordLength): boolean => {
       const meta = metaRepo.read();
       const puzzle = createPuzzle(
-        { answers: dict.answers, isWord: (word) => dict.guesses.has(word) },
+        { targets: targetsOf(dict), isWord: (word) => dict.guesses.has(word) },
         meta.recentAnswers[forLength],
         systemRandom,
       );
@@ -172,12 +181,13 @@ export function ShuffleProvider({ children }: { children: ReactNode }): React.JS
       .then((dict) => {
         if (cancelled) return;
 
-        const answers = new Set(dict.answers);
+        // A game saved before the target pool changed has an answer as its target.
+        const targets = new Set([...dict.answers, ...targetsOf(dict)]);
         const saved = sessionRepo.read();
 
         if (
           saved?.wordLength === length &&
-          isShuffleSessionUsable(saved, (word) => answers.has(word))
+          isShuffleSessionUsable(saved, (word) => targets.has(word))
         ) {
           dispatch({ type: 'RESTORE', state: saved });
         } else if (!startFreshPuzzle(dict, length)) {
@@ -291,13 +301,22 @@ export function ShuffleProvider({ children }: { children: ReactNode }): React.JS
   }, [state, announce]);
 
   const reshuffle = useCallback((): void => {
-    const action = { type: 'RESHUFFLE', tray: shuffleLetters(state.tray, systemRandom) } as const;
+    // The tray never lands on a word or on the target's own order (ADR-038). A hint
+    // has locked its letter, so the order to avoid is the letters still to place.
+    const avoid = {
+      reference: [...state.target].filter((_, position) => !state.hinted.includes(position)),
+      isWord: (word: string) => dictionary?.guesses.has(word) ?? false,
+    };
+    const action = {
+      type: 'RESHUFFLE',
+      tray: shuffleLetters(state.tray, systemRandom, avoid),
+    } as const;
     const next = shuffleReducer(state, action);
     if (next === state) return;
 
     announce(reshuffleAnnouncement(next));
     dispatch(action);
-  }, [state, announce]);
+  }, [state, dictionary, announce]);
 
   const giveUp = useCallback((): void => {
     if (!dictionary || state.status !== 'playing') return;
