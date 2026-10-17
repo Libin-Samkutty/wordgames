@@ -10,6 +10,13 @@ export interface RawLists {
    * subset of `guesses`.
    */
   readonly ladder?: readonly string[];
+  /**
+   * Words WordShuffle draws its targets from (ADR-038): the next most familiar
+   * fair words after `answers`, never an answer, a subset of `guesses`. Every
+   * generated module has it. Test fixtures may leave it out, and WordShuffle then
+   * falls back to `answers`.
+   */
+  readonly shuffle?: readonly string[];
 }
 
 /**
@@ -31,6 +38,8 @@ export interface Dictionary {
   readonly guessList: readonly string[];
   /** The ladder list, for the lengths that have one (FR-75). */
   readonly ladder?: readonly string[];
+  /** The WordShuffle target pool, when the module has one (ADR-038). */
+  readonly shuffle?: readonly string[];
 }
 
 /** Raised when a dictionary chunk cannot be loaded, so the UI can offer Retry (EC-14). */

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '@/App';
 import { resetDictionaryCache } from '@/dictionary';
+import { createShuffleGame } from '@/engine/shuffle';
 import { gameKeys } from '@/storage';
 
 import { FIRST_SCRAMBLE, useShuffleFixtures } from './shuffleFixtures';
@@ -88,19 +89,36 @@ describe('WordShuffle', () => {
         .map((button) => button.getAttribute('aria-label'));
       expect(labels).toEqual([
         'E, 1 left',
-        'I, 1 left',
         'L, 1 left',
+        'I, 1 left',
         'N, 1 left',
         'S, 1 left',
         'T, 1 left',
       ]);
     });
 
-    it('has no on-screen QWERTY keyboard and no timer', async () => {
+    it('has no on-screen QWERTY keyboard', async () => {
       await openShuffle();
 
       expect(screen.queryByLabelText('Keyboard')).not.toBeInTheDocument();
-      expect(screen.queryByText(/\d:\d\d/)).not.toBeInTheDocument();
+    });
+
+    it('shows a clock at 0:00 until the first letter, with no time limit (ADR-038)', async () => {
+      await openShuffle();
+
+      expect(screen.getByRole('timer', { name: 'Time' })).toHaveTextContent('0:00');
+    });
+
+    it('keeps the clock running from the first letter after leaving and returning', async () => {
+      const game = createShuffleGame('clock', 5, 'PLANT', 'ANLTP');
+      localStorage.setItem(
+        gameKeys('shuffle').session,
+        JSON.stringify({ ...game, startedAt: Date.now() - 125_000 }),
+      );
+
+      await openShuffle();
+
+      expect(screen.getByRole('timer', { name: 'Time' }).textContent).toMatch(/^2:0[5-9]$/);
     });
   });
 
@@ -161,6 +179,22 @@ describe('WordShuffle', () => {
       expect(panel).toHaveTextContent('PLANT');
       expect(panel).toHaveTextContent('No hints used');
       expect(within(panel).getByText('No other word uses these letters.')).toBeInTheDocument();
+    });
+
+    it('stops the clock at the solve and shows the time on the result (ADR-038)', async () => {
+      const game = createShuffleGame('clock', 5, 'PLANT', 'ANLTP');
+      localStorage.setItem(
+        gameKeys('shuffle').session,
+        JSON.stringify({ ...game, startedAt: Date.now() - 65_000 }),
+      );
+      const { user } = await openShuffle();
+
+      await typeWord(user, 'PLANT');
+      await user.keyboard('{Enter}');
+
+      const panel = await screen.findByRole('region', { name: 'Solved!' });
+      expect(panel.textContent).toMatch(/Time 1:0[5-9]/);
+      expect(screen.queryByRole('timer')).not.toBeInTheDocument();
     });
 
     it('a different anagram solves, and the result lists the others (AC-53, EC-47)', async () => {
@@ -297,6 +331,53 @@ describe('WordShuffle', () => {
 
       expect(answerText()).toBe('Your answer: S, empty, empty, empty, empty, empty');
       expect(screen.getByRole('button', { name: 'Hint, 2 left' })).toBeInTheDocument();
+    });
+  });
+
+  describe('reshuffle keeps the letters off the target and off words (ADR-038)', () => {
+    const inPlace = (word: string): number =>
+      trayLetters().filter((letter, index) => letter === word[index]).length;
+
+    it('never lands a letter where the target has it, however often it is asked', async () => {
+      seed(6);
+      const { user } = await openShuffle();
+
+      for (let i = 0; i < 4; i += 1) {
+        await user.click(screen.getByRole('button', { name: 'Reshuffle' }));
+        expect(inPlace('LISTEN')).toBe(0);
+      }
+    });
+
+    it('never lands on a word, so the tray cannot spell the answer', async () => {
+      seed(6);
+      const { user } = await openShuffle();
+      const words = [
+        'DANGER',
+        'ENLIST',
+        'GANDER',
+        'GARDEN',
+        'INLETS',
+        'LISTEN',
+        'SILENT',
+        'TINSEL',
+      ];
+
+      for (let i = 0; i < 4; i += 1) {
+        await user.click(screen.getByRole('button', { name: 'Reshuffle' }));
+        expect(words).not.toContain(trayLetters().join(''));
+      }
+    });
+
+    it('after a hint, avoids the order of the letters still to place', async () => {
+      seed(6);
+      const { user } = await openShuffle();
+      await user.click(screen.getByRole('button', { name: 'Hint, 2 left' }));
+
+      for (let i = 0; i < 3; i += 1) {
+        await user.click(screen.getByRole('button', { name: 'Reshuffle' }));
+        // The hint locked the L, so the tray is ISTEN, to be kept off that order.
+        expect(inPlace('ISTEN')).toBe(0);
+      }
     });
   });
 
@@ -494,7 +575,9 @@ describe('WordShuffle', () => {
       await user.keyboard('{Enter}');
       await screen.findByRole('heading', { name: 'Solved!' });
 
-      expect(polite().textContent?.trim()).toBe('Solved with PLANT. 1 hint used.');
+      expect(polite().textContent?.trim()).toBe(
+        'Solved with PLANT in under a second. 1 hint used.',
+      );
     });
 
     it('announces a give up with the word', async () => {

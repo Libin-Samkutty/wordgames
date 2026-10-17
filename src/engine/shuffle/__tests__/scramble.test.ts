@@ -4,7 +4,11 @@ import { seededRandom, type RandomSource } from '../../random';
 import { anagramKey } from '../anagram';
 import { createPuzzle, makeScramble, shuffleLetters } from '../scramble';
 
-/** Scrambles, reshuffles and puzzle draws (T-88: FR-138, FR-143, EC-49). */
+/** Scrambles, reshuffles and puzzle draws (T-88: FR-138, FR-143, EC-49, ADR-038). */
+
+/** How many letters of `order` are where `word` has the same letter. */
+const inPlace = (order: string, word: string): number =>
+  [...order].filter((letter, index) => letter === word[index]).length;
 
 const fixed = (...values: number[]): RandomSource => {
   let index = 0;
@@ -32,7 +36,7 @@ describe('makeScramble (FR-138, EC-49)', () => {
     }
   });
 
-  it('can produce every qualifying order, not just a few', () => {
+  it('can produce every order that leaves no letter in place, not just one', () => {
     const seen = new Set<string>();
 
     for (let seed = 1; seed <= 400; seed += 1) {
@@ -40,10 +44,49 @@ describe('makeScramble (FR-138, EC-49)', () => {
       if (result.ok) seen.add(result.value);
     }
 
-    expect([...seen].sort()).toEqual(['ACB', 'BAC', 'BCA', 'CAB', 'CBA']);
+    // ACB, BAC and CBA each keep one letter where the target has it.
+    expect([...seen].sort()).toEqual(['BCA', 'CAB']);
   });
 
-  it('counts a repeated letter once: ABBA has 6 orders, 5 other than itself', () => {
+  it('leaves no letter in the target\u2019s place whenever that is possible (ADR-038)', () => {
+    for (const target of ['LISTEN', 'PLANT', 'COAT', 'TRAIN', 'ANCHOR', 'STORM']) {
+      for (let seed = 1; seed <= 100; seed += 1) {
+        const result = makeScramble(target, () => false, seededRandom(seed));
+
+        expect(result.ok).toBe(true);
+        if (result.ok) expect(inPlace(result.value, target)).toBe(0);
+      }
+    }
+  });
+
+  it('uses the fewest it can when repeated letters force one into place', () => {
+    // AAB has no order with every letter moved: ABA and BAA each keep one.
+    const seen = new Set<string>();
+
+    for (let seed = 1; seed <= 200; seed += 1) {
+      const result = makeScramble('AAB', () => false, seededRandom(seed));
+      if (result.ok) {
+        seen.add(result.value);
+        expect(inPlace(result.value, 'AAB')).toBe(1);
+      }
+    }
+
+    expect([...seen].sort()).toEqual(['ABA', 'BAA']);
+  });
+
+  it('drops the orders that are words before it counts letters in place', () => {
+    // BCA and CAB would leave none in place, but they are words, so one of the rest is used.
+    const isWord = (word: string): boolean => word === 'BCA' || word === 'CAB';
+
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const result = makeScramble('ABC', isWord, seededRandom(seed));
+
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(['ACB', 'BAC', 'CBA']).toContain(result.value);
+    }
+  });
+
+  it('counts a repeated letter once: ABBA has 6 orders, and only BAAB moves every letter', () => {
     const seen = new Set<string>();
 
     for (let seed = 1; seed <= 400; seed += 1) {
@@ -51,7 +94,7 @@ describe('makeScramble (FR-138, EC-49)', () => {
       if (result.ok) seen.add(result.value);
     }
 
-    expect([...seen].sort()).toEqual(['AABB', 'BAAB', 'BABA', 'BBAA', 'ABAB'].sort());
+    expect([...seen]).toEqual(['BAAB']);
   });
 
   it('returns no-scramble when every other order is a word (EC-49)', () => {
@@ -106,11 +149,69 @@ describe('shuffleLetters (FR-143)', () => {
     }
   });
 
-  it('rotates when the shuffle lands on the same order', () => {
-    // Always picking the last index keeps every element in place.
-    const keepOrder = fixed(0.999);
+  it('can produce every other order when there is nothing to avoid', () => {
+    const seen = new Set<string>();
 
-    expect(shuffleLetters(['A', 'B', 'C'], keepOrder)).toEqual(['B', 'C', 'A']);
+    for (let seed = 1; seed <= 400; seed += 1) {
+      seen.add(shuffleLetters(['A', 'B', 'C'], seededRandom(seed)).join(''));
+    }
+
+    expect([...seen].sort()).toEqual(['ACB', 'BAC', 'BCA', 'CAB', 'CBA']);
+  });
+
+  describe('with avoid (ADR-038)', () => {
+    const none = (): boolean => false;
+
+    it('leaves no letter where the target has it, whenever that is possible', () => {
+      const avoid = { reference: ['A', 'B', 'C'], isWord: none };
+
+      for (let seed = 1; seed <= 200; seed += 1) {
+        const tray = shuffleLetters(['A', 'B', 'C'], seededRandom(seed), avoid).join('');
+
+        expect(['BCA', 'CAB']).toContain(tray);
+      }
+    });
+
+    it('skips an order that is a word', () => {
+      const avoid = {
+        reference: ['A', 'B', 'C'],
+        isWord: (w: string) => w === 'BCA' || w === 'CAB',
+      };
+
+      for (let seed = 1; seed <= 200; seed += 1) {
+        const tray = shuffleLetters(['A', 'B', 'C'], seededRandom(seed), avoid).join('');
+
+        expect(['ACB', 'BAC', 'CBA']).toContain(tray);
+      }
+    });
+
+    it('still changes the order when every other order is a word', () => {
+      const avoid = { reference: ['A', 'B', 'C'], isWord: () => true };
+
+      for (let seed = 1; seed <= 50; seed += 1) {
+        const tray = shuffleLetters(['A', 'B', 'C'], seededRandom(seed), avoid);
+
+        expect(tray).not.toEqual(['A', 'B', 'C']);
+        expect([...tray].sort()).toEqual(['A', 'B', 'C']);
+      }
+    });
+
+    it('works on a tray with letters taken out, against the letters still to place', () => {
+      // After a hint locks the first letter, the tray holds the rest of the target.
+      const avoid = { reference: ['T', 'A', 'R'], isWord: none };
+
+      for (let seed = 1; seed <= 100; seed += 1) {
+        const tray = shuffleLetters(['T', 'A', 'R'], seededRandom(seed), avoid);
+
+        expect(tray.filter((letter, index) => letter === avoid.reference[index])).toEqual([]);
+      }
+    });
+
+    it('swaps a two-letter tray, the only other order', () => {
+      expect(
+        shuffleLetters(['C', 'D'], fixed(0.5), { reference: ['C', 'D'], isWord: none }),
+      ).toEqual(['D', 'C']);
+    });
   });
 
   it('returns the same letters when they are all alike, or there is only one', () => {
@@ -126,11 +227,11 @@ describe('shuffleLetters (FR-143)', () => {
 
 describe('createPuzzle (FR-138)', () => {
   const lists = (words: string[], isWord: (word: string) => boolean) => ({
-    answers: words,
+    targets: words,
     isWord,
   });
 
-  it('draws a target from the answers with a valid scramble', () => {
+  it('draws a target from the pool with a valid scramble', () => {
     const result = createPuzzle(
       lists(['PLANT', 'STORM'], () => false),
       [],

@@ -17,7 +17,13 @@ export {
   timeBucketIndex,
 } from './constants';
 export { createShuffleGame, shuffleReducer, type ShuffleAction } from './reducer';
-export { createPuzzle, makeScramble, shuffleLetters, type PuzzleLists } from './scramble';
+export {
+  createPuzzle,
+  makeScramble,
+  shuffleLetters,
+  type PuzzleLists,
+  type ShuffleAvoid,
+} from './scramble';
 export {
   canHint,
   hasInput,

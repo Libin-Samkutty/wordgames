@@ -10,7 +10,8 @@ import type { WordLength } from '@/engine';
  *
  * With `Math.random` pinned to 0 the target is the first answer and the
  * scramble is the first qualifying ordering of its letters in alphabetical
- * order: LAMB → ABLM, PLANT → ALNPT, LISTEN → EILNST.
+ * order among those that leave no letter in the target's place (ADR-038):
+ * LAMB → ABLM, PLANT → ANLTP, LISTEN → ELINST.
  */
 export const SHUFFLE_FIXTURE_LISTS: Record<
   WordLength,
@@ -33,8 +34,8 @@ export const SHUFFLE_FIXTURE_LISTS: Record<
 /** The scramble each length starts with under the pinned random source. */
 export const FIRST_SCRAMBLE: Record<WordLength, string> = {
   4: 'ABLM',
-  5: 'ALNPT',
-  6: 'EILNST',
+  5: 'ANLTP',
+  6: 'ELINST',
 };
 
 /** Puts the fixture lists behind the registry and pins `Math.random` to 0. */

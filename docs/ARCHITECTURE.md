@@ -560,7 +560,7 @@ Actions
 
 ### 3.10 WordShuffle engine
 
-`src/engine/shuffle/`, T-88 to T-91. Rules in SPEC §20; rationale in ADR-032.
+`src/engine/shuffle/`, T-88 to T-91. Rules in SPEC §20; rationale in ADR-032 and ADR-038 (harder targets, scramble and clock).
 
 ```ts
 export const MAX_HINTS = 2;
@@ -589,12 +589,14 @@ Actions
   RESTORE        { state }                 // a validated saved puzzle (FR-147)
   ADD_LETTER     { letter, now }           // typed or tapped; ignored if not in the tray (EC-46)
   REMOVE_LETTER                            // returns the last unlocked letter to the tray
-  RESHUFFLE      { tray }                  // new order from shuffleLetters()
+  RESHUFFLE      { tray }                  // new order from shuffleLetters(tray, random, avoid)
   HINT           { now }                   // locks the next target letter
   SUBMIT_ANSWER  { word, anagrams, now }   // word passed validateAnswer
   GIVE_UP        { anagrams, now }
 ```
 
+- **Targets and scrambles (ADR-038).** `createPuzzle({ targets, isWord }, recent, random)` draws from the shuffle list. `makeScramble` and `shuffleLetters` both list every distinct order of the letters, drop the current one and any word, keep the orders with the fewest letters where the reference has the same letter, and pick one at random. For a first scramble the reference is the target. For a reshuffle it is the target's letters not locked by a hint, passed in as `avoid`. This is at most 720 orders, so there is no retry loop. The provider falls back to `answers` when a dictionary has no shuffle list, as a test fixture may.
+- **Clock (ADR-038).** `useElapsed(startedAt, finishedAt)` in `src/hooks/` ticks once a second while the game is running and holds still at the end. It reads the saved `startedAt`, so a restored game keeps counting. The engine stays free of timers: it only stores the two times it always stored.
 - **Input model (FR-139, FR-142).** `ADD_LETTER` moves one copy of the letter from the tray into the leftmost empty slot. A locked slot is never empty, so it is skipped. `REMOVE_LETTER` clears the rightmost filled slot that is not locked and appends its letter to the tray. It never removes a locked letter. A letter that is not left in the tray, or a full row, returns the same state.
 - **Hints.** `HINT` picks the leftmost position not in `hinted`. It first returns every unlocked letter in the row to the end of the tray, so the hinted letter is always available and never collides with a typed one (FR-142). It then places `target[position]` there, locks it and takes one copy of that letter out of the tray. It does nothing after `MAX_HINTS` or once the puzzle ends. The tray and the row together always hold exactly the letters of the scramble.
 - `validateAnswer(slots, { target, hinted, isAllowed })` returns `Result<string, AnswerError>` in FR-140 order: an empty slot gives `too-short`, a locked position that differs from the target gives `hint-moved`, and a word not in the guess list gives `not-a-word`. The input model makes `hint-moved` unreachable from the UI. It is a guard against a bad action or a hand-edited session, and the provider shows no toast for it (EC-48). `SUBMIT_ANSWER` repeats the guard: it ignores a word that is not the row as it stands, or that moves a hinted letter.

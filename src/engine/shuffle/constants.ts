@@ -11,7 +11,7 @@ export const SHUFFLE_LENGTHS = WORD_LENGTHS;
 /** The length a first-time player gets (FR-137). */
 export const DEFAULT_SHUFFLE_LENGTH = DEFAULT_WORD_LENGTH;
 
-/** Hints per puzzle (FR-142). There is no guess limit and no timer (FR-137). */
+/** Hints per puzzle (FR-142). There is no guess limit (FR-137), and the clock never ends a puzzle (ADR-038). */
 export const MAX_HINTS = 2;
 
 /**

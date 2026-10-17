@@ -26,6 +26,8 @@ ENABLE1 is the standard free word list used by word games; it contains no capita
 
 **`answers`** — the 700 most frequent words of that length that also pass a fairness screen. Small and curated, so every solution is deducible.
 
+**`shuffle`** — the words WordShuffle draws its targets from (ADR-038): the 1,500 candidates ranked just below the answers, under the answer fairness filters plus two shuffle-only ones. A hand-read blocklist drops first names, surnames, places, foreign words, archaic forms, interjections, slang and crude or distressing words. A rule drops past-tense and -ing forms whose stem is also a word, because the ending gives the shape away. The blocklist is `SHUFFLE_BLOCKLIST` in the generator. It never contains an answer, and every word is a valid guess.
+
 **`ladder`** (4 and 5 letters only) — the words WordWeaver builds ladders from: the most frequent ENABLE1 words of that length that have corpus frequency data, minus the blocklisted, name-like and clipped words, plus every answer. 1,400 words for 4 letters and 5,000 for 5. The plural rule for answers is not applied, because `CARS` is a fine rung. The sizes come from `scripts/measure-par.mjs` (SPEC §15.1) and are set by `LADDER_POOL_SIZE` in the generator.
 
 ## Answer fairness filters
@@ -42,11 +44,11 @@ Applied to the answer pool only. Every filtered word remains a **valid guess** �
 
 ## Current output
 
-| Length | Answers | Guesses | Ladder |
-| ------ | ------- | ------- | ------ |
-| 4      | 700     | 6,142   | 1,400  |
-| 5      | 700     | 13,746  | 5,000  |
-| 6      | 700     | 24,637  | none   |
+| Length | Answers | Guesses | Shuffle | Ladder |
+| ------ | ------- | ------- | ------- | ------ |
+| 4      | 700     | 6,142   | 712     | 1,400  |
+| 5      | 700     | 13,746  | 1,144   | 5,000  |
+| 6      | 700     | 24,637  | 1,051   | none   |
 
 Comfortably above the SPEC minimums of 300 answers and 1,500 guesses (FR-30). At 700 answers per length, the no-repeat ring buffer (FR-4) suppresses the 50 most recent solutions, so a player sees no repeat for at least 50 games.
 

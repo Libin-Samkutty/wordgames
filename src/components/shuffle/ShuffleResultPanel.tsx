@@ -1,6 +1,7 @@
 import type { WordLength } from '@/engine';
 import { SHUFFLE_LENGTHS } from '@/engine/shuffle';
 import { useEnterToContinue } from '@/hooks/useEnterToContinue';
+import { formatDuration } from '@/lib/format';
 
 import { ChangeLength } from '../game/ChangeLength';
 import { Button } from '../ui/Button';
@@ -11,6 +12,8 @@ export interface ShuffleResultPanelProps {
   /** The word that solved it, or the drawn target after a give up. */
   readonly word: string;
   readonly hintsUsed: number;
+  /** How long the puzzle took, in ms, or absent when the clock never started (ADR-038). */
+  readonly elapsedMs?: number | null;
   /** The other valid anagrams, not including `word` (FR-145). */
   readonly others: readonly string[];
   readonly onPlayAgain: () => void;
@@ -29,6 +32,7 @@ export function ShuffleResultPanel({
   length,
   word,
   hintsUsed,
+  elapsedMs = null,
   others,
   onPlayAgain,
   onChangeLength,
@@ -51,6 +55,10 @@ export function ShuffleResultPanel({
         </h3>
         <p className="font-mono text-xl font-bold tracking-widest">{word}</p>
       </div>
+
+      {elapsedMs === null || elapsedMs <= 0 ? null : (
+        <p className="text-sm text-text-muted">Time {formatDuration(elapsedMs)}</p>
+      )}
 
       <p className="text-sm text-text-muted">
         {hintsUsed === 0

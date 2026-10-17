@@ -27,11 +27,11 @@ describe('the real lists', () => {
     async (length: WordLength) => {
       const lists = await DICTIONARY_REGISTRY[length]();
       const guesses = new Set(lists.guesses);
-      const answers = new Set(lists.answers);
+      const pool = new Set(lists.shuffle);
 
       for (let seed = 1; seed <= 1000; seed += 1) {
         const puzzle = createPuzzle(
-          { answers: lists.answers, isWord: (word) => guesses.has(word) },
+          { targets: lists.shuffle ?? [], isWord: (word) => guesses.has(word) },
           [],
           seededRandom(seed),
         );
@@ -39,7 +39,7 @@ describe('the real lists', () => {
         expect(puzzle.ok).toBe(true);
         if (!puzzle.ok) return;
         const { target, scramble } = puzzle.value;
-        expect(answers.has(target)).toBe(true);
+        expect(pool.has(target)).toBe(true);
         expect(scramble).not.toBe(target);
         expect(guesses.has(scramble)).toBe(false);
         expect(anagramKey(scramble)).toBe(anagramKey(target));
@@ -48,14 +48,34 @@ describe('the real lists', () => {
   );
 
   it.each([4, 5, 6] as const)(
-    'every answer at length %i has a valid scramble, so EC-49 never has to redraw',
+    'every target at length %i has a valid scramble, so EC-49 never has to redraw',
     async (length: WordLength) => {
       const lists = await DICTIONARY_REGISTRY[length]();
       const guesses = new Set(lists.guesses);
 
-      for (const answer of lists.answers) {
-        expect(makeScramble(answer, (word) => guesses.has(word), seededRandom(1)).ok).toBe(true);
+      for (const target of lists.shuffle ?? []) {
+        expect(makeScramble(target, (word) => guesses.has(word), seededRandom(1)).ok).toBe(true);
       }
+    },
+  );
+
+  it.each([4, 5, 6] as const)(
+    'a scramble at length %i leaves no letter in the target\u2019s place, bar the few words that cannot (ADR-038)',
+    async (length: WordLength) => {
+      const lists = await DICTIONARY_REGISTRY[length]();
+      const guesses = new Set(lists.guesses);
+      const inPlace = (order: string, word: string): number =>
+        [...order].filter((letter, index) => letter === word[index]).length;
+
+      let somePlace = 0;
+      for (const target of lists.shuffle ?? []) {
+        const result = makeScramble(target, (word) => guesses.has(word), seededRandom(3));
+        if (result.ok && inPlace(result.value, target) > 0) somePlace += 1;
+      }
+
+      // Only words whose repeated letters force one into place, or whose every
+      // moved order is a word, can keep a letter. That is a small share of the pool.
+      expect(somePlace / (lists.shuffle?.length ?? 1)).toBeLessThan(0.05);
     },
   );
 });

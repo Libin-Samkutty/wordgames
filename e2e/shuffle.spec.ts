@@ -32,11 +32,13 @@ interface SeedOptions {
   /** Positions locked by hints; their letters come from the target. */
   hinted?: number[];
   status?: 'playing' | 'solved';
+  /** False for a puzzle whose clock has not started. Defaults to true. */
+  started?: boolean;
 }
 
 /** Saves a WordShuffle puzzle with a real target before the page loads. */
 async function seedPuzzle(page: Page, options: SeedOptions = {}): Promise<void> {
-  const { length = 5, typed = '', hinted = [], status = 'playing' } = options;
+  const { length = 5, typed = '', hinted = [], status = 'playing', started = true } = options;
   const target = TARGETS[length];
   const scramble = SCRAMBLES[length];
   const solved = status === 'solved';
@@ -68,7 +70,7 @@ async function seedPuzzle(page: Page, options: SeedOptions = {}): Promise<void> 
     found: solved ? target : null,
     anagrams:
       solved && length === 6 ? ['ELINTS', 'ENLIST', 'INLETS', 'LISTEN', 'SILENT', 'TINSEL'] : [],
-    startedAt: 1,
+    startedAt: started ? 1 : null,
     finishedAt: solved ? 2 : null,
   };
 
@@ -128,6 +130,25 @@ test.describe('playing (FR-139, FR-141, AC-53)', () => {
       'Your answer: empty, empty, empty, empty, empty',
     );
     await expect(page.getByRole('radio', { name: /^5/ })).toBeChecked();
+  });
+
+  test('the clock starts at 0:00, runs from the first letter and stops at the solve (ADR-038)', async ({
+    page,
+  }) => {
+    await seedPuzzle(page, { started: false });
+    await openShuffle(page);
+    const clock = page.getByRole('timer', { name: 'Time' });
+    await expect(clock).toHaveText('0:00');
+
+    await page.keyboard.type('P');
+    await expect(clock).toHaveText(/^0:0[1-9]$/, { timeout: 5000 });
+
+    await page.keyboard.type('LANT');
+    await page.keyboard.press('Enter');
+
+    const panel = page.getByRole('region', { name: 'Solved!' });
+    await expect(panel).toContainText(/Time 0:0[0-9]/);
+    await expect(page.getByRole('timer')).toHaveCount(0);
   });
 
   test('typing and tapping build the same answer, and Backspace returns a letter', async ({

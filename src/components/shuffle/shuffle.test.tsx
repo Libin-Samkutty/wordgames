@@ -177,6 +177,44 @@ describe('ShuffleResultPanel (FR-145)', () => {
     expect(within(panel).queryByRole('list')).not.toBeInTheDocument();
   });
 
+  it('shows the time it took, and leaves it out when the clock never started', () => {
+    const { rerender } = render(
+      <ShuffleResultPanel
+        {...baseProps}
+        solved
+        word="PLANT"
+        hintsUsed={0}
+        elapsedMs={65_000}
+        others={[]}
+      />,
+    );
+    expect(screen.getByText('Time 1:05')).toBeInTheDocument();
+
+    rerender(
+      <ShuffleResultPanel
+        {...baseProps}
+        solved
+        word="PLANT"
+        hintsUsed={0}
+        elapsedMs={null}
+        others={[]}
+      />,
+    );
+    expect(screen.queryByText(/^Time /)).not.toBeInTheDocument();
+
+    rerender(
+      <ShuffleResultPanel
+        {...baseProps}
+        solved
+        word="PLANT"
+        hintsUsed={0}
+        elapsedMs={0}
+        others={[]}
+      />,
+    );
+    expect(screen.queryByText(/^Time /)).not.toBeInTheDocument();
+  });
+
   it('says "No hints used" with none', () => {
     render(<ShuffleResultPanel {...baseProps} solved word="PLANT" hintsUsed={0} others={[]} />);
 
@@ -193,7 +231,7 @@ describe('ShuffleHelpModal (FR-147, A11Y-13)', () => {
     expect(dialog).toHaveTextContent(/Any real word/);
     expect(dialog).toHaveTextContent(/Reshuffle/);
     expect(dialog).toHaveTextContent(/2 hints/);
-    expect(dialog).toHaveTextContent(/no clock/i);
+    expect(dialog).toHaveTextContent(/clock counts up/i);
     expect(dialog).toHaveTextContent(/Give up/);
   });
 
@@ -258,6 +296,24 @@ describe('announcements (A11Y-24)', () => {
     expect(solveAnnouncement(solved(0))).toBe('Solved with SILENT. No hints used.');
     expect(solveAnnouncement(solved(1))).toBe('Solved with SILENT. 1 hint used.');
     expect(solveAnnouncement(solved(2))).toBe('Solved with SILENT. 2 hints used.');
+  });
+
+  it('adds how long a solve took, in words', () => {
+    const took = (ms: number): string =>
+      solveAnnouncement({
+        ...fresh(),
+        status: 'solved',
+        found: 'SILENT',
+        startedAt: 1_000,
+        finishedAt: 1_000 + ms,
+      });
+
+    expect(took(400)).toBe('Solved with SILENT in under a second. No hints used.');
+    expect(took(1_000)).toBe('Solved with SILENT in 1 second. No hints used.');
+    expect(took(42_000)).toBe('Solved with SILENT in 42 seconds. No hints used.');
+    expect(took(60_000)).toBe('Solved with SILENT in 1 minute. No hints used.');
+    expect(took(125_000)).toBe('Solved with SILENT in 2 minutes 5 seconds. No hints used.');
+    expect(took(61_000)).toBe('Solved with SILENT in 1 minute 1 second. No hints used.');
   });
 
   it('words a give up with the word', () => {

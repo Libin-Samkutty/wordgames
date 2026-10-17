@@ -94,7 +94,7 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 - The letters of a word arrive shuffled in a tray. Type or tap them into order
 - **Any real word** that uses exactly those letters wins, not only the drawn one
 - Up to 2 **hints** lock the next letter of the drawn word in place; **Reshuffle** is free; **Give up** shows every valid anagram
-- 4, 5 or 6 letters, no clock and no guess limit. Statistics count hints, not time
+- 4, 5 or 6 letters and no guess limit. Targets are less common words than the answers of the other games, no letter starts where it belongs, and a count-up clock shows how long you took
 
 ### WordWright
 
