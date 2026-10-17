@@ -114,6 +114,14 @@ async function guess(page: Page, word: string, total: number): Promise<void> {
   await page.keyboard.type(word);
   await page.keyboard.press('Enter');
   await expect(scoredRows(page)).toHaveCount(total, { timeout: 3000 });
+  // The reveal is over once input is open again, or the game has ended, so the next word is not dropped.
+  await expect
+    .poll(async () => {
+      const open = await page.getByRole('button', { name: 'Enter' }).isEnabled();
+      const ended = (await page.getByRole('heading', { name: /cornered|Gave up/ }).count()) > 0;
+      return open || ended;
+    })
+    .toBe(true);
 }
 
 // Reduced motion keeps dialogs from fading while axe reads colours.
@@ -126,7 +134,7 @@ test.describe('opening and navigating (AC-45)', () => {
     await page.goto('/');
 
     const links = page.getByRole('list').getByRole('link');
-    await expect(links).toHaveCount(7);
+    await expect(links).toHaveCount(8);
     await expect(links.nth(6)).toHaveAccessibleName('Play WordDodge');
 
     await page.getByRole('link', { name: 'Play WordDodge' }).click();

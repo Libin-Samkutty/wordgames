@@ -21,7 +21,8 @@ const legacyPrefix = `${LEGACY_NAMESPACE}:${STORAGE_VERSION}`;
  * Games in the suite. An explicit union, widened when work on a game starts so
  * its storage keys and tests can exist before it has a route (ADR-028).
  */
-export type GameId = 'wordwright' | 'weaver' | 'stack' | 'range' | 'code' | 'shuffle' | 'dodge';
+export type GameId =
+  'wordwright' | 'weaver' | 'stack' | 'range' | 'code' | 'shuffle' | 'dodge' | 'hunt';
 
 /** Keys shared by the whole suite. */
 export const STORAGE_KEYS = {

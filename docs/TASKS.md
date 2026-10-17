@@ -2,7 +2,7 @@
 
 The project was previously named Wordwright. That name now belongs to the Wordle-style game inside the suite.
 
-Ordered, phased backlog for Wordwright V1 (Phases 0–10), Suite V1 (Phases 11–14) and the game releases R2–R6 (Phases 15–19). Every task is **independently completable**: it has a clear deliverable, explicit acceptance, and can be shipped as one commit or PR without breaking `main`.
+Ordered, phased backlog for Wordwright V1 (Phases 0–10), Suite V1 (Phases 11–14) and the game releases R2–R7 (Phases 15–20). Every task is **independently completable**: it has a clear deliverable, explicit acceptance, and can be shipped as one commit or PR without breaking `main`.
 
 **Conventions**
 
@@ -11,7 +11,7 @@ Ordered, phased backlog for Wordwright V1 (Phases 0–10), Suite V1 (Phases 11�
 - **DoD** — done when these are true, _in addition to_ the global bar: `npm run verify` passes, no console errors, docs updated if behaviour changed.
 - Phases are sequential; tasks inside a phase are mostly parallelisable unless a dependency is noted.
 
-**Progress:** 95 / 95 complete. Wordwright V1 (T-01 … T-49) is done, plus a full review pass (2026-07-26); see [`REVIEW.md`](./REVIEW.md). Suite V1 (T-50 … T-73) is built and verified in this environment; deployment and the redirect are owner steps (see the README). Releases R2–R5 (T-74 … T-91) follow Suite V1, one game per release: WordStack, WordRange, WordCode, then WordShuffle.
+**Progress:** 99 / 99 complete. Wordwright V1 (T-01 … T-49) is done, plus a full review pass (2026-07-26); see [`REVIEW.md`](./REVIEW.md). Suite V1 (T-50 … T-73) is built and verified in this environment; deployment and the redirect are owner steps (see the README). Releases R2–R5 (T-74 … T-91) follow Suite V1, one game per release: WordStack, WordRange, WordCode, then WordShuffle.
 
 ---
 
@@ -682,6 +682,32 @@ Schemas and runtime guards for `wordgames:v1:dodge:{prefs,stats,session}`, with 
 
 ---
 
+## Phase 20 — WordHunt, release R7 (T-96 … T-99)
+
+Adds WordHunt (SPEC §22). Rationale in ADR-040.
+
+### ✅ T-96 · WordHunt engine
+
+Pure code in `src/engine/hunt/`. A tray of six letters (FR-158). `subsetKeys` and `requiredFor` find the common words that hide in a tray with WordShuffle's anagram index, `buildPool` keeps the seeds hiding 8 to 20 of them, and `createPuzzle` draws one with the ring buffer (FR-159). `validateWord` runs the FR-161 order. `huntReducer` handles typing, `SUBMIT_WORD` (a required word to `found`, any other to `bonus`, a win when all are found), `RESHUFFLE`, and `GIVE_UP` (FR-160, FR-162, FR-163).
+**Req:** FR-158, FR-159, FR-160, FR-161, FR-162, FR-163, NFR-19, AC-59 · **Depends:** T-74, T-88 · **DoD:** sub-multiset cases with repeated letters; the pool keeps a seed at exactly 8 and at exactly 20 required words and drops one either side; on the real lists the pool has at least 150 seeds, each hiding 8 to 20 required words that are valid guesses spelled from the tray; 1,000 seeded puzzles have a tray that is not the seed; a bonus word never wins or fills a slot; a letter the tray has none left of changes nothing; 100% branch coverage and the engine purity lint cover `src/engine/hunt/**`.
+
+### ✅ T-97 · WordHunt storage and providers
+
+Schemas and runtime guards for `wordgames:v1:hunt:{stats,session,meta}`, with no prefs key. A `recordGame` reducer, idempotent by game id, with one set of stats: played, completed, streaks, words found and to find, bonus words, solve times, and the last 50 puzzles (FR-165). `HuntStatsProvider` and `HuntProvider` in `src/state/hunt/` load the three dictionaries, persist the whole puzzle with its own words, and record each finished puzzle once (FR-164).
+**Req:** FR-164, FR-165, AC-56 · **Depends:** T-96 · **DoD:** unit tests for a completion, a give up that ends the streak, the averages, the 50-game cap, double-record idempotency and hostile input; leaving mid-puzzle and returning restores the tray, the words and the typed letters; a saved puzzle restores with its own words whatever the lists hold; a corrupt save is dropped; resetting WordHunt stats leaves every other game's stats byte-identical (AC-56).
+
+### ✅ T-98 · WordHunt view
+
+`HuntView` in `src/components/hunt/`: `HuntBoard` with the slots grouped by length, the bonus words, the word row and a tray of buttons at least 44 px square, the words-found line and the clock, and **Backspace**, **Submit**, **Reshuffle** and **Give up**. **Give up** and a new puzzle after any progress ask to confirm through `ConfirmDialog` (FR-163, FR-164). `HuntResultPanel` with the FR-165 content and `useEnterToContinue` armed on mount.
+**Req:** FR-160, FR-161, FR-162, FR-163, FR-165, US-40, AC-55 · **Depends:** T-97, T-52 · **DoD:** integration tests: typing and tapping build the same word; a common word fills its slot and a bonus word does not; each rejection gives its toast; finding every word wins; give up asks and shows the missed words; the Enter that submits the last word does not start a new puzzle and the next Enter does (AC-55).
+
+### ✅ T-99 · WordHunt help, stats, accessibility and release
+
+`HuntHelpModal` explaining the tray, slots, bonus words, reshuffle, the clock and Give up (FR-166), with a decorative example. `HuntStatsModal` with the completion and word-found measures, recent puzzles, the empty state and scoped reset actions. Name each slot, tray letter and the word row, and announce each accepted word (A11Y-26). Add WordHunt to the catalogue. Run axe and fill the R7 addendum in `ACCEPTANCE.md`.
+**Req:** FR-165, FR-166, A11Y-26, US-40, AC-57 · **Depends:** T-98 · **DoD:** tests assert the slot, tray and word-row names and one announcement per accepted word; the help dialog never opens by itself; with fixture stats every value matches a hand-computed expectation and the percentages show `—` with nothing found; axe reports zero serious or critical issues on WordHunt in both themes and both palettes (AC-57); Home shows the WordHunt card and `#/hunt` opens it (AC-45); every R7 row in `ACCEPTANCE.md` is ticked with evidence.
+
+---
+
 ## Dependency Summary
 
 ```
@@ -702,7 +728,7 @@ Phase 10 ──▶ T-50 ──┬──▶ Phase 11 (T-51 … T-57) ──┬─
 
 T-50 (rename) comes first. After it, Phase 11 and Phase 12 can run in parallel; T-52 and T-61 have no dependencies and can start at any time. Phase 13 needs both.
 
-Releases R2–R6:
+Releases R2–R7:
 
 ```
 Phase 14 ──▶ T-74 ──┬──▶ Phase 15 (R2 WordStack, T-75 … T-79)
@@ -712,11 +738,13 @@ Phase 14 ──▶ T-74 ──┬──▶ Phase 15 (R2 WordStack, T-75 … T-79
                     ├──▶ T-84 ───────────────────────────┴──▶ Phase 17 (R4 WordCode, T-85 … T-87)
                     │                                                      │
                     ├──▶ T-88 ─────────────────────────────────────────────┴──▶ Phase 18 (R5 WordShuffle, T-89 … T-91)
-                    │                                                                          │
-                    └──▶ T-92 ─────────────────────────────────────────────────────────────────┴──▶ Phase 19 (R6 WordDodge, T-93 … T-95)
+                    │                                                               │
+                    ├──▶ T-92 ──────────────────────────────────────────────────────┴──▶ Phase 19 (R6 WordDodge, T-93 … T-95)
+                    │                                                                        │
+                    └──▶ T-96 ───────────────────────────────────────────────────────────────┴──▶ Phase 20 (R7 WordHunt, T-97 … T-99)
 ```
 
-T-74 (game catalogue) comes first and is part of R2. The engines T-80, T-84, T-88 and T-92 depend only on T-74, so they can be built ahead of their phase. The releases still ship in order: R2, R3, R4, R5, R6. Each release task (T-79, T-83, T-87, T-91, T-95) adds its game to the catalogue, deploys, and fills that release's addendum in `ACCEPTANCE.md`. There are no feature flags.
+T-74 (game catalogue) comes first and is part of R2. The engines T-80, T-84, T-88, T-92 and T-96 depend only on T-74 (T-96 also on T-88, whose anagram index it reuses), so they can be built ahead of their phase. The releases still ship in order: R2, R3, R4, R5, R6, R7. Each release task (T-79, T-83, T-87, T-91, T-95, T-99) adds its game to the catalogue, deploys, and fills that release's addendum in `ACCEPTANCE.md`. There are no feature flags.
 
 ## Out of Scope
 

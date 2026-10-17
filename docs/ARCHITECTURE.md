@@ -1,6 +1,6 @@
 # wordgames — Architecture
 
-**Scope:** Suite V1 implementation design: the shell, Wordwright and WordWeaver, plus the five games in releases R2–R6 (WordStack, WordRange, WordCode, WordShuffle, WordDodge). Companion to [`SPEC.md`](./SPEC.md) (what) and [`DECISIONS.md`](./DECISIONS.md) (why). The project was previously named Wordwright; that name now means the Wordle-style game. Sections marked _planned_ describe the suite work in TASKS Phases 11–18 and are not built yet.
+**Scope:** Suite V1 implementation design: the shell, Wordwright and WordWeaver, plus the six games in releases R2–R7 (WordStack, WordRange, WordCode, WordShuffle, WordDodge, WordHunt). Companion to [`SPEC.md`](./SPEC.md) (what) and [`DECISIONS.md`](./DECISIONS.md) (why). The project was previously named Wordwright; that name now means the Wordle-style game. Sections marked _planned_ describe the suite work in TASKS Phases 11–18 and are not built yet.
 
 ---
 
@@ -41,6 +41,7 @@ Suite V1 (T-50 … T-73) ships Home, Wordwright and WordWeaver. Four more games 
 | R4      | WordCode    | `#/code`    | Bulls and cows: two counts per guess, no tile colours        | §19  | 031 |
 | R5      | WordShuffle | `#/shuffle` | Unscramble the letters; any valid anagram wins               | §20  | 032 |
 | R6      | WordDodge   | `#/dodge`   | A Wordle that never picks a word and keeps the most possible | §21  | 039 |
+| R7      | WordHunt    | `#/hunt`    | Find every common word hiding in six letters                 | §22  | 040 |
 
 There are no feature flags. A game enters the catalogue in the release that ships it, and until then its route goes Home (FR-97).
 
@@ -49,10 +50,10 @@ Each game has its own engine, reducer, providers, statistics and storage keys. T
 ```
           ┌──────────── Shell (catalogue, routes, header, settings, toasts) ────────────┐
           │                                                                              │
- #/ ──▶ HomeView   #/wordwright   #/weaver      #/stack      #/range      #/code      #/shuffle    #/dodge
+ #/ ──▶ HomeView   #/wordwright   #/weaver      #/stack      #/range      #/code      #/shuffle    #/dodge    #/hunt
                         │             │             │            │            │            │
                    engine/       engine/       engine/      engine/      engine/      engine/
-                   (root)        weaver/       stack/       range/       code/        shuffle/     dodge/
+                   (root)        weaver/       stack/       range/       code/        shuffle/     dodge/     hunt/
                         └─────────────┴──── dictionary/ · storage/ ──────┴────────────┘
 ```
 
@@ -129,10 +130,16 @@ wordgames/
 │   │   │   ├── validate.ts        # validateAnswer() — FR-140 order
 │   │   │   ├── reducer.ts  selectors.ts
 │   │   │   └── index.ts  __tests__/
-│   │   └── dodge/                 # WordDodge engine (§3.11)
-│   │       ├── types.ts  constants.ts      # DodgeState, distribution rows …
-│   │       ├── adversary.ts       # chooseReply() — largest group of candidates
-│   │       ├── reducer.ts  selectors.ts    # restoreGame(), dodgeRows() …
+│   │   ├── dodge/                 # WordDodge engine (§3.11)
+│   │   │   ├── types.ts  constants.ts      # DodgeState, distribution rows …
+│   │   │   ├── adversary.ts       # chooseReply() — largest group of candidates
+│   │   │   ├── reducer.ts  selectors.ts    # restoreGame(), dodgeRows() …
+│   │   │   └── index.ts  __tests__/
+│   │   └── hunt/                  # WordHunt engine (§3.12)
+│   │       ├── types.ts  constants.ts      # HuntState, MIN_REQUIRED = 8 …
+│   │       ├── puzzle.ts          # requiredFor(), buildPool(), createPuzzle()
+│   │       ├── validate.ts        # validateWord() — FR-161 order
+│   │       ├── reducer.ts  selectors.ts
 │   │       └── index.ts  __tests__/
 │   ├── dictionary/
 │   │   ├── data/
@@ -175,7 +182,8 @@ wordgames/
 │   │   ├── range/                 # RangeProvider, RangeStatsProvider, rangeContexts (useRange, useRangeStats)
 │   │   ├── code/                  # CodeProvider, CodeStatsProvider, codeContexts (useCode, useCodeStats)
 │   │   ├── shuffle/               # ShuffleProvider, ShuffleStatsProvider, shuffleContexts (useShuffle, useShuffleStats)
-│   │   └── dodge/                 # DodgeProvider, DodgeStatsProvider, dodgeContexts (useDodge, useDodgeStats)
+│   │   ├── dodge/                 # DodgeProvider, DodgeStatsProvider, dodgeContexts (useDodge, useDodgeStats)
+│   │   └── hunt/                  # HuntProvider, HuntStatsProvider, huntContexts (useHunt, useHuntStats)
 │   ├── shell/                     # suite shell (§1.1, §6.4)
 │   │   ├── catalogue.ts           # GAMES: ordered, read-only, lazy Views; defineGame, GameLoadError (ADR-028)
 │   │   ├── GameFrame.tsx          # loads one catalogue game: Suspense fallback, load-failure panel (EC-50)
@@ -208,6 +216,8 @@ wordgames/
 │   │   │              result, help and stats dialogs
 │   │   ├── dodge/     DodgeView (shared Board and Keyboard, words-left count, Give up),
 │   │   │              DodgeResultPanel, help and stats dialogs
+│   │   ├── hunt/      HuntView, HuntBoard (slots, word row, tray), huntLabels,
+│   │   │              result, help and stats dialogs
 │   │   └── index.ts
 │   ├── hooks/
 │   │   ├── usePhysicalKeyboard.ts
@@ -658,6 +668,45 @@ type DodgeAction =
 
 ---
 
+### 3.12 WordHunt engine
+
+`src/engine/hunt/`, T-96 to T-99. Rules in SPEC §22; rationale in ADR-040.
+
+```ts
+interface HuntState {
+  readonly id: string;
+  readonly seed: string; // the 6-letter word the tray came from
+  readonly tray: string; // the six letters, in the order shown
+  readonly required: readonly string[]; // common words that hide in the tray, by length then alphabet
+  readonly found: readonly string[]; // required words found, in order
+  readonly bonus: readonly string[]; // other valid words found
+  readonly currentInput: string;
+  readonly status: 'playing' | 'won' | 'gave-up';
+  readonly startedAt: number | null;
+  readonly finishedAt: number | null;
+}
+
+type HuntAction =
+  | START        { id, puzzle }
+  | RESTORE      { state }
+  | ADD_LETTER   { letter, now }
+  | REMOVE_LETTER
+  | SUBMIT_WORD  { word, now }     // validated by the provider
+  | RESHUFFLE    { tray }          // from shuffleLetters()
+  | GIVE_UP      { now }
+```
+
+- **Finding the words.** `requiredFor(letters, sources)` in `puzzle.ts` takes, for each length 4, 5 and 6, every distinct sorted-letter key of that many of the letters (`subsetKeys`), looks it up in that length's anagram index, and keeps the words in the common set. A word belongs to one key, so none repeats. `sources` holds, per length, the common set (answers and shuffle list) and the index built from the guess list.
+- **The pool.** `buildPool(seeds, sources)` keeps the seeds with 8 to 20 required words. `createPuzzle(pool, sources, recent, random)` draws a seed with `pickAnswer` and the ring buffer, and scrambles it with WordShuffle's `shuffleLetters`.
+- **Check.** `validateWord(input, state, isWord)` runs the FR-161 order: `too-short`, `not-from-tray`, `already-found`, `not-a-word`. It returns the word and whether it is required. The reducer re-checks length, tray and repeats, and trusts the dictionary result.
+- **Reducer.** `SUBMIT_WORD` puts a required word in `found` and any other in `bonus`, and wins when `found` holds every required word. `ADD_LETTER` ignores a letter the tray has none left of. `RESHUFFLE` accepts only a reordering of the same letters.
+- **Selectors.** `slotGroups` (the board's slots by length), `usedPositions` (which tray buttons typed letters are using), `missedWords`, `requiredCount`, `foundCount`, `isGameOver` and `huntRecord` (the FR-165 stats record).
+- **Provider.** `HuntProvider` loads the 4, 5 and 6-letter dictionaries together, builds the sources and the pool once (cached against the 6-letter dictionary), and restores a saved puzzle or starts one. A saved puzzle needs no check against the lists. It has a ring buffer in `meta` and no prefs.
+- **View.** `HuntBoard` shows the slots in a labelled scrollable group, the bonus words, the word row and a tray of buttons at least 44 px square. `HuntView` adds the words-found line, the clock (`useElapsed`), and **Backspace**, **Submit**, **Reshuffle** and **Give up**.
+- **Reuses** WordShuffle's `buildAnagramIndex` and `shuffleLetters`, the root engine's `pickAnswer`, and `useElapsed`.
+
+---
+
 ## 4. Component Hierarchy
 
 The suite tree as built (`src/App.tsx`, `src/shell/AppShell.tsx`). §4.1 has the reasoning and the game-by-game table.
@@ -721,6 +770,7 @@ Each `View` module wraps its own provider pair around its view. The shell never 
 | `#/code`       | `CodeStatsProvider` › `CodeProvider` (reducer incl. letter notes, dictionary, length pref) › `CodeView`                 |
 | `#/shuffle`    | `ShuffleStatsProvider` › `ShuffleProvider` (reducer, dictionary, anagram index, length pref) › `ShuffleView`            |
 | `#/dodge`      | `DodgeStatsProvider` › `DodgeProvider` (reducer, dictionary, replay on restore, length pref) › `DodgeView`              |
+| `#/hunt`       | `HuntStatsProvider` › `HuntProvider` (reducer, three dictionaries, word sources and pool) › `HuntView`                  |
 
 - The header `<h1>` and page title come from the catalogue entry, so they render before the chunk resolves. Focus moves to the `<h1>` on a route change as before (A11Y-15).
 - A game that has not shipped has no catalogue entry, so its route goes Home (FR-97, EC-22).
@@ -791,6 +841,10 @@ Releases R2–R5 add one set of slices per game. The persisted ones map to the k
 | WordDodge game          | `DodgeProvider` (`useReducer`)         | Yes, debounced 150 ms + page hide + unmount flush | `DodgeSession` without candidates (§3.11)               |
 | WordDodge prefs         | `DodgeProvider`                        | Yes, immediate                                    | `{ defaultWordLength }`; no meta                        |
 | WordDodge statistics    | `DodgeStatsProvider` (`useReducer`)    | Yes, immediate                                    | overall + per length + last 50 (FR-155)                 |
+| WordHunt puzzle         | `HuntProvider` (`useReducer`)          | Yes, debounced 150 ms + page hide + unmount flush | `HuntState` incl. its own word list (§3.12)             |
+| WordHunt word sources   | `HuntProvider` (cached, per session)   | No (built from bundled lists)                     | per length: common set + anagram index; seed pool       |
+| WordHunt meta           | `HuntProvider`                         | Yes, immediate                                    | `{ recentAnswers }`, one buffer; no prefs               |
+| WordHunt statistics     | `HuntStatsProvider` (`useReducer`)     | Yes, immediate                                    | one set + last 50 (FR-165)                              |
 
 Each game's slices are independent of every other game's. Nothing in one game's tree reads another game's state (FR-99, AC-56).
 
@@ -990,6 +1044,7 @@ Only the key names are shared. Each game keeps its own validators, defaults and 
 | WordCode (`code`)       | `{ defaultWordLength }`, default 5       | `{ recentAnswers: { 4: [], 5: [], 6: [] } }` | FR-134 / `CodeState` with notes (FR-135) |
 | WordShuffle (`shuffle`) | `{ defaultWordLength }`, default 5       | `{ recentAnswers: { 4: [], 5: [], 6: [] } }` | FR-146 / `ShuffleState` (FR-147)         |
 | WordDodge (`dodge`)     | `{ defaultWordLength }`, default 5       | not used: no secret is drawn                 | FR-155 / `DodgeSession` (FR-153)         |
+| WordHunt (`hunt`)       | not used: one fixed size                 | `{ recentAnswers: string[] }`, seeds         | FR-165 / `HuntState` (FR-164)            |
 
 - Each game's ring buffer lives in its own `meta`, so playing one game never changes another game's answer rotation.
 - Restore rules follow FR-32 and FR-33: a saved session is discarded silently if any answer, secret or target has left the answer list (FR-112, FR-125).
@@ -1067,13 +1122,14 @@ WordWeaver adds no loader, no registry entry and no data chunk (NFR-14).
 
 The four new games add no loader, no registry entry and no data chunk (NFR-18). Each calls `loadDictionary(length)` and gets the same cached `Dictionary` as the other games, so a chunk is downloaded once per session whichever game asks first. None of them uses the ladder list.
 
-| Game        | Chunks                | Answer list                      | Guess `Set`                                        | Sorted guess array                        |
-| ----------- | --------------------- | -------------------------------- | -------------------------------------------------- | ----------------------------------------- |
-| WordStack   | `lists-5`             | 2 or 4 distinct answers (FR-103) | validation (FR-104)                                | not used                                  |
-| WordRange   | `lists-5`             | the secret (FR-115)              | validation (FR-117)                                | list distance for heat (FR-120)           |
-| WordCode    | `lists-4`, `-5`, `-6` | the secret (FR-127)              | validation (FR-128)                                | not used                                  |
-| WordShuffle | `lists-4`, `-5`, `-6` | the target (FR-138)              | validation and the scramble check (FR-138, FR-140) | builds the anagram index (FR-141, FR-144) |
-| WordDodge   | `lists-4`, `-5`, `-6` | the candidates (FR-149)          | validation (FR-151)                                | not used                                  |
+| Game        | Chunks                | Answer list                                                  | Guess `Set`                                        | Sorted guess array                        |
+| ----------- | --------------------- | ------------------------------------------------------------ | -------------------------------------------------- | ----------------------------------------- |
+| WordStack   | `lists-5`             | 2 or 4 distinct answers (FR-103)                             | validation (FR-104)                                | not used                                  |
+| WordRange   | `lists-5`             | the secret (FR-115)                                          | validation (FR-117)                                | list distance for heat (FR-120)           |
+| WordCode    | `lists-4`, `-5`, `-6` | the secret (FR-127)                                          | validation (FR-128)                                | not used                                  |
+| WordShuffle | `lists-4`, `-5`, `-6` | the target (FR-138)                                          | validation and the scramble check (FR-138, FR-140) | builds the anagram index (FR-141, FR-144) |
+| WordDodge   | `lists-4`, `-5`, `-6` | the candidates (FR-149)                                      | validation (FR-151)                                | not used                                  |
+| WordHunt    | `lists-4`, `-5`, `-6` | with the shuffle list, the required words and seeds (FR-159) | validation (FR-161)                                | builds the anagram index (FR-159)         |
 
 - `Dictionary` holds `guesses` only as a `Set` today (`src/dictionary/types.ts`). WordRange and WordShuffle need the sorted array as well, so `Dictionary` gains a read-only `guessList` field that points at the module's existing array. Nothing is copied.
 - The lists are already sorted, uppercase and unique, and `answers ⊆ guesses` (§8.3). WordRange relies on this: string order is list order, so bounds compare as strings and heat is a difference of indices (ADR-030).

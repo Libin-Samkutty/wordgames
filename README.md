@@ -1,8 +1,8 @@
 # WordGames
 
-An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. **WordDodge** is a Wordle that never picks a word. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
+An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. **WordDodge** is a Wordle that never picks a word. **WordHunt** finds every word hiding in six letters. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
 
-> **Status:** All seven games are built, 95 of 95 tasks: WordWright, WordWeaver, WordStack, WordRange, WordCode, WordShuffle and WordDodge. 2,185 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
+> **Status:** All eight games are built, 99 of 99 tasks: WordWright, WordWeaver, WordStack, WordRange, WordCode, WordShuffle, WordDodge and WordHunt. 2,344 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
 
 ---
 
@@ -22,7 +22,7 @@ An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 a
 
 ## Overview
 
-WordGames is a single-page web app with a Home screen and one view per game, chosen by the URL hash (`#/`, `#/wordwright`, `#/weaver`, `#/stack`, `#/range`, `#/code`, `#/shuffle`, `#/dodge`). Wordwright recreates the Wordle game loop with three word lengths, unlimited replays, and a full statistics suite. WordWeaver generates an unlimited supply of ladder puzzles on the device, scored against par. Each game keeps its own statistics, preferences and saved game. The suite is deliberately **local-first**: the dictionaries ship with the bundle, game state and stats live in LocalStorage, and the app is fully playable with the network disabled.
+WordGames is a single-page web app with a Home screen and one view per game, chosen by the URL hash (`#/`, `#/wordwright`, `#/weaver`, `#/stack`, `#/range`, `#/code`, `#/shuffle`, `#/dodge`, `#/hunt`). Wordwright recreates the Wordle game loop with three word lengths, unlimited replays, and a full statistics suite. WordWeaver generates an unlimited supply of ladder puzzles on the device, scored against par. Each game keeps its own statistics, preferences and saved game. The suite is deliberately **local-first**: the dictionaries ship with the bundle, game state and stats live in LocalStorage, and the app is fully playable with the network disabled.
 
 **Design principles**
 
@@ -102,6 +102,13 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 - A count shows how many words are left. You win by guessing the last one. There is no guess limit
 - 4, 5 or 6 letters. **Give up** shows a word that was still possible and counts as a loss
 - Statistics overall and per length, with wins grouped by guesses used
+
+### WordHunt
+
+- Six letters sit in a tray. Find every common word of 4, 5 or 6 letters that can be made from them
+- Slots grouped by length show how many are left. A found word fills its slot, and a count-up clock shows how long you took
+- Any other real word is a **bonus word**: it is counted but never needed. **Reshuffle** is free; **Give up** shows the words you missed
+- Statistics for completion, the share of words found, bonus words and times
 
 ### WordWright
 
@@ -228,7 +235,8 @@ wordgames/
 │   │   ├── range/         # WordRange: range, heat by list distance
 │   │   ├── code/          # WordCode: bulls and cows, letter notes
 │   │   ├── shuffle/       # WordShuffle: anagram index, scramble, tray and hints
-│   │   └── dodge/         # WordDodge: the adversary, candidates and replay on restore
+│   │   ├── dodge/         # WordDodge: the adversary, candidates and replay on restore
+│   │   └── hunt/          # WordHunt: words hiding in a tray, the puzzle pool and the check
 │   ├── dictionary/        # Word lists (answers, guesses, ladder) + lazy loading registry
 │   ├── shell/             # Home, hash routing, the frame around every view
 │   ├── storage/           # LocalStorage repositories, legacy import
@@ -262,8 +270,8 @@ Read `SPEC.md` first. When code and docs disagree, the docs win — or the docs 
 
 ## Roadmap
 
-**Suite V1 and releases R2 to R6**
-Home and navigation, WordWright, WordWeaver, the rename to wordgames with no loss of saved data, then WordStack, WordRange, WordCode, WordShuffle and WordDodge. Nothing else is planned: Appendix A of the SPEC lists game ideas that are deliberately not built.
+**Suite V1 and releases R2 to R7**
+Home and navigation, WordWright, WordWeaver, the rename to wordgames with no loss of saved data, then WordStack, WordRange, WordCode, WordShuffle, WordDodge and WordHunt. Nothing else is planned: Appendix A of the SPEC lists game ideas that are deliberately not built.
 
 **V2 — Gameplay expansion (not implemented; architecture must not block it)**
 Daily challenge · hard mode · practice mode · timed mode · survival mode · custom & seeded games · shareable links · calendar heatmap · long-term trends · per-length analytics · win history charts · sound effects · richer animations · themes · confetti · achievements · installable PWA with offline caching.

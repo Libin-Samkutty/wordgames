@@ -8,7 +8,7 @@ Legend — **A** = covered by an automated test · **M** = manual verification �
 
 Sections 1–13 cover Wordwright V1. Sections 14–17, and the rows marked Suite V1 in §6, §8 and §10, cover Suite V1. They must all be ticked with evidence before Suite V1 is released (T-73).
 
-Sections 18–22, and the rows marked R2 to R6 in §6, §8, §9 and §10, cover the five later game releases. Each release's rows must be ticked with evidence before that release ships: R2 WordStack (T-79), R3 WordRange (T-83), R4 WordCode (T-87), R5 WordShuffle (T-91) and R6 WordDodge (T-95).
+Sections 18–23, and the rows marked R2 to R7 in §6, §8, §9 and §10, cover the six later game releases. Each release's rows must be ticked with evidence before that release ships: R2 WordStack (T-79), R3 WordRange (T-83), R4 WordCode (T-87), R5 WordShuffle (T-91), R6 WordDodge (T-95) and R7 WordHunt (T-99).
 
 ---
 
@@ -451,6 +451,31 @@ Releases R2–R5: each `EC-39 … EC-49` needs the same evidence before its rele
 | 22.18 | WordDodge engine has 100% branch coverage and passes the engine purity lint rules                                                                                            | T    | NFR-19               | ✅  |
 | 22.19 | axe reports zero serious or critical issues on WordDodge in both themes and both palettes                                                                                    | T    | AC-57                | ✅  |
 
+## 23. WordHunt (R7)
+
+| #     | Criterion                                                                                                                                                                       | Type | Ref                 | ✓   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ------------------- | --- |
+| 23.1  | Home shows the WordHunt card in catalogue order; `#/hunt` opens it with the title `WordHunt · wordgames` and the `<h1>` "WordHunt"; before R7 ships, `#/hunt` goes Home         | A    | FR-97, FR-98, AC-45 | ✅  |
+| 23.2  | Header order: **All games**, "WordHunt", **How to play**, **New puzzle**, **Statistics**, then settings; there is no length selector                                            | A    | FR-101, US-40       | ✅  |
+| 23.3  | A puzzle has a tray of six letters in an order that is not the seed's, drawn with its own no-repeat ring buffer                                                                 | A    | FR-158              | ✅  |
+| 23.4  | On the shipped lists the pool has at least 150 seeds, each hiding 8 to 20 required words, all valid guesses spelled from the tray, of 4 to 6 letters                            | A    | FR-159, AC-59       | ✅  |
+| 23.5  | Typing and tapping build the same word; a letter the tray has none left of is ignored with no toast; Backspace returns the last letter                                          | A    | FR-160              | ✅  |
+| 23.6  | The slots are grouped by length with a count for each, a found word fills its own slot, and the words found show as text beside a clock that starts at the first letter         | A    | FR-160              | ✅  |
+| 23.7  | Rejections run in the FR-161 order with the exact toast copy and no other cost                                                                                                  | A    | FR-161              | ✅  |
+| 23.8  | A valid word that is not required is a bonus word: listed, counted, never needed, and a repeat is rejected                                                                      | A    | FR-162              | ✅  |
+| 23.9  | **Reshuffle** reorders the tray without changing its letters or the typed letters; finding every required word wins whatever the bonus words                                    | A    | FR-163, AC-59       | ✅  |
+| 23.10 | **Give up** asks to confirm, ends as given up, shows the words missed on the board and in the result, counts in statistics and ends the streak                                  | A    | FR-163              | ✅  |
+| 23.11 | Leaving and returning restores the tray, found and bonus words and typed letters; a saved puzzle restores with its own words whatever the lists hold; a corrupt save is dropped | A    | FR-164              | ✅  |
+| 23.12 | A new puzzle after any progress, including a typed letter, asks to confirm, and an abandoned puzzle is not recorded                                                             | A    | FR-164              | ✅  |
+| 23.13 | Result panel shows every word found or gave up, the counts, bonus words, the time, the words missed and **Play again**                                                          | A    | FR-165              | ✅  |
+| 23.14 | Statistics, including completion %, words found %, bonus words and times, match a hand-computed expectation; a give up ends the streak                                          | A    | FR-165              | ✅  |
+| 23.15 | **How to play** explains the tray, slots, bonus words, reshuffle, the clock and Give up; it never opens by itself                                                               | A    | FR-166              | ✅  |
+| 23.16 | Each accepted word is announced with the counts; slots, tray letters and the word row have the names in A11Y-26                                                                 | A    | A11Y-26             | ✅  |
+| 23.17 | Enter on the result panel starts a new puzzle; the Enter that submitted the last word does not                                                                                  | A    | FR-100, AC-55       | ✅  |
+| 23.18 | WordHunt data lives only under `wordgames:v1:hunt:*`; resetting its statistics leaves every other game's statistics unchanged                                                   | A    | FR-99, AC-56        | ✅  |
+| 23.19 | WordHunt engine has 100% branch coverage and passes the engine purity lint rules                                                                                                | T    | NFR-19              | ✅  |
+| 23.20 | axe reports zero serious or critical issues on WordHunt in both themes and both palettes                                                                                        | T    | AC-57               | ✅  |
+
 ---
 
 ## Evidence Summary (2026-07-26)
@@ -753,6 +778,34 @@ A seventh game, an adversarial Wordle (ADR-039). Rows 22.1 to 22.19 describe it.
 
 - Nothing outside this environment: the deployed site was not touched.
 
+### Addendum — R7 WordHunt (T-99, 2026-10-17)
+
+An eighth game, find every word hiding in six letters (ADR-040). Rows 23.1 to 23.20 describe it.
+
+**Behaviour**
+
+- A puzzle is a 6-letter seed from the answer and shuffle lists that hides 8 to 20 common words of 4, 5 and 6 letters. 739 of the 1,751 seeds qualify. Every one of them hides at least three 4-letter words and at least one 6-letter word.
+- Building the pool takes a few tens of milliseconds, once per visit, after the three lists load. No data was added.
+- A saved puzzle carries its own word list, so a change to the word lists cannot break it.
+
+**Tests**
+
+- `src/engine/hunt`: **100%** branch coverage. Unit and integration: **98 files, 2,344 tests, all passing.**
+- `e2e/hunt.spec.ts`: **50 passed**, on desktop and mobile. It covers a win, a give up, a reload, a reshuffle, axe in both themes and both palettes, and layouts from 320 px to 2560 px and 740 x 360 landscape with the puzzle that hides the most words.
+- The other specs (WordCode, WordRange, WordShuffle, WordStack, WordWeaver, WordDodge, navigation, a11y, responsive and suite): **479 passed, 1 skipped, 2 failed** in one run after the Home card count went to 8. One was a race in the WordDodge spec's own helper, which typed the next word while the last reveal still held input; the helper now waits for the reveal, and the spec passes (**62**). The other is the WordStack timing test (a Quad guess under 16 ms at p95). It fails at times on this machine with no change to that game: on the previous master it passed twice and failed once in three runs, at 9 to 25 ms per guess. It is a timing check, and it is left as is.
+
+**Changes found while testing**
+
+- Found words first used the green tile colours with white text, which axe scored at 4.15:1 for 14 px text. They now use a green border and the normal text colour.
+
+**Bundle**
+
+- The WordHunt view is its own chunk of **6.4 KB gzipped**, and no lists chunk changed. The entry bundle is **81.0 KB gzipped**, up from 80.0 KB, against a limit of 200 KB.
+
+**Not verified**
+
+- Nothing outside this environment: the deployed site was not touched.
+
 ## Sign-off
 
 | Gate                                            | Owner | Date | Notes |
@@ -771,5 +824,6 @@ A seventh game, an adversarial Wordle (ADR-039). Rows 22.1 to 22.19 describe it.
 | R4 WordCode (§20 and R4 rows)                   |       |      |       |
 | R5 WordShuffle (§21 and R5 rows)                |       |      |       |
 | R6 WordDodge (§22 and R6 rows)                  |       |      |       |
+| R7 WordHunt (§23 and R7 rows)                   |       |      |       |
 
 **V1 is done when every box above is ticked. Not before, and nothing more.**

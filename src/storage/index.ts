@@ -222,3 +222,25 @@ export {
   resetDodgeHistory,
   resetDodgeStatistics,
 } from './dodgeRepositories';
+export {
+  defaultHuntMeta,
+  defaultHuntStats,
+  emptyHuntBucket,
+  validateHuntMeta,
+  validateHuntSession,
+  validateHuntStats,
+  type HuntMeta,
+  type HuntStatsBucket,
+  type HuntStatsState,
+} from './huntSchemas';
+export {
+  createHuntMetaRepository,
+  createHuntSessionRepository,
+  createHuntStatsRepository,
+  huntCompletionPercentage,
+  huntWordsFoundPercentage,
+  recordHuntGame,
+  rememberHuntSeed,
+  resetHuntHistory,
+  resetHuntStatistics,
+} from './huntRepositories';
