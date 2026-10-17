@@ -77,10 +77,10 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 
 ### WordRange
 
-- Find a hidden 5-letter word in 14 guesses. Each guess tells you whether the word comes **before** or **after** it in the dictionary
+- Find a hidden 4, 5 or 6-letter word in 13, 14 or 15 guesses. Each guess tells you whether the word comes **before** or **after** it in the dictionary
 - The **range** shows the two words you have narrowed it to, and only words inside it are allowed
 - **Heat** (Burning, Hot, Warm, Cold, Freezing) says how near a guess is, always written as a word
-- Statistics with a guess distribution for 1 to 14
+- Statistics overall and per length, with a guess distribution for each
 
 ### WordCode
 

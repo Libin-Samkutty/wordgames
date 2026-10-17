@@ -1,3 +1,4 @@
+import type { WordLength } from '../types';
 import type { HEAT_LEVELS } from './constants';
 
 /** How near a guess is to the secret, in words (FR-120). */
@@ -13,7 +14,7 @@ export type RangeStatus = 'playing' | 'won' | 'lost';
 
 /** An accepted guess. */
 export interface RangeGuess {
-  /** Uppercase, 5 letters. */
+  /** Uppercase, the game's length. */
   readonly word: string;
   /** `after`: the secret comes later. `before`: it comes earlier. Null for the secret itself. */
   readonly direction: RangeDirection | null;
@@ -29,6 +30,8 @@ export interface RangeState {
   /** Stable id; the idempotency key for recording statistics (FR-124). */
   readonly id: string;
   readonly secret: string;
+  /** 4, 5 or 6: the length of the secret and of every guess (FR-115). */
+  readonly wordLength: WordLength;
   /** In play order. The view sorts them alphabetically. */
   readonly guesses: readonly RangeGuess[];
   /** The secret comes after this word. Starts at the lower sentinel. */
@@ -51,6 +54,8 @@ export interface RangeRecord {
   readonly secret: string;
   readonly guessesUsed: number;
   readonly won: boolean;
+  /** The game's word length. A row saved before lengths were added reads as 5 letters. */
+  readonly wordLength: WordLength;
   /**
    * The fields below were added later, so a row saved before then has none.
    */

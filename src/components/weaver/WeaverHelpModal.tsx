@@ -55,9 +55,7 @@ export function WeaverHelpModal({
           A letter turns green when it already matches the end word in the same spot. Grey means it
           does not.
         </p>
-        <p>
-          Stuck? Tap Undo to remove your last rung. Give up shows one shortest ladder.
-        </p>
+        <p>Stuck? Tap Undo to remove your last rung. Give up shows one shortest ladder.</p>
         <p>
           Par is the shortest ladder made of everyday words. Every rung you submit counts as a move,
           even one you undo. A rarer word can get you under par.

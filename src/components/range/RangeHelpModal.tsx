@@ -1,4 +1,6 @@
-import { RANGE_MAX_GUESSES } from '@/engine/range';
+import type { WordLength } from '@/engine';
+import { HEAT_BANDS, RANGE_MAX_GUESSES } from '@/engine/range';
+import { formatNumber } from '@/lib/format';
 
 import { Modal } from '../ui/Modal';
 import { HeatBadge } from './HeatBadge';
@@ -7,21 +9,30 @@ import { RANGE_HELP_EXAMPLE } from './helpExample';
 
 export interface RangeHelpModalProps {
   readonly isOpen: boolean;
+  /** The length being played: it sets the guess limit and the heat distances. */
+  readonly length: WordLength;
   readonly onClose: () => void;
 }
 
 /**
  * Explains WordRange to a player who has not seen it (FR-126, US-38). Opened
  * only from the header control, never by the app itself (ADR-020), so it needs
- * no persisted state.
+ * no persisted state. The guess limit and the heat distances follow the selected
+ * length. The worked example is always the 5-letter one.
  */
-export function RangeHelpModal({ isOpen, onClose }: RangeHelpModalProps): React.JSX.Element {
+export function RangeHelpModal({
+  isOpen,
+  length,
+  onClose,
+}: RangeHelpModalProps): React.JSX.Element {
+  const [burning, hot, warm, cold] = HEAT_BANDS[length];
+
   return (
     <Modal isOpen={isOpen} title="How to play" onClose={onClose}>
       <div className="flex flex-col gap-4 text-sm">
         <p>
-          Find the hidden 5-letter word in {RANGE_MAX_GUESSES} guesses. Each guess must be a real
-          word. After every guess you learn whether the hidden word comes{' '}
+          Find the hidden {length}-letter word in {RANGE_MAX_GUESSES[length]} guesses. Each guess
+          must be a real word. After every guess you learn whether the hidden word comes{' '}
           <strong className="font-bold">before</strong> or{' '}
           <strong className="font-bold">after</strong> it in the dictionary.
         </p>
@@ -36,16 +47,20 @@ export function RangeHelpModal({ isOpen, onClose }: RangeHelpModalProps): React.
         </p>
         <ul className="flex flex-col gap-1">
           <li>
-            <HeatBadge heat="burning" /> <span className="text-text-muted">within 20 words</span>
+            <HeatBadge heat="burning" />{' '}
+            <span className="text-text-muted">within {formatNumber(burning?.max ?? 0)} words</span>
           </li>
           <li>
-            <HeatBadge heat="hot" /> <span className="text-text-muted">within 100</span>
+            <HeatBadge heat="hot" />{' '}
+            <span className="text-text-muted">within {formatNumber(hot?.max ?? 0)}</span>
           </li>
           <li>
-            <HeatBadge heat="warm" /> <span className="text-text-muted">within 500</span>
+            <HeatBadge heat="warm" />{' '}
+            <span className="text-text-muted">within {formatNumber(warm?.max ?? 0)}</span>
           </li>
           <li>
-            <HeatBadge heat="cold" /> <span className="text-text-muted">within 2,000</span>
+            <HeatBadge heat="cold" />{' '}
+            <span className="text-text-muted">within {formatNumber(cold?.max ?? 0)}</span>
           </li>
           <li>
             <HeatBadge heat="freezing" /> <span className="text-text-muted">further than that</span>
@@ -53,7 +68,7 @@ export function RangeHelpModal({ isOpen, onClose }: RangeHelpModalProps): React.
         </ul>
 
         <section>
-          <h3 className="mb-2 text-xs font-bold tracking-wide uppercase">Example</h3>
+          <h3 className="mb-2 text-xs font-bold tracking-wide uppercase">Example (5 letters)</h3>
           {/* Decorative: the sentences below carry the meaning (A11Y-13). */}
           <ol aria-hidden="true" className="flex flex-col gap-1">
             {RANGE_HELP_EXAMPLE.steps.map((step) => (

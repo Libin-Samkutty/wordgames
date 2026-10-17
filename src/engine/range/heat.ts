@@ -1,3 +1,4 @@
+import type { WordLength } from '../types';
 import { HEAT_BANDS } from './constants';
 import type { Heat } from './types';
 
@@ -35,13 +36,14 @@ export function listDistance(sorted: readonly string[], a: string, b: string): n
 }
 
 /**
- * The heat for a distance in list positions (FR-120): Burning up to 20, Hot up
- * to 100, Warm up to 500, Cold up to 2,000, and Freezing beyond that. Heat is
- * monotonic with distance, so a guess inside the range is never colder than
- * the bound on its side of the secret (ADR-030).
+ * The heat for a distance in list positions (FR-120). For 5 letters that is
+ * Burning up to 20, Hot up to 100, Warm up to 500, Cold up to 2,000, and
+ * Freezing beyond that. The other lengths scale those bands to their list.
+ * Heat is monotonic with distance, so a guess inside the range is never colder
+ * than the bound on its side of the secret (ADR-030).
  */
-export function heatOf(distance: number): Heat {
-  for (const band of HEAT_BANDS) {
+export function heatOf(distance: number, length: WordLength): Heat {
+  for (const band of HEAT_BANDS[length]) {
     if (distance <= band.max) return band.heat;
   }
   return 'freezing';

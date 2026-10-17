@@ -53,7 +53,7 @@ describe('heatOf bands (FR-120)', () => {
     [2001, 'freezing'],
     [13_000, 'freezing'],
   ])('a distance of %i is %s', (distance, heat) => {
-    expect(heatOf(distance)).toBe(heat);
+    expect(heatOf(distance, 5)).toBe(heat);
   });
 
   it('is monotonic: a bigger distance is never hotter', () => {
@@ -61,13 +61,37 @@ describe('heatOf bands (FR-120)', () => {
     let previous = 0;
 
     for (let distance = 1; distance <= 2500; distance += 1) {
-      const rank = order.indexOf(heatOf(distance));
+      const rank = order.indexOf(heatOf(distance, 5));
       expect(rank).toBeGreaterThanOrEqual(previous);
       previous = rank;
     }
   });
 
+  it.each([
+    [4, 9, 'burning'],
+    [4, 10, 'hot'],
+    [4, 894, 'cold'],
+    [4, 895, 'freezing'],
+    [6, 36, 'burning'],
+    [6, 37, 'hot'],
+    [6, 3585, 'cold'],
+    [6, 3586, 'freezing'],
+  ] as const)('at %i letters, a distance of %i is %s', (length, distance, heat) => {
+    expect(heatOf(distance, length)).toBe(heat);
+  });
+
   it('matches the documented band limits', () => {
-    expect(HEAT_BANDS.map((band) => band.max)).toEqual([20, 100, 500, 2000]);
+    expect(HEAT_BANDS[4].map((band) => band.max)).toEqual([9, 45, 223, 894]);
+    expect(HEAT_BANDS[5].map((band) => band.max)).toEqual([20, 100, 500, 2000]);
+    expect(HEAT_BANDS[6].map((band) => band.max)).toEqual([36, 179, 896, 3585]);
+  });
+
+  it.each([
+    [4, 6142],
+    [6, 24_637],
+  ] as const)('scales the 5-letter bands by list size for %i letters (ADR-037)', (length, size) => {
+    const scaled = HEAT_BANDS[5].map((band) => Math.round((band.max * size) / 13_746));
+
+    expect(HEAT_BANDS[length].map((band) => band.max)).toEqual(scaled);
   });
 });
