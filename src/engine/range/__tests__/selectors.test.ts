@@ -125,6 +125,14 @@ describe('rangeRecord (FR-124)', () => {
     expect(rangeRecord(state)?.firstBurningGuess).toBeNull();
   });
 
+  it('falls back to 0 times and no opener for a finished game with no data', () => {
+    const won = run(fresh(), submit('PLANT', 0));
+    const record = rangeRecord({ ...won, guesses: [], startedAt: null, finishedAt: null });
+
+    expect(record).toMatchObject({ playedAt: 0, solveMs: 0 });
+    expect(record).not.toHaveProperty('opener');
+  });
+
   it('records a loss', () => {
     let state = fresh();
     for (let i = 0; i < 14; i += 1) state = run(state, submit('BRAVE', 5000));

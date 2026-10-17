@@ -234,4 +234,10 @@ describe('stackRecord (FR-111)', () => {
 
     expect(stackRecord(won)?.playedAt).toBe(0);
   });
+
+  it('falls back to 0 solve time if a finished game has no start time', () => {
+    const won = { ...play(duo(), 'PLANT', 'STORM'), startedAt: null, finishedAt: null };
+
+    expect(stackRecord(won)?.solveMs).toBe(0);
+  });
 });

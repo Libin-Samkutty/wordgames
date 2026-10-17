@@ -84,6 +84,14 @@ describe('codeRecord (FR-134)', () => {
     expect(codeRecord(state)?.lettersFoundAt).toBeNull();
   });
 
+  it('falls back to 0 times and no opener for a finished game with no data', () => {
+    const won = run(fresh(), submit('PLANT'));
+    const record = codeRecord({ ...won, guesses: [], startedAt: null, finishedAt: null });
+
+    expect(record).toMatchObject({ playedAt: 0, solveMs: 0 });
+    expect(record).not.toHaveProperty('opener');
+  });
+
   it('records whether the notepad was used', () => {
     const state = run(fresh(), { type: 'CYCLE_NOTE', letter: 'Z' }, submit('PLANT'));
 

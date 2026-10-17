@@ -83,7 +83,7 @@ export function ModeSelector({ value, disabled, onChange }: ModeSelectorProps): 
               onChange(mode);
             }}
             className={cn(
-              'min-h-9 rounded px-2.5 text-sm font-bold transition-colors',
+              'min-h-11 rounded px-2.5 text-sm font-bold transition-colors',
               'disabled:cursor-not-allowed disabled:opacity-50',
               isSelected ? 'bg-surface text-text shadow-sm' : 'text-text-muted hover:text-text',
             )}

@@ -423,5 +423,9 @@ test.describe('layout (FR-121, FR-59, AC-22)', () => {
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
     }
+    for (const radio of await page.getByRole('radio').all()) {
+      const box = await radio.boundingBox();
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
   });
 });
