@@ -47,6 +47,7 @@ The project was previously named Wordwright. ADR-001 to ADR-020 were written und
 | [038](#adr-038--wordshuffle-rarer-targets-no-letter-in-place-a-visible-clock)                  | WordShuffle: harder targets, scramble, a clock       | Accepted (refines 032) |
 | [039](#adr-039--worddodge-an-adversary-that-never-picks-a-word)                                | WordDodge: an adversary that never picks a word      | Accepted               |
 | [040](#adr-040--wordhunt-find-the-common-words-hiding-in-six-letters)                          | WordHunt: the common words hiding in six letters     | Accepted               |
+| [041](#adr-041--wordhang-hangman-with-six-misses-one-letter-at-a-time)                         | WordHang: Hangman with six misses                    | Accepted               |
 
 ---
 
@@ -903,3 +904,28 @@ This is not a plugin system. There is no runtime registration and no shared inte
 - Statistics have no per-length view, and track the share of words found over all puzzles, which a partial result adds to.
 
 **Alternatives.** (a) Add a 3-letter list for more words per puzzle. Rejected: new data, a hand read for offensive words, and bigger chunks, for words that are mostly obscure. (b) Seven letters with a required centre letter and repeats allowed, as Spelling Bee does. Rejected: it changes the game's shape and needs a 7-letter list. (c) Require every guess-list word. Rejected: it would ask for words nobody knows. (d) Pick puzzles at build time. Rejected: the same result for more files, and the pool depends on three lists that already load together. (e) A hint button. Rejected for now: the slots already show how many words are left at each length.
+
+---
+
+## ADR-041 — WordHang: Hangman with six misses, one letter at a time
+
+**Context.** Hangman is the most familiar word game there is, and the suite has none where the player picks letters and not words. It needs no new data and no word lookup. The choices are how many misses to allow, whether the figure is drawn, and how much of the game to share with the Wordle games, whose keyboard and checks do not fit a one-key guess.
+
+**Decision.**
+
+- **Six misses at every length.** Head, body, two arms and two legs, as in the classic game. One limit for all lengths keeps the figure the same size and the rule easy to say. On the shipped lists, a player who knows the whole answer list wins at least half of the games they play at every length, and a player who tries letters in a fixed English frequency order and ignores what is revealed wins about one game in ten. The game rewards reading the pattern.
+- **A drawn figure.** An inline SVG, in the text colour, adds one part per miss. It is decorative and hidden from assistive technology. The misses are also text ("2 of 6 misses"), the wrong letters are listed, and each guess is announced, so the figure carries nothing alone.
+- **A letter is applied at once.** There is no Enter, no Backspace and no word to look up, so the engine takes only a letter and the clock, and there are no rejection toasts. A letter already tried is ignored and costs nothing, and its key is disabled.
+- **Derived, not stored.** The state holds the secret and the letters tried, in order. The misses, the revealed letters and the key colours all follow from those, so a saved game cannot disagree with its own letters. A saved game whose status is not the one its letters give is discarded.
+- **Its own keyboard.** The shared keyboard names a key "correct position" or "not in word" and has Enter and Backspace. WordHang's keyboard reuses the shared QWERTY layout, drops those two keys, names a tried key "in the word" or "not in the word", and adds a tick or a cross to the key as well as its colour.
+- **The secret is an answer.** It comes from the answer list for the length, with a ring buffer per length, so it is always a common, fair word.
+- **No give up and no hint.** A player who wants out starts a new game, which asks first if a letter has been tried. A clock runs from the first letter and is recorded for statistics, but it is not shown.
+
+**Consequences.**
+
+- A win is checked before a loss, so a letter that completes the word wins even after five misses. A win and a loss cannot happen on the same letter, because only a miss can lose and a miss never completes the word.
+- Statistics group wins by misses (0 to 5) instead of guesses, and count wins with no miss. A loss ends the streak.
+- The result panel replaces the keyboard when the game ends, so the result never pushes the keyboard off a small screen. The letter that ended the game cannot also start the next one, and Enter starts it (FR-73).
+- No new data, no new dependency, and no change to the shared keyboard.
+
+**Alternatives.** (a) Scale the misses by length, such as 7, 6 and 5. Rejected: the figure would need a different number of parts per length, and the measured win rates at the three lengths are close. (b) Show hearts or a counter and no drawing. Rejected: the figure is what makes the game Hangman. (c) Add a prop to the shared keyboard to hide Enter and Backspace. Rejected: its key names and its state labels are Wordle's, and a second set would be needed anyway. (d) A hint that reveals a letter. Rejected for now: it adds a rule and a statistic for a game that is already short. (e) Phrases, as some Hangman games use. Rejected: it needs a phrase list and spaces in the board.

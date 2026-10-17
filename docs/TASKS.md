@@ -2,7 +2,7 @@
 
 The project was previously named Wordwright. That name now belongs to the Wordle-style game inside the suite.
 
-Ordered, phased backlog for Wordwright V1 (Phases 0–10), Suite V1 (Phases 11–14) and the game releases R2–R7 (Phases 15–20). Every task is **independently completable**: it has a clear deliverable, explicit acceptance, and can be shipped as one commit or PR without breaking `main`.
+Ordered, phased backlog for Wordwright V1 (Phases 0–10), Suite V1 (Phases 11–14) and the game releases R2–R8 (Phases 15–21). Every task is **independently completable**: it has a clear deliverable, explicit acceptance, and can be shipped as one commit or PR without breaking `main`.
 
 **Conventions**
 
@@ -11,7 +11,7 @@ Ordered, phased backlog for Wordwright V1 (Phases 0–10), Suite V1 (Phases 11�
 - **DoD** — done when these are true, _in addition to_ the global bar: `npm run verify` passes, no console errors, docs updated if behaviour changed.
 - Phases are sequential; tasks inside a phase are mostly parallelisable unless a dependency is noted.
 
-**Progress:** 99 / 99 complete. Wordwright V1 (T-01 … T-49) is done, plus a full review pass (2026-07-26); see [`REVIEW.md`](./REVIEW.md). Suite V1 (T-50 … T-73) is built and verified in this environment; deployment and the redirect are owner steps (see the README). Releases R2–R5 (T-74 … T-91) follow Suite V1, one game per release: WordStack, WordRange, WordCode, then WordShuffle.
+**Progress:** 103 / 103 complete. Wordwright V1 (T-01 … T-49) is done, plus a full review pass (2026-07-26); see [`REVIEW.md`](./REVIEW.md). Suite V1 (T-50 … T-73) is built and verified in this environment; deployment and the redirect are owner steps (see the README). Releases R2–R5 (T-74 … T-91) follow Suite V1, one game per release: WordStack, WordRange, WordCode, then WordShuffle.
 
 ---
 
@@ -708,6 +708,32 @@ Schemas and runtime guards for `wordgames:v1:hunt:{stats,session,meta}`, with no
 
 ---
 
+## Phase 21 — WordHang, release R8 (T-100 … T-103)
+
+Adds WordHang (SPEC §23). Rationale in ADR-041.
+
+### ✅ T-100 · WordHang engine
+
+Pure code in `src/engine/hang/`. Lengths 4, 5 and 6 with 6 misses at every length (FR-167). `hangReducer` handles `GUESS_LETTER`: a letter already tried or outside A to Z, or a finished game, changes nothing (FR-169). A letter in the secret reveals every place, a letter not in it is a miss, a win is checked before a loss, and the sixth miss loses (FR-170). Selectors work out the misses, the missed letters, the masked word, the key states and the stats record from the secret and the letters tried (FR-171, FR-174).
+**Req:** FR-167, FR-169, FR-170, NFR-19, AC-60 · **Depends:** T-74 · **DoD:** a repeated letter is revealed at once; the sixth miss loses and a completing letter wins even after five misses; a repeat and a letter after the end change nothing; on the real lists every answer is 4 to 6 letters from A to Z, a player who knows the list wins most games, and one who ignores the pattern wins well under a third; 100% branch coverage and the engine purity lint cover `src/engine/hang/**`.
+
+### ✅ T-101 · WordHang storage and providers
+
+Schemas and runtime guards for `wordgames:v1:hang:{prefs,stats,session,meta}`. A `recordGame` reducer, idempotent by game id, with overall and per-length stats: played, won, streaks, the misses distribution for wins (0 to 5), solve times, and the last 50 games (FR-174). `HangStatsProvider` and `HangProvider` in `src/state/hang/` persist the secret and the letters tried, discard a game whose status does not match its letters, and record each finished game once (FR-173).
+**Req:** FR-168, FR-173, FR-174, AC-56 · **Depends:** T-100 · **DoD:** unit tests for a win, a loss that ends the streak, the distribution, the averages, the 50-game cap, double-record idempotency and hostile input; leaving mid-game and returning restores the letters and the misses; a game whose status does not match its letters, whose secret has left the list, or of another length is discarded; resetting WordHang stats leaves every other game's stats byte-identical (AC-56).
+
+### ✅ T-102 · WordHang view
+
+`HangView` in `src/components/hang/`: `HangFigure`, the misses as text and the wrong letters, `HangWord`, and `HangKeyboard` with the shared letter layout, no Enter or Backspace, and a tick or a cross on each tried key. A length selector. A new game or a length change after a letter asks to confirm through `ConfirmDialog` (FR-173). `HangResultPanel` replaces the keyboard when the game ends, with the FR-172 content and `useEnterToContinue` armed on mount.
+**Req:** FR-169, FR-170, FR-171, FR-172, US-41, AC-55 · **Depends:** T-101, T-52 · **DoD:** integration tests: a letter in the word shows in its place and a miss is counted, listed and drawn; a repeat costs nothing and shows no toast; a game is won with no misses and lost on the sixth; the whole word shows after a loss; the letter that ended the game does not start a new one and Enter does (AC-55).
+
+### ✅ T-103 · WordHang help, stats, accessibility and release
+
+`HangHelpModal` explaining the letters, the six misses, repeats and the keys (FR-175), with a decorative example for the length. `HangStatsModal` with overall and per-length views, wins by misses, recent games, the empty state and scoped reset actions. Name the word, each key and the misses, and announce each letter and the end of a game (A11Y-27). Add WordHang to the catalogue. Run axe and fill the R8 addendum in `ACCEPTANCE.md`.
+**Req:** FR-174, FR-175, A11Y-27, US-41, AC-57 · **Depends:** T-102 · **DoD:** tests assert the word, key and misses names and one announcement per letter and for the end of a game; the help dialog never opens by itself; with fixture stats every value matches a hand-computed expectation and the averages show `—` with no wins; axe reports zero serious or critical issues on WordHang in both themes and both palettes (AC-57); Home shows the WordHang card and `#/hang` opens it (AC-45); every R8 row in `ACCEPTANCE.md` is ticked with evidence.
+
+---
+
 ## Dependency Summary
 
 ```
@@ -728,7 +754,7 @@ Phase 10 ──▶ T-50 ──┬──▶ Phase 11 (T-51 … T-57) ──┬─
 
 T-50 (rename) comes first. After it, Phase 11 and Phase 12 can run in parallel; T-52 and T-61 have no dependencies and can start at any time. Phase 13 needs both.
 
-Releases R2–R7:
+Releases R2–R8:
 
 ```
 Phase 14 ──▶ T-74 ──┬──▶ Phase 15 (R2 WordStack, T-75 … T-79)
@@ -741,10 +767,12 @@ Phase 14 ──▶ T-74 ──┬──▶ Phase 15 (R2 WordStack, T-75 … T-79
                     │                                                               │
                     ├──▶ T-92 ──────────────────────────────────────────────────────┴──▶ Phase 19 (R6 WordDodge, T-93 … T-95)
                     │                                                                        │
-                    └──▶ T-96 ───────────────────────────────────────────────────────────────┴──▶ Phase 20 (R7 WordHunt, T-97 … T-99)
+                    ├──▶ T-96 ───────────────────────────────────────────────────────────────┴──▶ Phase 20 (R7 WordHunt, T-97 … T-99)
+                    │                                                                                 │
+                    └──▶ T-100 ───────────────────────────────────────────────────────────────────────┴──▶ Phase 21 (R8 WordHang, T-101 … T-103)
 ```
 
-T-74 (game catalogue) comes first and is part of R2. The engines T-80, T-84, T-88, T-92 and T-96 depend only on T-74 (T-96 also on T-88, whose anagram index it reuses), so they can be built ahead of their phase. The releases still ship in order: R2, R3, R4, R5, R6, R7. Each release task (T-79, T-83, T-87, T-91, T-95, T-99) adds its game to the catalogue, deploys, and fills that release's addendum in `ACCEPTANCE.md`. There are no feature flags.
+T-74 (game catalogue) comes first and is part of R2. The engines T-80, T-84, T-88, T-92, T-96 and T-100 depend only on T-74 (T-96 also on T-88, whose anagram index it reuses), so they can be built ahead of their phase. The releases still ship in order: R2, R3, R4, R5, R6, R7, R8. Each release task (T-79, T-83, T-87, T-91, T-95, T-99, T-103) adds its game to the catalogue, deploys, and fills that release's addendum in `ACCEPTANCE.md`. There are no feature flags.
 
 ## Out of Scope
 

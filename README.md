@@ -1,8 +1,8 @@
 # WordGames
 
-An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. **WordDodge** is a Wordle that never picks a word. **WordHunt** finds every word hiding in six letters. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
+An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. **WordDodge** is a Wordle that never picks a word. **WordHunt** finds every word hiding in six letters. **WordHang** is Hangman. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
 
-> **Status:** All eight games are built, 99 of 99 tasks: WordWright, WordWeaver, WordStack, WordRange, WordCode, WordShuffle, WordDodge and WordHunt. 2,344 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
+> **Status:** All nine games are built, 103 of 103 tasks: WordWright, WordWeaver, WordStack, WordRange, WordCode, WordShuffle, WordDodge, WordHunt and WordHang. 2,490 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
 
 ---
 
@@ -22,7 +22,7 @@ An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 a
 
 ## Overview
 
-WordGames is a single-page web app with a Home screen and one view per game, chosen by the URL hash (`#/`, `#/wordwright`, `#/weaver`, `#/stack`, `#/range`, `#/code`, `#/shuffle`, `#/dodge`, `#/hunt`). Wordwright recreates the Wordle game loop with three word lengths, unlimited replays, and a full statistics suite. WordWeaver generates an unlimited supply of ladder puzzles on the device, scored against par. Each game keeps its own statistics, preferences and saved game. The suite is deliberately **local-first**: the dictionaries ship with the bundle, game state and stats live in LocalStorage, and the app is fully playable with the network disabled.
+WordGames is a single-page web app with a Home screen and one view per game, chosen by the URL hash (`#/`, `#/wordwright`, `#/weaver`, `#/stack`, `#/range`, `#/code`, `#/shuffle`, `#/dodge`, `#/hunt`, `#/hang`). Wordwright recreates the Wordle game loop with three word lengths, unlimited replays, and a full statistics suite. WordWeaver generates an unlimited supply of ladder puzzles on the device, scored against par. Each game keeps its own statistics, preferences and saved game. The suite is deliberately **local-first**: the dictionaries ship with the bundle, game state and stats live in LocalStorage, and the app is fully playable with the network disabled.
 
 **Design principles**
 
@@ -109,6 +109,12 @@ Colourblind mode swaps green/yellow for blue/orange **and** adds distinct tile m
 - Slots grouped by length show how many are left. A found word fills its slot, and a count-up clock shows how long you took
 - Any other real word is a **bonus word**: it is counted but never needed. **Reshuffle** is free; **Give up** shows the words you missed
 - Statistics for completion, the share of words found, bonus words and times
+
+### WordHang
+
+- Hangman: guess the hidden word one letter at a time. A letter in the word shows in every place it appears
+- Each wrong letter draws one more part of the figure, and the sixth loses. A letter you have tried cannot be pressed again, and a repeat costs nothing
+- 4, 5 or 6 letters. Statistics overall and per length, with wins grouped by misses
 
 ### WordWright
 
@@ -236,7 +242,8 @@ wordgames/
 │   │   ├── code/          # WordCode: bulls and cows, letter notes
 │   │   ├── shuffle/       # WordShuffle: anagram index, scramble, tray and hints
 │   │   ├── dodge/         # WordDodge: the adversary, candidates and replay on restore
-│   │   └── hunt/          # WordHunt: words hiding in a tray, the puzzle pool and the check
+│   │   ├── hunt/          # WordHunt: words hiding in a tray, the puzzle pool and the check
+│   │   └── hang/          # WordHang: letters tried, misses and the figure
 │   ├── dictionary/        # Word lists (answers, guesses, ladder) + lazy loading registry
 │   ├── shell/             # Home, hash routing, the frame around every view
 │   ├── storage/           # LocalStorage repositories, legacy import
@@ -270,8 +277,8 @@ Read `SPEC.md` first. When code and docs disagree, the docs win — or the docs 
 
 ## Roadmap
 
-**Suite V1 and releases R2 to R7**
-Home and navigation, WordWright, WordWeaver, the rename to wordgames with no loss of saved data, then WordStack, WordRange, WordCode, WordShuffle, WordDodge and WordHunt. Nothing else is planned: Appendix A of the SPEC lists game ideas that are deliberately not built.
+**Suite V1 and releases R2 to R8**
+Home and navigation, WordWright, WordWeaver, the rename to wordgames with no loss of saved data, then WordStack, WordRange, WordCode, WordShuffle, WordDodge, WordHunt and WordHang. Nothing else is planned: Appendix A of the SPEC lists game ideas that are deliberately not built.
 
 **V2 — Gameplay expansion (not implemented; architecture must not block it)**
 Daily challenge · hard mode · practice mode · timed mode · survival mode · custom & seeded games · shareable links · calendar heatmap · long-term trends · per-length analytics · win history charts · sound effects · richer animations · themes · confetti · achievements · installable PWA with offline caching.
