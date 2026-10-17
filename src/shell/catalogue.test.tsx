@@ -41,7 +41,7 @@ function goTo(hash: string): void {
 }
 
 describe('the real catalogue (FR-97, FR-98)', () => {
-  it('lists the shipped games in release order: Wordwright, WordWeaver, WordStack, WordRange, WordCode, WordShuffle', () => {
+  it('lists the shipped games in release order: Wordwright, WordWeaver, WordStack, WordRange, WordCode, WordShuffle, WordDodge', () => {
     expect(GAMES.map((game) => game.name)).toEqual([
       'WordWright',
       'WordWeaver',
@@ -49,6 +49,7 @@ describe('the real catalogue (FR-97, FR-98)', () => {
       'WordRange',
       'WordCode',
       'WordShuffle',
+      'WordDodge',
     ]);
   });
 
@@ -75,6 +76,7 @@ describe('the real catalogue (FR-97, FR-98)', () => {
       range: '#/range',
       code: '#/code',
       shuffle: '#/shuffle',
+      dodge: '#/dodge',
     });
   });
 

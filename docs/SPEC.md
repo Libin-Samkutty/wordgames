@@ -1,8 +1,8 @@
 # wordgames — Product Requirements Document (SPEC)
 
-**Version:** 2.1 · **Scope:** Suite V1 (Wordwright V1 + WordWeaver + suite shell), then releases R2–R5 (WordStack, WordRange, WordCode, WordShuffle) · **Status:** Draft for review
+**Version:** 2.2 · **Scope:** Suite V1 (Wordwright V1 + WordWeaver + suite shell), then releases R2–R6 (WordStack, WordRange, WordCode, WordShuffle, WordDodge) · **Status:** Draft for review
 
-This is the single source of truth for _what_ the wordgames suite does. Version 1.0 specified Wordwright alone. Version 2.0 keeps every Wordwright requirement and ID unchanged, and adds the suite shell (§14), WordWeaver (§15–§16) and candidate future games (Appendix A). Version 2.1 adds four more games as later releases: WordStack (§17), WordRange (§18), WordCode (§19) and WordShuffle (§20). The project was previously named Wordwright; that name now belongs to the Wordle-style game inside the suite. Anything not stated here is out of scope. Requirements are identified (`FR-x`, `NFR-x`, `A11Y-x`, `EC-x`, `AC-x`) so tests, tasks, and reviews can cite them.
+This is the single source of truth for _what_ the wordgames suite does. Version 1.0 specified Wordwright alone. Version 2.0 keeps every Wordwright requirement and ID unchanged, and adds the suite shell (§14), WordWeaver (§15–§16) and candidate future games (Appendix A). Version 2.1 adds four more games as later releases: WordStack (§17), WordRange (§18), WordCode (§19) and WordShuffle (§20). Version 2.2 adds WordDodge (§21). The project was previously named Wordwright; that name now belongs to the Wordle-style game inside the suite. Anything not stated here is out of scope. Requirements are identified (`FR-x`, `NFR-x`, `A11Y-x`, `EC-x`, `AC-x`) so tests, tasks, and reviews can cite them.
 
 ---
 
@@ -13,12 +13,13 @@ This is the single source of truth for _what_ the wordgames suite does. Version 
 - **Wordwright**: guess a hidden 4, 5 or 6-letter word in six tries with green/yellow/grey feedback.
 - **WordWeaver**: turn a start word into an end word one letter at a time. Every rung must be a real word, and letters that already match the end word turn green.
 
-Four more follow, one per release (§14.4):
+Five more follow, one per release (§14.4):
 
 - **WordStack** (R2): solve two or four Wordle boards at once with shared guesses.
 - **WordRange** (R3): find a word by its alphabetical place, guided by before/after and a heat meter.
 - **WordCode** (R4): deduce a word from bull and cow counts alone.
 - **WordShuffle** (R5): unscramble a word; any valid anagram wins.
+- **WordDodge** (R6): an adversarial Wordle that never picks a word and keeps the most answers possible.
 
 The qualities below were written for Wordwright and now apply to the whole suite.
 
@@ -110,6 +111,7 @@ Rationale in [`DECISIONS.md`](./DECISIONS.md).
 | US-36 | As a WordCode player, I can mark letters I've ruled out or confirmed.                                  | Should   |
 | US-37 | As a player, I can unscramble a word, reshuffle the letters and take a hint.                           | Must     |
 | US-38 | As a player, every game has its own rules, statistics and Enter to play again.                         | Must     |
+| US-39 | As a player, I can play a Wordle that never commits to a word and keeps as many answers as it can.     | Must     |
 
 ## 5. Glossary
 
@@ -331,32 +333,33 @@ else:
 
 ## 9. Accessibility Requirements
 
-| ID      | Requirement                                                                                                                                                                                                                                                      |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A11Y-1  | Every action is reachable and operable by keyboard alone; logical tab order; no keyboard traps outside intentional modal traps.                                                                                                                                  |
-| A11Y-2  | Board is `role="grid"` with `role="row"`/`role="gridcell"` children; each tile exposes `aria-label` like `"Row 2, letter 3: A, correct position"`.                                                                                                               |
-| A11Y-3  | A polite `aria-live` region announces each evaluated guess in words (e.g. `"CRANE: C correct, R absent, A present, N absent, E correct. 4 guesses remaining."`).                                                                                                 |
-| A11Y-4  | Errors are announced via an assertive live region as well as visually.                                                                                                                                                                                           |
-| A11Y-5  | Game end is announced (`"You won in 4 guesses"` / `"Game over, the word was CRANE"`).                                                                                                                                                                            |
-| A11Y-6  | Visible focus indicator on all focusable elements, ≥ 3:1 contrast against adjacent colours, never removed.                                                                                                                                                       |
-| A11Y-7  | Text and UI contrast meets WCAG 2.1 AA (4.5:1 text, 3:1 large text/UI). Tile text on all five states verified.                                                                                                                                                   |
-| A11Y-8  | Colour is never the only signal: colourblind mode plus optional tile markers; state is always in the `aria-label`.                                                                                                                                               |
-| A11Y-9  | `prefers-reduced-motion: reduce` (or the reduced setting) removes flips, shakes, bounces, and confetti-like motion; transitions become instant colour swaps.                                                                                                     |
-| A11Y-10 | On-screen keyboard keys are real `<button>`s with `aria-label`s (`"Backspace"`, `"Enter"`, letter + state).                                                                                                                                                      |
-| A11Y-11 | Modals use `role="dialog" aria-modal="true"` with a labelled heading.                                                                                                                                                                                            |
-| A11Y-12 | The page has a sensible `<title>`, one `<h1>`, and landmark regions (`header`, `main`, `footer`).                                                                                                                                                                |
-| A11Y-13 | Help examples are decorative: the tiles are hidden from assistive technology and the meaning is carried by the sentence beneath, so no orphan `gridcell` semantics appear outside the board's grid.                                                              |
-| A11Y-14 | Home lists the games as a `<ul>` of links, each with an accessible name such as "Play WordWeaver" and a one-line description. Every view has exactly one `<h1>`.                                                                                                 |
-| A11Y-15 | On a view change, focus moves to the new view's `<h1>` (`tabindex="-1"`). In a game view, "All games" is the first item in tab order.                                                                                                                            |
-| A11Y-16 | The WordWeaver board is a `grid` named "Word ladder". Rows are labelled Start, Rung _n_, Next rung and End. Tiles read like "Rung 2, letter 3: A, matches end word" or "…, does not match".                                                                      |
-| A11Y-17 | A polite live region announces each accepted rung (`"CARD: 2 of 4 letters match"`), undo (`"Removed CARD"`), solve (`"Solved in 5 moves. Par 4."`) and give up (`"Gave up. One shortest ladder: COLD, CORD, CARD, WARD, WARM"`). Errors stay assertive (A11Y-4). |
-| A11Y-18 | Enter to continue (FR-72) never moves focus, and **Play again** stays reachable with Tab.                                                                                                                                                                        |
-| A11Y-19 | WordWeaver reuses the existing `correct` and `absent` tile tokens and glyph markers in both palettes, so no new colour pairs are introduced.                                                                                                                     |
-| A11Y-20 | WordStack boards are separate `grid`s named "Board 1 of 4" and so on, with "solved" added once solved. Split keyboard keys carry every board's state in their label, for example "A: board 1 present, board 2 absent, board 3 solved, board 4 absent".           |
-| A11Y-21 | WordStack announces one summary per guess: `"CRANE. Board 1: 2 correct, 1 present. Board 2: solved. 6 guesses left."`                                                                                                                                            |
-| A11Y-22 | WordRange announces each guess with its direction, the new range and the heat in words: `"BRAVE: the word is after it. Range BRAVE to ZZZZZ. Freezing. 13 guesses left."` Heat never relies on colour alone.                                                     |
-| A11Y-23 | WordCode announces counts in words (`"PANEL: 1 bull, 3 cows. 9 guesses left."`). In Mark mode every letter key is named with its current mark, and a marked key keeps that name in Type mode. The Type and Mark switch is a pair of toggle buttons.              |
-| A11Y-24 | WordShuffle tray letters are buttons labelled with the letter and remaining count. Hints, reshuffles and solves are announced, and the answer row is labelled with hinted letters marked.                                                                        |
+| ID      | Requirement                                                                                                                                                                                                                                                                                                                                                           |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A11Y-1  | Every action is reachable and operable by keyboard alone; logical tab order; no keyboard traps outside intentional modal traps.                                                                                                                                                                                                                                       |
+| A11Y-2  | Board is `role="grid"` with `role="row"`/`role="gridcell"` children; each tile exposes `aria-label` like `"Row 2, letter 3: A, correct position"`.                                                                                                                                                                                                                    |
+| A11Y-3  | A polite `aria-live` region announces each evaluated guess in words (e.g. `"CRANE: C correct, R absent, A present, N absent, E correct. 4 guesses remaining."`).                                                                                                                                                                                                      |
+| A11Y-4  | Errors are announced via an assertive live region as well as visually.                                                                                                                                                                                                                                                                                                |
+| A11Y-5  | Game end is announced (`"You won in 4 guesses"` / `"Game over, the word was CRANE"`).                                                                                                                                                                                                                                                                                 |
+| A11Y-6  | Visible focus indicator on all focusable elements, ≥ 3:1 contrast against adjacent colours, never removed.                                                                                                                                                                                                                                                            |
+| A11Y-7  | Text and UI contrast meets WCAG 2.1 AA (4.5:1 text, 3:1 large text/UI). Tile text on all five states verified.                                                                                                                                                                                                                                                        |
+| A11Y-8  | Colour is never the only signal: colourblind mode plus optional tile markers; state is always in the `aria-label`.                                                                                                                                                                                                                                                    |
+| A11Y-9  | `prefers-reduced-motion: reduce` (or the reduced setting) removes flips, shakes, bounces, and confetti-like motion; transitions become instant colour swaps.                                                                                                                                                                                                          |
+| A11Y-10 | On-screen keyboard keys are real `<button>`s with `aria-label`s (`"Backspace"`, `"Enter"`, letter + state).                                                                                                                                                                                                                                                           |
+| A11Y-11 | Modals use `role="dialog" aria-modal="true"` with a labelled heading.                                                                                                                                                                                                                                                                                                 |
+| A11Y-12 | The page has a sensible `<title>`, one `<h1>`, and landmark regions (`header`, `main`, `footer`).                                                                                                                                                                                                                                                                     |
+| A11Y-13 | Help examples are decorative: the tiles are hidden from assistive technology and the meaning is carried by the sentence beneath, so no orphan `gridcell` semantics appear outside the board's grid.                                                                                                                                                                   |
+| A11Y-14 | Home lists the games as a `<ul>` of links, each with an accessible name such as "Play WordWeaver" and a one-line description. Every view has exactly one `<h1>`.                                                                                                                                                                                                      |
+| A11Y-15 | On a view change, focus moves to the new view's `<h1>` (`tabindex="-1"`). In a game view, "All games" is the first item in tab order.                                                                                                                                                                                                                                 |
+| A11Y-16 | The WordWeaver board is a `grid` named "Word ladder". Rows are labelled Start, Rung _n_, Next rung and End. Tiles read like "Rung 2, letter 3: A, matches end word" or "…, does not match".                                                                                                                                                                           |
+| A11Y-17 | A polite live region announces each accepted rung (`"CARD: 2 of 4 letters match"`), undo (`"Removed CARD"`), solve (`"Solved in 5 moves. Par 4."`) and give up (`"Gave up. One shortest ladder: COLD, CORD, CARD, WARD, WARM"`). Errors stay assertive (A11Y-4).                                                                                                      |
+| A11Y-18 | Enter to continue (FR-72) never moves focus, and **Play again** stays reachable with Tab.                                                                                                                                                                                                                                                                             |
+| A11Y-19 | WordWeaver reuses the existing `correct` and `absent` tile tokens and glyph markers in both palettes, so no new colour pairs are introduced.                                                                                                                                                                                                                          |
+| A11Y-20 | WordStack boards are separate `grid`s named "Board 1 of 4" and so on, with "solved" added once solved. Split keyboard keys carry every board's state in their label, for example "A: board 1 present, board 2 absent, board 3 solved, board 4 absent".                                                                                                                |
+| A11Y-21 | WordStack announces one summary per guess: `"CRANE. Board 1: 2 correct, 1 present. Board 2: solved. 6 guesses left."`                                                                                                                                                                                                                                                 |
+| A11Y-22 | WordRange announces each guess with its direction, the new range and the heat in words: `"BRAVE: the word is after it. Range BRAVE to ZZZZZ. Freezing. 13 guesses left."` Heat never relies on colour alone.                                                                                                                                                          |
+| A11Y-23 | WordCode announces counts in words (`"PANEL: 1 bull, 3 cows. 9 guesses left."`). In Mark mode every letter key is named with its current mark, and a marked key keeps that name in Type mode. The Type and Mark switch is a pair of toggle buttons.                                                                                                                   |
+| A11Y-24 | WordShuffle tray letters are buttons labelled with the letter and remaining count. Hints, reshuffles and solves are announced, and the answer row is labelled with hinted letters marked.                                                                                                                                                                             |
+| A11Y-25 | WordDodge announces each guess after its reveal with the colours in words and the words left (`"PLANK: P correct, L correct, A correct, N correct, K not in word. 3 words left."`), and the end of a game with the word and the guesses used. The words-left count is text beside the board, and the board is a labelled scrollable region that a keyboard can reach. |
 
 ---
 
@@ -513,6 +516,7 @@ Principles: never a raw stack trace in the UI; never a silent failure; every err
 - **AC-55** Given any of the four new games, when I finish a game with physical Enter and press Enter again, then the first press does not restart and the second does (FR-100).
 - **AC-56** Given 5 completed games in each game, when I reset one game's statistics, then every other game's statistics are unchanged.
 - **AC-57** Given axe scans of each new game in both themes and both palettes, then there are zero serious or critical issues.
+- **AC-58** Given WordDodge and any sequence of guesses, then each answer is the colours of the largest group of remaining words, and the game is won only on the guess that is the last word left.
 
 ---
 
@@ -564,10 +568,10 @@ _The shared confirmation dialog required by FR-34 and FR-47 is built once for th
 
 ### 14.4 More games (releases R2–R5)
 
-Four more games ship after Suite V1, one per release, in this order: **R2 WordStack** (§17), **R3 WordRange** (§18), **R4 WordCode** (§19), **R5 WordShuffle** (§20). Each release is a normal deploy; there are no feature flags.
+Five more games ship after Suite V1, one per release, in this order: **R2 WordStack** (§17), **R3 WordRange** (§18), **R4 WordCode** (§19), **R5 WordShuffle** (§20), **R6 WordDodge** (§21). Each release is a normal deploy; there are no feature flags.
 
 - **FR-97** The suite keeps one static **game catalogue**: an ordered, read-only list with each game's id, name, one-line description, route and lazily loaded view (ADR-028). Home renders one card per catalogue entry, in catalogue order. A game is added to the catalogue in the release that ships it. Until then its route is unknown and goes Home (EC-22).
-- **FR-98** Routes for the new games are `#/stack`, `#/range`, `#/code` and `#/shuffle`. Page titles follow FR-66, for example `WordStack · wordgames`.
+- **FR-98** Routes for the new games are `#/stack`, `#/range`, `#/code`, `#/shuffle` and `#/dodge`. Page titles follow FR-66, for example `WordStack · wordgames`.
 - **FR-99** Every game stores its data under `wordgames:v1:<gameId>:{prefs,stats,session,meta}`, following FR-68. Statistics, history and session are never shared between games.
 - **FR-100** Enter to continue (FR-72, FR-73) and leaving without abandoning (FR-65) apply to every game in the catalogue. In games with no reveal animation (WordRange, WordCode, WordShuffle), the result panel mounts after the keydown that ended the game has been handled, so FR-73\'s protection still holds; each of those games tests it explicitly.
 - **FR-101** Every game's header follows FR-64. Its game controls are How to play, a selector where the game has one (word length, or board count for WordStack), and Statistics. Every game has its own How to play dialog, never opened automatically (ADR-020), and its examples follow A11Y-13.
@@ -788,6 +792,31 @@ Unscramble a word. The letters arrive shuffled, and any real word that uses exac
   - the last 50 games `{ id, playedAt, length, target, found, hintsUsed, solved }`
   - added later (ADR-035): average and fastest solve time, a chart of solves by time (under 10 s, 30 s, 1 min, 2 min, longer), a chart of solves by hints used, and how often another anagram was found in puzzles that had several answers. Each record carries `solveMs` and `anagramCount`, and the recent list shows the word found.
 - **FR-147** The in-progress puzzle (target, scramble, tray, answer row, hints) is saved and restored as in FR-32, FR-33 and FR-65. Starting a new puzzle or switching length after any input asks for confirmation. The How to play dialog explains the tray, reshuffle, hints, the clock and that any valid anagram wins.
+
+---
+
+## 21. WordDodge (release R6)
+
+An adversarial Wordle, in the style of Absurdle. The game never picks a secret. Every guess is answered with the colours that leave the most words possible, so the game only commits when one is left. Rationale in ADR-039.
+
+### 21.1 Rules
+
+- **FR-148** Word length is 4, 5 or 6, default 5, with its own length preference. There is no guess limit.
+- **FR-149** The game starts with every word in the answer list for that length as a **candidate**. For each accepted guess it scores the guess against every candidate with `evaluateGuess` (FR-12, FR-13) and groups the candidates by the resulting colours. It answers with the colours of the **largest group**, and the candidates become that group. A tie in size goes to the colours with fewer hits, counting two for each green and one for each yellow, and a tie there goes to the smaller pattern, so the answer to a guess is always the same for the same candidates. The game is won when the answer is all green, which can only happen when the guess is the last candidate.
+- **FR-150** The board shows one row per guess, plus the row being typed. It has no fixed row count, so it grows and scrolls inside its own region, with the newest row kept in view. A count above the board shows how many candidates are left, such as "3 words left", and reads "1 word left" at the end.
+- **FR-151** Input and validation follow Wordwright (FR-6 to FR-11, FR-14 to FR-17). A repeated guess is allowed, though it tells the player nothing new. The tile reveal (FR-52) and the on-screen keyboard colours (FR-53) follow the colours the game answered with.
+- **FR-152** **Give up** is available once a guess has been made. It asks for confirmation, ends the game as given up, and shows one of the candidates still possible, the first in list order, with how many others were possible. A give up counts as a loss in statistics and ends the streak.
+
+### 21.2 Interface
+
+- **FR-153** The in-progress game is saved and restored as in FR-32, FR-33 and FR-65. The save holds the guesses with the colours the game gave and the row being typed, not the candidates. On restore the candidates are rebuilt by replaying the guesses against the answer list. A game whose replies no longer replay, or whose length is not the current one, is discarded silently. A game is not saved while its reveal is running, so a reload then keeps the game as it was before that guess. Restarting or switching length with at least one guess asks for confirmation.
+- **FR-154** The result panel shows found or gave up, the word, guesses used, the time, and **Play again** and **Change length**. After a give up it also says how many other words were still possible. A win is announced with its guesses in words (A11Y-25).
+- **FR-155** Statistics are kept overall and per length, and recorded once per game:
+  - played, won, win %, current and best streak
+  - average and fewest guesses over wins, and average and fastest win time
+  - wins grouped by guesses used: 5 or fewer, then one row each for 6 to 11, then 12 or more
+  - the last 50 games `{ id, playedAt, length, word, guessesUsed, won, solveMs, opener }`
+- **FR-156** The How to play dialog explains that the game has not picked a word and answers with the colours that keep the most words, the colours, the words-left count and Give up, with an example that follows the selected length.
 
 ---
 

@@ -8,7 +8,7 @@ Legend — **A** = covered by an automated test · **M** = manual verification �
 
 Sections 1–13 cover Wordwright V1. Sections 14–17, and the rows marked Suite V1 in §6, §8 and §10, cover Suite V1. They must all be ticked with evidence before Suite V1 is released (T-73).
 
-Sections 18–21, and the rows marked R2 to R5 in §6, §8, §9 and §10, cover the four later game releases. Each release's rows must be ticked with evidence before that release ships: R2 WordStack (T-79), R3 WordRange (T-83), R4 WordCode (T-87) and R5 WordShuffle (T-91).
+Sections 18–22, and the rows marked R2 to R6 in §6, §8, §9 and §10, cover the five later game releases. Each release's rows must be ticked with evidence before that release ships: R2 WordStack (T-79), R3 WordRange (T-83), R4 WordCode (T-87), R5 WordShuffle (T-91) and R6 WordDodge (T-95).
 
 ---
 
@@ -427,6 +427,30 @@ Releases R2–R5: each `EC-39 … EC-49` needs the same evidence before its rele
 | 21.20 | Targets come from the shuffle list, which holds no answer and no offensive word; an old saved game whose target is an answer still restores                                                                   | A    | FR-138, ADR-038      | ✅  |
 | 21.21 | A count-up clock reads 0:00 until the first letter, runs from it, stops at the solve or give up, and survives leaving and returning; the result shows the time                                                | A    | FR-137, FR-145       | ✅  |
 
+## 22. WordDodge (R6)
+
+| #     | Criterion                                                                                                                                                                    | Type | Ref                  | ✓   |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------------- | --- |
+| 22.1  | Home shows the WordDodge card in catalogue order; `#/dodge` opens it with the title `WordDodge · wordgames` and the `<h1>` "WordDodge"; before R6 ships, `#/dodge` goes Home | A    | FR-97, FR-98, AC-45  | ✅  |
+| 22.2  | Header order: **All games**, "WordDodge", **How to play**, **New game**, the length selector, **Statistics**, then settings                                                  | A    | FR-101, US-39        | ✅  |
+| 22.3  | Word length is 4, 5 or 6, default 5, with its own preference, and there is no guess limit                                                                                    | A    | FR-148               | ✅  |
+| 22.4  | Every reply is the colours of the largest group of remaining words; a tie goes to fewer hits, then the smaller pattern; repeated letters follow the Wordle scorer            | A    | FR-149, AC-58        | ✅  |
+| 22.5  | The game is won only when the guess is the last word left; on the shipped lists a player who guesses well wins within 12 guesses at every length                             | A    | FR-149, AC-58        | ✅  |
+| 22.6  | The board has a row per guess plus the row being typed, grows without a limit, keeps the newest row in view, and shows the words left as text                                | A    | FR-150               | ✅  |
+| 22.7  | Input, validation and rejection toasts follow Wordwright, a rejected guess costs nothing, and a repeated guess is allowed                                                    | A    | FR-151               | ✅  |
+| 22.8  | The keyboard colours follow the replies given, and the result stays hidden until the reveal ends                                                                             | A    | FR-151, FR-52, FR-53 | ✅  |
+| 22.9  | **Give up** is disabled before the first guess, asks to confirm, shows the first word still possible and how many others were, counts as a loss and ends the streak          | A    | FR-152               | ✅  |
+| 22.10 | Leaving and returning restores the guesses, the row being typed and the words left, rebuilt by replay; a game that no longer replays, or of another length, is discarded     | A    | FR-153               | ✅  |
+| 22.11 | Restarting or switching length after a guess asks to confirm, and an abandoned game is not recorded                                                                          | A    | FR-153               | ✅  |
+| 22.12 | Result panel shows found or gave up, the word, guesses, time, **Play again** and **Change length**                                                                           | A    | FR-154               | ✅  |
+| 22.13 | Statistics overall and per length, including average and fewest guesses and the grouped distribution, match a hand-computed expectation; a give up ends the streak           | A    | FR-155               | ✅  |
+| 22.14 | **How to play** explains the adversary, the colours, the count and Give up with an example for the length; it never opens by itself                                          | A    | FR-156               | ✅  |
+| 22.15 | Each guess is announced after its reveal with the colours in words and the words left, and the end of a game is announced                                                    | A    | A11Y-25              | ✅  |
+| 22.16 | Enter on the result panel starts a new game; the Enter that submitted the winning guess does not                                                                             | A    | FR-100, AC-55        | ✅  |
+| 22.17 | WordDodge data lives only under `wordgames:v1:dodge:*`; resetting its statistics leaves every other game's statistics unchanged                                              | A    | FR-99, AC-56         | ✅  |
+| 22.18 | WordDodge engine has 100% branch coverage and passes the engine purity lint rules                                                                                            | T    | NFR-19               | ✅  |
+| 22.19 | axe reports zero serious or critical issues on WordDodge in both themes and both palettes                                                                                    | T    | AC-57                | ✅  |
+
 ---
 
 ## Evidence Summary (2026-07-26)
@@ -705,6 +729,30 @@ Two changes after R5. Rows 19.2 to 19.4, 19.9, 19.10, 19.14 and 19.15 and rows 2
 - The lists chunks grew by 1.5, 2.4 and 3.5 KB gzipped (20.6, 53.5 and 76.3 KB), against a limit of 15 KB each. The entry bundle is **79.1 KB gzipped**.
 - Unit and integration: **83 files, 2,027 tests, all passing.** `src/engine/**` branch coverage is 100% after the follow-up that added the missing selector tests.
 
+### Addendum — R6 WordDodge (T-95, 2026-10-17)
+
+A seventh game, an adversarial Wordle (ADR-039). Rows 22.1 to 22.19 describe it.
+
+**Behaviour**
+
+- The game keeps the 700 answers of the chosen length as candidates and answers each guess with the colours of the largest group. A real-list test plays a sensible strategy at 4, 5 and 6 letters and wins within 12 guesses each time.
+- A saved game holds the guesses and their colours. The candidates are rebuilt by replaying them, and a game that no longer replays is dropped.
+- A game is not saved while its reveal runs. After a reload during a reveal, the game is as it was before that guess.
+
+**Tests**
+
+- `src/engine/dodge`: **100%** branch coverage. Unit and integration: **90 files, 2,185 tests, all passing.**
+- `e2e/dodge.spec.ts`: **62 passed**, on desktop and mobile. It covers a win, a give up, a reload, axe in both themes and both palettes, and layouts from 320 px to 2560 px and 740 x 360 landscape with eight guesses.
+- The other specs (WordCode, WordRange, WordShuffle, WordStack, WordWeaver, navigation, a11y, responsive and suite): **418 passed, 1 skipped**, after raising the Home card count to 7 in four of them. One WordStack timing test (a Quad guess under 16 ms at p95) failed once during the long run, at 25 ms, and passed on its own at about 9 ms per guess. It is a timing check, and the long run was loaded.
+
+**Bundle**
+
+- The WordDodge view is its own chunk of **6.2 KB gzipped**, and no lists chunk changed. The entry bundle is **80.0 KB gzipped**, up from 79.1 KB, against a limit of 200 KB.
+
+**Not verified**
+
+- Nothing outside this environment: the deployed site was not touched.
+
 ## Sign-off
 
 | Gate                                            | Owner | Date | Notes |
@@ -722,5 +770,6 @@ Two changes after R5. Rows 19.2 to 19.4, 19.9, 19.10, 19.14 and 19.15 and rows 2
 | R3 WordRange (§19 and R3 rows)                  |       |      |       |
 | R4 WordCode (§20 and R4 rows)                   |       |      |       |
 | R5 WordShuffle (§21 and R5 rows)                |       |      |       |
+| R6 WordDodge (§22 and R6 rows)                  |       |      |       |
 
 **V1 is done when every box above is ticked. Not before, and nothing more.**

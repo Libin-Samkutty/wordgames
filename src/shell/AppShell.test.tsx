@@ -72,6 +72,7 @@ describe('suite shell', () => {
         '#/range',
         '#/code',
         '#/shuffle',
+        '#/dodge',
       ]);
       expect(screen.getByRole('link', { name: 'Play WordWright' })).toHaveAccessibleDescription(
         /six tries/,

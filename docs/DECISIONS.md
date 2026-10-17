@@ -45,6 +45,7 @@ The project was previously named Wordwright. ADR-001 to ADR-020 were written und
 | [036](#adr-036--wordweaver-backspace-no-longer-undoes)                                         | WordWeaver: Backspace no longer undoes               | Accepted (refines 026) |
 | [037](#adr-037--wordrange-plays-4-5-and-6-letters)                                             | WordRange plays 4, 5 and 6 letters                   | Accepted (refines 030) |
 | [038](#adr-038--wordshuffle-rarer-targets-no-letter-in-place-a-visible-clock)                  | WordShuffle: harder targets, scramble, a clock       | Accepted (refines 032) |
+| [039](#adr-039--worddodge-an-adversary-that-never-picks-a-word)                                | WordDodge: an adversary that never picks a word      | Accepted               |
 
 ---
 
@@ -852,3 +853,27 @@ This is not a plugin system. There is no runtime registration and no shared inte
 - WordShuffle's tests that pinned the first scramble moved to the new first scramble: ANLTP for PLANT and ELINST for LISTEN.
 
 **Alternatives.** (a) A Normal / Hard toggle. Rejected: more work, a spec change for a hard mode, and statistics per mode, for a game that was simply too easy. (b) Only one answer per target. Rejected: it reverses ADR-032's "any valid anagram wins" for little gain. (c) One hint instead of two. Rejected: the other changes already raise the difficulty, and hints are optional. (d) A countdown timer. Rejected: it needs a loss state, a pause when the tab is hidden, and a change to streaks. (e) Several words a round. Rejected: new round state, session save and statistics, the largest change of the three. (f) Pick the pool by frequency rank only. Rejected: the range below the answers is full of names and slang, which the blocklist removes.
+
+---
+
+## ADR-039 — WordDodge: an adversary that never picks a word
+
+**Context.** The suite has no game where the answer moves. Absurdle showed that a Wordle whose secret is undecided is a different puzzle: the player is not guessing a word but cutting down a set, and the game fights back. It needs the Wordle board, the keyboard, the scorer and the answer lists, all of which exist, so it is the cheapest new game.
+
+**Decision.**
+
+- **Candidates, not a secret.** A game starts with the answer list for the chosen length, 700 words, as its candidates. It never draws a word, so it has no ring buffer and no `meta` key.
+- **Largest group wins.** Each accepted guess is scored against every candidate with `evaluateGuess`. The candidates are grouped by their colours, and the game answers with the largest group's colours and keeps that group. A tie in size goes to fewer hits (two for a green, one for a yellow), then to the smaller pattern string. This makes every answer a pure function of the candidates and the guess, so it can be tested exactly. With 700 candidates a guess costs at most 700 scores.
+- **Won on the last word.** The reply is all green only when the guess is the only candidate left, because the all-green group has one word and loses any tie to a group with fewer hits. The game is won then. There is no guess limit.
+- **Give up shows the first candidate.** In list order, with a count of the others, so the reveal is the same on every reload. A give up counts as a loss.
+- **The save omits the candidates.** A session holds the guesses and their colours. A restore replays them against the answer list and drops the game if any reply differs, so a changed list can never leave a game that is unwinnable or that contradicts what the player saw.
+- **The shared board.** WordDodge reuses `Board`, `Tile`, `Keyboard` and `useRevealTimeline` with its own state, and adds no new component. The board has a row per guess and scrolls.
+
+**Consequences.**
+
+- The game never ends by loss, only by a win or a give up. Its statistics have no loss streak and group wins by guesses used: five or fewer, one row each from 6 to 11, and 12 or more. A saved game has no guess cap as a rule. A storage guard of 1,000 guesses only keeps a corrupt blob from being huge.
+- A reload during a reveal restores the game from before that guess, because a game is not saved while revealing. This avoids saving a result the player has not seen.
+- The first guess is the most informative one. The candidates are only the 700 answers, though any guess-list word may be played, so the set is small enough to finish in a handful of guesses. The game is easier than Absurdle, which uses a list of over 2,000.
+- No new word data, no new runtime dependency and no new chunk beyond the view (NFR-18, NFR-20).
+
+**Alternatives.** (a) Use the whole guess list as candidates. Rejected: tens of thousands of words, obscure answers and a slow first guess. (b) A guess limit with a loss. Rejected: the game already pushes back, and a limit would make a hard puzzle punishing rather than interesting. (c) Pick a secret at the end. Rejected: this is the same as Wordle with a delayed draw, and gives no reason to explain the adversary. (d) Hard mode that forces every revealed hint to be used. Rejected for now: Wordwright has none (V2), and the game's pressure comes from the adversary.

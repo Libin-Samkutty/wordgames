@@ -108,4 +108,12 @@ export const GAMES: readonly CatalogueEntry[] = [
     route: '#/shuffle',
     load: () => import('@/components/shuffle/ShuffleView').then((m) => m.ShuffleView),
   }),
+  defineGame({
+    id: 'dodge',
+    name: 'WordDodge',
+    description:
+      'The game never picks a word. It dodges every guess to keep the most words in play.',
+    route: '#/dodge',
+    load: () => import('@/components/dodge/DodgeView').then((m) => m.DodgeView),
+  }),
 ];

@@ -109,7 +109,7 @@ test.describe('opening and navigating (AC-45)', () => {
     await page.goto('/');
 
     const links = page.getByRole('list').getByRole('link');
-    await expect(links).toHaveCount(6);
+    await expect(links).toHaveCount(7);
     await expect(links.nth(5)).toHaveAccessibleName('Play WordShuffle');
 
     await page.getByRole('link', { name: 'Play WordShuffle' }).click();
