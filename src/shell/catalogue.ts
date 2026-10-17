@@ -116,4 +116,11 @@ export const GAMES: readonly CatalogueEntry[] = [
     route: '#/dodge',
     load: () => import('@/components/dodge/DodgeView').then((m) => m.DodgeView),
   }),
+  defineGame({
+    id: 'hunt',
+    name: 'WordHunt',
+    description: 'Find every word hiding in six letters. Four to six letters each.',
+    route: '#/hunt',
+    load: () => import('@/components/hunt/HuntView').then((m) => m.HuntView),
+  }),
 ];

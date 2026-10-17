@@ -70,6 +70,7 @@ export default defineConfig({
         'src/engine/code/types.ts',
         'src/engine/shuffle/types.ts',
         'src/engine/dodge/types.ts',
+        'src/engine/hunt/types.ts',
         'src/**/*.d.ts',
       ],
       // NFR-8

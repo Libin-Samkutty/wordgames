@@ -46,6 +46,7 @@ The project was previously named Wordwright. ADR-001 to ADR-020 were written und
 | [037](#adr-037--wordrange-plays-4-5-and-6-letters)                                             | WordRange plays 4, 5 and 6 letters                   | Accepted (refines 030) |
 | [038](#adr-038--wordshuffle-rarer-targets-no-letter-in-place-a-visible-clock)                  | WordShuffle: harder targets, scramble, a clock       | Accepted (refines 032) |
 | [039](#adr-039--worddodge-an-adversary-that-never-picks-a-word)                                | WordDodge: an adversary that never picks a word      | Accepted               |
+| [040](#adr-040--wordhunt-find-the-common-words-hiding-in-six-letters)                          | WordHunt: the common words hiding in six letters     | Accepted               |
 
 ---
 
@@ -877,3 +878,28 @@ This is not a plugin system. There is no runtime registration and no shared inte
 - No new word data, no new runtime dependency and no new chunk beyond the view (NFR-18, NFR-20).
 
 **Alternatives.** (a) Use the whole guess list as candidates. Rejected: tens of thousands of words, obscure answers and a slow first guess. (b) A guess limit with a loss. Rejected: the game already pushes back, and a limit would make a hard puzzle punishing rather than interesting. (c) Pick a secret at the end. Rejected: this is the same as Wordle with a delayed draw, and gives no reason to explain the adversary. (d) Hard mode that forces every revealed hint to be used. Rejected for now: Wordwright has none (V2), and the game's pressure comes from the adversary.
+
+---
+
+## ADR-040 — WordHunt: find the common words hiding in six letters
+
+**Context.** Spelling Bee and Wordscapes give a few letters and ask for every word that can be made from them. The suite already has the pieces: an anagram index and a tray in WordShuffle, and 4, 5 and 6-letter lists. It has no 3-letter list, so a puzzle can only hold 4 to 6 letter words, and the question is whether six letters hide enough of them.
+
+**Decision.**
+
+- **Six letters, no selector.** A puzzle is a 6-letter seed word. The tray is its letters in another order. There is no length choice and no per-length statistics, because five letters would hide too few 4 and 5-letter words, and seven would need a 7-letter list.
+- **Required words are common words.** A word hides in the tray when it is spelled from the tray's letters, each used no more often than it appears. The required words are the hidden words in the answer list or the shuffle list for their length. Those lists are filtered for fairness, so a player is never asked to find a name, a slur or an obscure word.
+- **Every other word is a bonus.** Any other guess-list word spelled from the tray is accepted and counted as a bonus word. It does not fill a slot and is never needed. This keeps the rare words a player knows from being rejected, without making them a requirement.
+- **A good puzzle hides 8 to 20 required words.** The pool is every answer and shuffle word of 6 letters that does. Fewer is over too soon, and the richest seeds hide over 30, which is a chore. On the shipped lists that is 739 of 1,751 seeds. Each hides at least three 4-letter words and at least one 6-letter word, so every puzzle has slots at two or more lengths.
+- **Worked out on the device.** The sub-multisets of the tray are found by choosing 4, 5 or 6 of its letters and looking up each sorted-letter key in the anagram index, 22 lookups for a tray of distinct letters. Scoring every seed takes a few tens of milliseconds, once, after the three lists load. No data is added.
+- **The save carries the words.** A saved puzzle holds its required words, found words and bonus words. It restores whatever the lists now hold, and needs no replay.
+- **No hints and no word-count limit.** A clock counts up as in WordShuffle (ADR-038). It does not end a puzzle.
+
+**Consequences.**
+
+- The view loads the 4, 5 and 6-letter lists together, about 150 KB gzipped on a first visit. They are the same chunks the other games load, and Home still makes no dictionary request (NFR-15).
+- A found word shows as a word and an unfound slot as a blank, so the board needs no colour to carry meaning. Found slots use a green border and the normal text colour, because the green tile pair is below 4.5:1 for small text.
+- Giving up shows the words missed in their slots and in the result.
+- Statistics have no per-length view, and track the share of words found over all puzzles, which a partial result adds to.
+
+**Alternatives.** (a) Add a 3-letter list for more words per puzzle. Rejected: new data, a hand read for offensive words, and bigger chunks, for words that are mostly obscure. (b) Seven letters with a required centre letter and repeats allowed, as Spelling Bee does. Rejected: it changes the game's shape and needs a 7-letter list. (c) Require every guess-list word. Rejected: it would ask for words nobody knows. (d) Pick puzzles at build time. Rejected: the same result for more files, and the pool depends on three lists that already load together. (e) A hint button. Rejected for now: the slots already show how many words are left at each length.
