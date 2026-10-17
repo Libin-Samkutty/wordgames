@@ -342,6 +342,238 @@ describe('WordRange', () => {
     });
   });
 
+  describe('word lengths (FR-115, ADR-037)', () => {
+    const prefs = (): unknown => JSON.parse(localStorage.getItem(gameKeys('range').prefs) ?? '{}');
+
+    it('defaults to 5 letters and offers 4, 5 and 6 as a radio group', async () => {
+      await openRange();
+
+      expect(screen.getByRole('radio', { name: /^5/ })).toBeChecked();
+      expect(screen.getAllByRole('radio').map((radio) => radio.textContent?.trim())).toEqual([
+        '4 letters',
+        '5 letters',
+        '6 letters',
+      ]);
+    });
+
+    it('switches without asking when no guess has been made, and plays at that length', async () => {
+      const { user } = await openRange();
+
+      await user.click(screen.getByRole('radio', { name: /^4/ }));
+
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(boundWords()).toEqual({ upper: 'ZZZZ', lower: 'AAAA' });
+      });
+      expect(screen.getByText('13 guesses left')).toBeInTheDocument();
+
+      await user.keyboard('ABCDEFG');
+      expect(screen.getByRole('group', { name: 'Your guess: ABCD' })).toBeInTheDocument();
+    });
+
+    it('asks after a guess; Cancel keeps the game and Switch changes the length', async () => {
+      const { user } = await openRange();
+      await guess(user, 'BRAVE');
+
+      await user.click(screen.getByRole('radio', { name: /^6/ }));
+      const dialog = await screen.findByRole('alertdialog', { name: 'Switch to 6 letters?' });
+      await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+      expect(screen.getByRole('radio', { name: /^5/ })).toBeChecked();
+      expect(listedWords()).toEqual(['BRAVE']);
+
+      await user.click(screen.getByRole('radio', { name: /^6/ }));
+      await user.click(
+        within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Switch' }),
+      );
+
+      await waitFor(() => {
+        expect(boundWords()).toEqual({ upper: 'ZZZZZZ', lower: 'AAAAAA' });
+      });
+      expect(screen.getByRole('radio', { name: /^6/ })).toBeChecked();
+      expect(screen.getByText('15 guesses left')).toBeInTheDocument();
+      expect(listedWords()).toEqual([]);
+    });
+
+    it('does not record the game that was left', async () => {
+      const { user } = await openRange();
+      await guess(user, 'BRAVE');
+
+      await user.click(screen.getByRole('radio', { name: /^4/ }));
+      await user.click(
+        within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Switch' }),
+      );
+
+      await waitFor(() => {
+        expect(boundWords().upper).toBe('ZZZZ');
+      });
+      expect(localStorage.getItem(gameKeys('range').stats)).toBeNull();
+    });
+
+    it('remembers the length for the next visit', async () => {
+      const { user } = await openRange();
+
+      await user.click(screen.getByRole('radio', { name: /^6/ }));
+      await waitFor(() => {
+        expect(screen.getByRole('radio', { name: /^6/ })).toBeChecked();
+      });
+
+      expect(prefs()).toEqual({ defaultWordLength: 6 });
+    });
+
+    it('opens at the saved length', async () => {
+      localStorage.setItem(gameKeys('range').prefs, JSON.stringify({ defaultWordLength: 4 }));
+
+      await openRange();
+
+      expect(screen.getByRole('radio', { name: /^4/ })).toBeChecked();
+      expect(boundWords()).toEqual({ upper: 'ZZZZ', lower: 'AAAA' });
+    });
+
+    it('ignores a saved game of the other length', async () => {
+      const { user } = await openRange();
+      await guess(user, 'BRAVE');
+      await user.click(screen.getByRole('link', { name: 'All games' }));
+      await screen.findByRole('link', { name: 'Play WordRange' });
+      localStorage.setItem(gameKeys('range').prefs, JSON.stringify({ defaultWordLength: 4 }));
+
+      await user.click(screen.getByRole('link', { name: 'Play WordRange' }));
+
+      await screen.findByRole('group', { name: /^Your guess/ });
+      expect(screen.getByRole('radio', { name: /^4/ })).toBeChecked();
+      expect(listedWords()).toEqual([]);
+    });
+
+    it('restores a 4-letter game with its bounds and guesses', async () => {
+      localStorage.setItem(gameKeys('range').prefs, JSON.stringify({ defaultWordLength: 4 }));
+      const { user } = await openRange();
+      await guess(user, 'STEM', 'CLAY');
+
+      await user.click(screen.getByRole('link', { name: 'All games' }));
+      await screen.findByRole('link', { name: 'Play WordRange' });
+      await user.click(screen.getByRole('link', { name: 'Play WordRange' }));
+      await screen.findByRole('group', { name: /^Your guess/ });
+
+      expect(boundWords()).toEqual({ upper: 'STEM', lower: 'CLAY' });
+      expect(listedWords()).toEqual(['CLAY', 'STEM']);
+      expect(screen.getByText('11 guesses left')).toBeInTheDocument();
+    });
+
+    it.each([
+      [4, 'PLAN', 'BRAT', 13],
+      [6, 'PLANET', 'BRIDGE', 15],
+    ] as const)(
+      'wins at length %i and records it overall and for that length',
+      async (length, secret, first, limit) => {
+        localStorage.setItem(
+          gameKeys('range').prefs,
+          JSON.stringify({ defaultWordLength: length }),
+        );
+        const { user } = await openRange();
+        expect(screen.getByText(String(limit) + ' guesses left')).toBeInTheDocument();
+
+        await guess(user, first, secret);
+        const heading = await screen.findByRole('heading', { name: 'You found it!' });
+        expect(heading.closest('section')).toHaveTextContent('2 of ' + String(limit) + ' guesses');
+
+        await user.click(screen.getByRole('button', { name: 'Statistics' }));
+        const dialog = await screen.findByRole('dialog', { name: 'Statistics' });
+        expect(within(dialog).getByText('Played').closest('div')).toHaveTextContent('1');
+
+        const stored = JSON.parse(localStorage.getItem(gameKeys('range').stats) ?? '{}') as {
+          perLength: Record<string, { gamesPlayed: number; distribution: number[] }>;
+        };
+        expect(stored.perLength[String(length)]?.gamesPlayed).toBe(1);
+        expect(stored.perLength[String(length)]?.distribution[1]).toBe(1);
+        expect(stored.perLength['5']?.gamesPlayed).toBe(0);
+      },
+    );
+
+    it('is still playing after 9 guesses at 4 letters, with 4 left of 13', async () => {
+      localStorage.setItem(gameKeys('range').prefs, JSON.stringify({ defaultWordLength: 4 }));
+      const { user } = await openRange();
+
+      // Every word before PLAN ascending, then every word after it descending.
+      await guess(user, 'ABLE', 'BRAT', 'CLAY', 'FLAT', 'JUMP', 'TRIM', 'STEM', 'SLOT', 'PLUM');
+
+      expect(screen.getByText('4 guesses left')).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Out of guesses' })).not.toBeInTheDocument();
+    });
+
+    it('Change length on the result panel starts a fresh game at that length', async () => {
+      const { user } = await openRange();
+      await guess(user, 'PLANT');
+      await screen.findByRole('heading', { name: 'You found it!' });
+
+      await user.click(screen.getByRole('button', { name: 'Change length' }));
+      await user.click(
+        within(screen.getByRole('group', { name: 'New game length' })).getByRole('button', {
+          name: '6 letters',
+        }),
+      );
+
+      await waitFor(() => {
+        expect(boundWords()).toEqual({ upper: 'ZZZZZZ', lower: 'AAAAAA' });
+      });
+      expect(screen.getByRole('radio', { name: /^6/ })).toBeChecked();
+      expect(screen.queryByRole('heading', { name: 'You found it!' })).not.toBeInTheDocument();
+    });
+
+    it('the help dialog follows the length', async () => {
+      localStorage.setItem(gameKeys('range').prefs, JSON.stringify({ defaultWordLength: 6 }));
+      const { user } = await openRange();
+
+      await user.click(screen.getByRole('button', { name: 'How to play' }));
+
+      expect(await screen.findByRole('dialog', { name: 'How to play' })).toHaveTextContent(
+        '6-letter word in 15 guesses',
+      );
+    });
+  });
+
+  describe('saved before lengths existed (ADR-037)', () => {
+    it('keeps the statistics and restores the game of an older version', async () => {
+      // What the last release wrote: flat stats, one list of secrets, a game with no length.
+      const stats = {
+        gamesPlayed: 6,
+        gamesWon: 5,
+        currentStreak: 2,
+        bestStreak: 4,
+        distribution: [0, 0, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        recentGames: [],
+        recordedGameIds: [],
+      };
+      localStorage.setItem(gameKeys('range').stats, JSON.stringify(stats));
+      localStorage.setItem(gameKeys('range').prefs, '{}');
+      localStorage.setItem(gameKeys('range').meta, JSON.stringify({ recentAnswers: ['STORM'] }));
+      localStorage.setItem(
+        gameKeys('range').session,
+        JSON.stringify({
+          id: 'old',
+          secret: 'PLANT',
+          guesses: [{ word: 'BRAVE', direction: 'after', heat: 'hot' }],
+          lower: 'BRAVE',
+          upper: 'ZZZZZ',
+          currentInput: '',
+          status: 'playing',
+          startedAt: 1,
+          finishedAt: null,
+        }),
+      );
+
+      const { user } = await openRange();
+
+      expect(screen.getByRole('radio', { name: /^5/ })).toBeChecked();
+      expect(listedWords()).toEqual(['BRAVE']);
+      expect(screen.getByText('13 guesses left')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Statistics' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Statistics' });
+      expect(within(dialog).getByText('Played').closest('div')).toHaveTextContent('6');
+      expect(within(dialog).getByText('Win %').closest('div')).toHaveTextContent('83%');
+    });
+  });
+
   describe('help and statistics (T-83: FR-124, FR-126, US-38, AC-56)', () => {
     it('never opens the help dialog by itself (ADR-020)', async () => {
       await openRange();
@@ -371,9 +603,12 @@ describe('WordRange', () => {
       expect(within(dialog).getByText('Win %').closest('div')).toHaveTextContent('100%');
       expect(dialog).toHaveTextContent('PLANT');
       const stored = JSON.parse(localStorage.getItem(gameKeys('range').stats) ?? '{}') as {
-        distribution: number[];
+        overall: { distribution: number[] };
+        perLength: Record<string, { gamesPlayed: number; distribution: number[] }>;
       };
-      expect(stored.distribution[1]).toBe(1);
+      expect(stored.overall.distribution[1]).toBe(1);
+      expect(stored.perLength['5']?.distribution[1]).toBe(1);
+      expect(stored.perLength['4']?.gamesPlayed).toBe(0);
     });
 
     it("resets only WordRange statistics, leaving other games' keys untouched (AC-56)", async () => {
@@ -396,9 +631,9 @@ describe('WordRange', () => {
       expect(localStorage.getItem(gameKeys('wordwright').stats)).toBe('{"marker":"wordwright"}');
       expect(localStorage.getItem(gameKeys('stack').stats)).toBe('{"marker":"stack"}');
       const stored = JSON.parse(localStorage.getItem(gameKeys('range').stats) ?? '{}') as {
-        gamesPlayed: number;
+        overall: { gamesPlayed: number };
       };
-      expect(stored.gamesPlayed).toBe(0);
+      expect(stored.overall.gamesPlayed).toBe(0);
     });
   });
 });

@@ -1,4 +1,5 @@
-import { LOWER_SENTINEL, RANGE_LENGTH, RANGE_MAX_GUESSES, UPPER_SENTINEL } from './constants';
+import type { WordLength } from '../types';
+import { lowerSentinel, RANGE_MAX_GUESSES, upperSentinel } from './constants';
 import { heatOf } from './heat';
 import type { RangeGuess, RangeState } from './types';
 
@@ -23,14 +24,21 @@ export type RangeAction =
       readonly now: number;
     };
 
-/** Builds a fresh game in `playing` status, with the range at its sentinels. */
+/**
+ * Builds a fresh game in `playing` status, with the range at its sentinels. The
+ * game's length is the length of the secret, which the provider draws from the
+ * dictionary for the chosen length.
+ */
 export function createRangeGame(id: string, secret: string): RangeState {
+  const wordLength = secret.length as WordLength;
+
   return {
     id,
     secret: secret.toUpperCase(),
+    wordLength,
     guesses: [],
-    lower: LOWER_SENTINEL,
-    upper: UPPER_SENTINEL,
+    lower: lowerSentinel(wordLength),
+    upper: upperSentinel(wordLength),
     currentInput: '',
     status: 'playing',
     startedAt: null,
@@ -56,7 +64,7 @@ export function rangeReducer(state: RangeState, action: RangeAction): RangeState
     case 'ADD_LETTER': {
       if (state.status !== 'playing') return state;
       // Typing past the row length is ignored silently (FR-7).
-      if (state.currentInput.length >= RANGE_LENGTH) return state;
+      if (state.currentInput.length >= state.wordLength) return state;
 
       const letter = action.letter.toUpperCase();
       if (!/^[A-Z]$/.test(letter)) return state;
@@ -80,8 +88,9 @@ export function rangeReducer(state: RangeState, action: RangeAction): RangeState
       if (state.status !== 'playing') return state;
 
       const word = action.word.toUpperCase();
-      if (word.length !== RANGE_LENGTH) return state;
-      if (state.guesses.length >= RANGE_MAX_GUESSES) return state;
+      const maxGuesses = RANGE_MAX_GUESSES[state.wordLength];
+      if (word.length !== state.wordLength) return state;
+      if (state.guesses.length >= maxGuesses) return state;
 
       const startedAt = state.startedAt ?? action.now;
 
@@ -103,10 +112,10 @@ export function rangeReducer(state: RangeState, action: RangeAction): RangeState
       const guess: RangeGuess = {
         word,
         direction: isAfter ? 'after' : 'before',
-        heat: heatOf(action.distance),
+        heat: heatOf(action.distance, state.wordLength),
       };
       const guesses = [...state.guesses, guess];
-      const lost = guesses.length >= RANGE_MAX_GUESSES;
+      const lost = guesses.length >= maxGuesses;
 
       return {
         ...state,

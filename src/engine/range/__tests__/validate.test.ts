@@ -11,6 +11,7 @@ const WORDS = new Set(['ABOUT', 'BRAVE', 'CRANE', 'PLAIN', 'PLANT', 'STORM', 'WO
 
 function context(over: Partial<RangeContext> = {}): RangeContext {
   return {
+    wordLength: 5,
     lower: 'AAAAA',
     upper: 'ZZZZZ',
     guessed: [],

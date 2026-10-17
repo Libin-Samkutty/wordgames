@@ -8,12 +8,14 @@
  */
 
 export {
+  DEFAULT_RANGE_LENGTH,
   HEAT_BANDS,
   HEAT_LEVELS,
-  LOWER_SENTINEL,
-  RANGE_LENGTH,
+  lowerSentinel,
+  RANGE_LENGTHS,
   RANGE_MAX_GUESSES,
-  UPPER_SENTINEL,
+  RANGE_MAX_GUESSES_OVERALL,
+  upperSentinel,
 } from './constants';
 export { heatOf, listDistance, listIndex } from './heat';
 export { createRangeGame, rangeReducer, type RangeAction } from './reducer';

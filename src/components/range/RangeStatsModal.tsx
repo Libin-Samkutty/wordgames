@@ -1,5 +1,13 @@
-import { RANGE_MAX_GUESSES } from '@/engine/range';
+import { useState } from 'react';
+
 import { RECENT_GAMES_LIMIT } from '@/engine/constants';
+import type { WordLength } from '@/engine';
+import {
+  RANGE_LENGTHS,
+  RANGE_MAX_GUESSES,
+  RANGE_MAX_GUESSES_OVERALL,
+  type RangeRecord,
+} from '@/engine/range';
 import {
   EMPTY_VALUE,
   formatAverage,
@@ -13,14 +21,21 @@ import {
   rangeAverageFirstBurning,
   rangeBurningPercentage,
   rangeWinPercentage,
-  type RangeStatsState,
+  type RangeStatsBucket,
 } from '@/storage';
-import type { RangeRecord } from '@/engine/range';
 
 import { Distribution } from '../stats/Distribution';
 import { ResetStatsSection } from '../stats/ResetStatsSection';
 import { StatTile } from '../stats/StatTile';
+import { ViewSwitcher } from '../stats/ViewSwitcher';
 import { Modal } from '../ui/Modal';
+
+type View = 'all' | WordLength;
+
+const VIEWS: readonly { value: View; label: string }[] = [
+  { value: 'all', label: 'All' },
+  ...RANGE_LENGTHS.map((length) => ({ value: length, label: `${String(length)} letters` })),
+];
 
 /** Rows shown in the recent-games list; the log itself keeps 50 (FR-124). */
 const RECENT_SHOWN = 8;
@@ -31,10 +46,10 @@ export interface RangeStatsModalProps {
 }
 
 /** Mean guesses over wins, read off the distribution, or null with no wins. */
-function averageWinGuesses(stats: RangeStatsState): number | null {
-  const wins = stats.distribution.reduce((sum, count) => sum + count, 0);
+function averageWinGuesses(bucket: RangeStatsBucket): number | null {
+  const wins = bucket.distribution.reduce((sum, count) => sum + count, 0);
   if (wins === 0) return null;
-  const total = stats.distribution.reduce((sum, count, index) => sum + count * (index + 1), 0);
+  const total = bucket.distribution.reduce((sum, count, index) => sum + count * (index + 1), 0);
   return total / wins;
 }
 
@@ -56,39 +71,51 @@ function mostUsedOpener(records: readonly RangeRecord[]): string | null {
 }
 
 /**
- * WordRange statistics (FR-124, US-38): played, win percentage, streaks, the
- * win distribution over guesses 1 to 14, recent games, an empty state that
+ * WordRange statistics (FR-124, US-38): overall and per length, played, win
+ * percentage, streaks, the win distribution over the length's guesses, recent games, an empty state that
  * never shows NaN (FR-41), and scoped reset actions that can only reach this
  * game's data (FR-47, FR-67).
  */
 export function RangeStatsModal({ isOpen, onClose }: RangeStatsModalProps): React.JSX.Element {
   const { stats, resetStatistics, resetHistory } = useRangeStats();
-  const hasGames = stats.gamesPlayed > 0;
-  const opener = mostUsedOpener(stats.recentGames);
+  const [view, setView] = useState<View>('all');
+
+  const bucket = view === 'all' ? stats.overall : stats.perLength[view];
+  const guessLimit = view === 'all' ? RANGE_MAX_GUESSES_OVERALL : RANGE_MAX_GUESSES[view];
+  const games = stats.recentGames.filter((record) => view === 'all' || record.wordLength === view);
+  const hasGames = stats.overall.gamesPlayed > 0;
+  const opener = mostUsedOpener(games);
+  // Mark the bar of the game just finished, when it is a win in the chosen view.
   const lastGame = stats.recentGames.at(0);
-  // Mark the bar of the game just finished, when it was a win.
-  const highlightIndex = lastGame?.won ? lastGame.guessesUsed - 1 : null;
-  const burningPercent = rangeBurningPercentage(stats);
+  const highlightIndex =
+    lastGame?.won && (view === 'all' || lastGame.wordLength === view)
+      ? lastGame.guessesUsed - 1
+      : null;
+  const burningPercent = rangeBurningPercentage(bucket);
 
   return (
     <Modal isOpen={isOpen} title="Statistics" onClose={onClose}>
       {hasGames ? (
         <div className="flex flex-col gap-6">
+          <ViewSwitcher views={VIEWS} value={view} onChange={setView} />
+
           <dl className="grid grid-cols-4 gap-2">
-            <StatTile label="Played" value={formatNumber(stats.gamesPlayed)} />
-            <StatTile label="Win %" value={formatPercent(rangeWinPercentage(stats))} />
-            <StatTile label="Current streak" value={formatNumber(stats.currentStreak)} />
-            <StatTile label="Best streak" value={formatNumber(stats.bestStreak)} />
+            <StatTile label="Played" value={formatNumber(bucket.gamesPlayed)} />
+            <StatTile label="Win %" value={formatPercent(rangeWinPercentage(bucket))} />
+            <StatTile label="Current streak" value={formatNumber(bucket.currentStreak)} />
+            <StatTile label="Best streak" value={formatNumber(bucket.bestStreak)} />
           </dl>
 
           <dl className="grid grid-cols-4 gap-2">
-            <StatTile label="Avg guesses" value={formatAverage(averageWinGuesses(stats))} />
-            <StatTile label="Avg time" value={formatDuration(averageTimedSolveMs(stats))} />
-            <StatTile label="Fastest" value={formatDuration(stats.fastestSolveMs)} />
+            <StatTile label="Avg guesses" value={formatAverage(averageWinGuesses(bucket))} />
+            <StatTile label="Avg time" value={formatDuration(averageTimedSolveMs(bucket))} />
+            <StatTile label="Fastest" value={formatDuration(bucket.fastestSolveMs)} />
             <StatTile
               label="Closest miss"
               value={
-                stats.closestMiss === null ? EMPTY_VALUE : `${formatNumber(stats.closestMiss)} left`
+                bucket.closestMiss === null
+                  ? EMPTY_VALUE
+                  : `${formatNumber(bucket.closestMiss)} left`
               }
             />
           </dl>
@@ -97,28 +124,28 @@ export function RangeStatsModal({ isOpen, onClose }: RangeStatsModalProps): Reac
             <p className="text-sm text-text-muted">
               {burningPercent === null
                 ? null
-                : `Reached Burning in ${formatPercent(burningPercent)} of games, on guess ${formatAverage(rangeAverageFirstBurning(stats))} on average. `}
+                : `Reached Burning in ${formatPercent(burningPercent)} of games, on guess ${formatAverage(rangeAverageFirstBurning(bucket))} on average. `}
               {opener === null ? null : `Favourite opener: ${opener.toUpperCase()}.`}
             </p>
           )}
 
           <section>
             <h3 className="mb-2 text-xs font-bold tracking-wide uppercase">
-              Wins by guesses (1 to {RANGE_MAX_GUESSES})
+              Wins by guesses (1 to {guessLimit})
             </h3>
-            <Distribution counts={stats.distribution} highlightIndex={highlightIndex} />
+            <Distribution counts={bucket.distribution} highlightIndex={highlightIndex} />
           </section>
 
-          {stats.recentGames.length > 0 ? (
+          {games.length > 0 ? (
             <section>
               <h3 className="mb-2 text-xs font-bold tracking-wide uppercase">Recent games</h3>
               <ul className="flex flex-col gap-1 text-sm">
-                {stats.recentGames.slice(0, RECENT_SHOWN).map((record) => (
+                {games.slice(0, RECENT_SHOWN).map((record) => (
                   <li key={record.id} className="flex items-center justify-between gap-2">
                     <span className="font-mono tracking-wider uppercase">{record.secret}</span>
                     <span className="text-text-muted">
                       {record.won
-                        ? `${String(record.guessesUsed)}/${String(RANGE_MAX_GUESSES)}`
+                        ? `${String(record.guessesUsed)}/${String(RANGE_MAX_GUESSES[record.wordLength])}`
                         : 'Not found'}
                       {record.won && record.solveMs !== undefined
                         ? ` · ${formatDuration(record.solveMs)}`

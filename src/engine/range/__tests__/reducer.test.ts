@@ -35,6 +35,7 @@ describe('set-up (FR-116)', () => {
     expect(fresh()).toEqual({
       id: 'g1',
       secret: 'PLANT',
+      wordLength: 5,
       guesses: [],
       lower: 'AAAAA',
       upper: 'ZZZZZ',
@@ -44,6 +45,18 @@ describe('set-up (FR-116)', () => {
       finishedAt: null,
     });
   });
+
+  it.each([
+    [4, 'PLAN', 'AAAA', 'ZZZZ'],
+    [6, 'PLANET', 'AAAAAA', 'ZZZZZZ'],
+  ] as const)(
+    'a %i-letter game takes its length and sentinels from the secret (FR-115, FR-116)',
+    (length, secret, lower, upper) => {
+      const game = createRangeGame('x', secret);
+
+      expect([game.wordLength, game.lower, game.upper]).toEqual([length, lower, upper]);
+    },
+  );
 
   it('uppercases the secret', () => {
     expect(createRangeGame('x', 'plant').secret).toBe('PLANT');
@@ -167,7 +180,7 @@ describe('winning and losing (FR-119)', () => {
 
   it('wins on the 14th and last guess', () => {
     let state = fresh();
-    for (let i = 0; i < RANGE_MAX_GUESSES - 1; i += 1) state = run(state, submit('BRAVE', FAR));
+    for (let i = 0; i < RANGE_MAX_GUESSES[5] - 1; i += 1) state = run(state, submit('BRAVE', FAR));
     state = run(state, submit('PLANT', 0));
 
     expect(state.status).toBe('won');
@@ -176,7 +189,7 @@ describe('winning and losing (FR-119)', () => {
 
   it('loses on the 14th wrong guess', () => {
     let state = fresh();
-    for (let i = 0; i < RANGE_MAX_GUESSES; i += 1)
+    for (let i = 0; i < RANGE_MAX_GUESSES[5]; i += 1)
       state = run(state, submit('BRAVE', FAR, 900 + i));
 
     expect(state.status).toBe('lost');
@@ -186,7 +199,7 @@ describe('winning and losing (FR-119)', () => {
 
   it('is still playing after the 13th wrong guess', () => {
     let state = fresh();
-    for (let i = 0; i < RANGE_MAX_GUESSES - 1; i += 1) state = run(state, submit('BRAVE', FAR));
+    for (let i = 0; i < RANGE_MAX_GUESSES[5] - 1; i += 1) state = run(state, submit('BRAVE', FAR));
 
     expect(state.status).toBe('playing');
   });
@@ -202,6 +215,38 @@ describe('winning and losing (FR-119)', () => {
     const full: RangeState = { ...fresh(), guesses: Array.from({ length: 14 }, () => guess) };
 
     expect(rangeReducer(full, submit('CRANE', FAR))).toBe(full);
+  });
+});
+
+describe('word lengths (FR-115)', () => {
+  const CASES = [
+    [4, 'PLAN', 'BRAT', 13],
+    [6, 'PLANET', 'BRAVER', 15],
+  ] as const;
+
+  it.each(CASES)(
+    'a %i-letter game is lost on the last of its guesses, not before',
+    (_length, secret, wrong, limit) => {
+      let state = fresh(secret);
+      for (let i = 0; i < limit - 1; i += 1) state = run(state, submit(wrong, FAR));
+      expect(state.status).toBe('playing');
+
+      state = run(state, submit(wrong, FAR));
+      expect(state.status).toBe('lost');
+      expect(state.guesses).toHaveLength(limit);
+    },
+  );
+
+  it.each(CASES)('a %i-letter game stops typing at its length', (length, secret) => {
+    const state = run(fresh(secret), ...type('ABCDEFGHIJ'));
+
+    expect(state.currentInput).toHaveLength(length);
+  });
+
+  it.each(CASES)('a %i-letter game ignores a word of another length', (_length, secret) => {
+    const state = fresh(secret);
+
+    expect(rangeReducer(state, submit('PLANT', FAR))).toBe(state);
   });
 });
 

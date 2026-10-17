@@ -1,10 +1,4 @@
-import {
-  RANGE_LENGTH,
-  lastHeat,
-  remainingGuesses,
-  sortedGuesses,
-  type RangeState,
-} from '@/engine/range';
+import { lastHeat, remainingGuesses, sortedGuesses, type RangeState } from '@/engine/range';
 import { cn } from '@/lib/cn';
 
 import { TILE_STATE_CLASS } from '../board/tileAppearance';
@@ -38,7 +32,7 @@ export function RangeBoard({ state, shake, reducedMotion }: RangeBoardProps): Re
   const heat = lastHeat(state);
   const guesses = sortedGuesses(state);
   const left = remainingGuesses(state);
-  const letters = Array.from({ length: RANGE_LENGTH }, (_, index) =>
+  const letters = Array.from({ length: state.wordLength }, (_, index) =>
     state.currentInput.charAt(index),
   );
 

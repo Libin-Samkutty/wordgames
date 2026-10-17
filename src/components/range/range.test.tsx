@@ -133,7 +133,16 @@ describe('RangeBoard (FR-121)', () => {
 describe('RangeResultPanel (FR-123)', () => {
   it('shows a win with the guesses and the word, and Play again', async () => {
     const onPlayAgain = vi.fn();
-    render(<RangeResultPanel won guessesUsed={6} secret="PLANT" onPlayAgain={onPlayAgain} />);
+    render(
+      <RangeResultPanel
+        won
+        length={5}
+        guessesUsed={6}
+        secret="PLANT"
+        onPlayAgain={onPlayAgain}
+        onChangeLength={vi.fn()}
+      />,
+    );
 
     const panel = screen.getByRole('region', { name: 'You found it!' });
     expect(panel).toHaveTextContent('6 of 14 guesses');
@@ -144,7 +153,16 @@ describe('RangeResultPanel (FR-123)', () => {
   });
 
   it('shows a loss and reveals the word', () => {
-    render(<RangeResultPanel won={false} guessesUsed={14} secret="PLANT" onPlayAgain={vi.fn()} />);
+    render(
+      <RangeResultPanel
+        won={false}
+        length={5}
+        guessesUsed={14}
+        secret="PLANT"
+        onPlayAgain={vi.fn()}
+        onChangeLength={vi.fn()}
+      />,
+    );
 
     const panel = screen.getByRole('region', { name: 'Out of guesses' });
     expect(panel).toHaveTextContent('14 of 14 guesses');
@@ -152,9 +170,55 @@ describe('RangeResultPanel (FR-123)', () => {
   });
 });
 
+describe('RangeResultPanel, change length (ADR-037)', () => {
+  it('offers the other two lengths and starts a game at the one chosen', async () => {
+    const onChangeLength = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <RangeResultPanel
+        won
+        length={4}
+        guessesUsed={6}
+        secret="PLAN"
+        onPlayAgain={vi.fn()}
+        onChangeLength={onChangeLength}
+      />,
+    );
+
+    const panel = screen.getByRole('region', { name: 'You found it!' });
+    expect(panel).toHaveTextContent('6 of 13 guesses');
+
+    await user.click(within(panel).getByRole('button', { name: 'Change length' }));
+    const group = within(panel).getByRole('group', { name: 'New game length' });
+    expect(
+      within(group)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['5 letters', '6 letters']);
+
+    await user.click(within(group).getByRole('button', { name: '6 letters' }));
+    expect(onChangeLength).toHaveBeenCalledWith(6);
+  });
+
+  it('says 15 guesses for a 6-letter game', () => {
+    render(
+      <RangeResultPanel
+        won={false}
+        length={6}
+        guessesUsed={15}
+        secret="PLANET"
+        onPlayAgain={vi.fn()}
+        onChangeLength={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('region')).toHaveTextContent('15 of 15 guesses');
+  });
+});
+
 describe('RangeHelpModal (FR-126, A11Y-13)', () => {
   it('explains before and after, the range and all five heat levels', () => {
-    render(<RangeHelpModal isOpen onClose={vi.fn()} />);
+    render(<RangeHelpModal isOpen length={5} onClose={vi.fn()} />);
 
     const dialog = screen.getByRole('dialog', { name: 'How to play' });
     expect(dialog).toHaveTextContent(/before or after/);
@@ -162,8 +226,26 @@ describe('RangeHelpModal (FR-126, A11Y-13)', () => {
     for (const label of Object.values(HEAT_LABEL)) expect(dialog).toHaveTextContent(label);
   });
 
+  it.each([
+    [4, 13, 'within 9 words', 'within 894'],
+    [5, 14, 'within 20 words', 'within 2,000'],
+    [6, 15, 'within 36 words', 'within 3,585'],
+  ] as const)(
+    'at %i letters it says the word length, %i guesses and the heat distances',
+    (length, guesses, burning, cold) => {
+      render(<RangeHelpModal isOpen length={length} onClose={vi.fn()} />);
+
+      const dialog = screen.getByRole('dialog', { name: 'How to play' });
+      expect(dialog).toHaveTextContent(
+        `${String(length)}-letter word in ${String(guesses)} guesses`,
+      );
+      expect(dialog).toHaveTextContent(burning);
+      expect(dialog).toHaveTextContent(cold);
+    },
+  );
+
   it('has a three-guess example, decorative, with the meaning in sentences', () => {
-    render(<RangeHelpModal isOpen onClose={vi.fn()} />);
+    render(<RangeHelpModal isOpen length={5} onClose={vi.fn()} />);
 
     const dialog = screen.getByRole('dialog', { name: 'How to play' });
     expect(RANGE_HELP_EXAMPLE.steps).toHaveLength(3);
@@ -174,7 +256,7 @@ describe('RangeHelpModal (FR-126, A11Y-13)', () => {
   });
 
   it('renders nothing while closed', () => {
-    render(<RangeHelpModal isOpen={false} onClose={vi.fn()} />);
+    render(<RangeHelpModal isOpen={false} length={5} onClose={vi.fn()} />);
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -185,7 +267,7 @@ describe('RangeHelpModal (FR-126, A11Y-13)', () => {
 
     for (const step of RANGE_HELP_EXAMPLE.steps) {
       const distance = listDistance(sorted, step.word, RANGE_HELP_EXAMPLE.secret) as number;
-      expect(heatOf(distance)).toBe(step.heat);
+      expect(heatOf(distance, 5)).toBe(step.heat);
       expect(step.word < RANGE_HELP_EXAMPLE.secret ? 'after' : 'before').toBe(step.direction);
     }
   });
@@ -235,6 +317,7 @@ describe('RangeStatsModal (FR-124, FR-47)', () => {
     secret: 'PLANT',
     guessesUsed: 5,
     won: true,
+    wordLength: 5,
     ...over,
   });
 
@@ -283,7 +366,7 @@ describe('RangeStatsModal (FR-124, FR-47)', () => {
     expect(tile('Best streak')).toBe('Best streak2');
 
     const dialog = screen.getByRole('dialog', { name: 'Statistics' });
-    expect(dialog).toHaveTextContent('Wins by guesses (1 to 14)');
+    expect(dialog).toHaveTextContent('Wins by guesses (1 to 15)');
     // Newest first, with the loss marked.
     const rows = within(dialog).getAllByRole('listitem');
     expect(rows.map((row) => row.textContent)).toEqual([
@@ -292,9 +375,74 @@ describe('RangeStatsModal (FR-124, FR-47)', () => {
       'STORM5/14',
       'PLANT3/14',
     ]);
-    // 14 distribution rows.
-    expect(dialog.querySelectorAll('[data-has-count]')).toHaveLength(14);
+    // 15 distribution rows in the All view.
+    expect(dialog.querySelectorAll('[data-has-count]')).toHaveLength(15);
     expect(dialog.querySelectorAll('[data-has-count="true"]')).toHaveLength(3);
+  });
+
+  it('switches between All and each length, with that length’s guess limit', async () => {
+    seed((s) => {
+      let stats = recordRangeGame(s, record('a', { guessesUsed: 3 }));
+      stats = recordRangeGame(stats, record('b', { guessesUsed: 5, secret: 'STORM' }));
+      stats = recordRangeGame(stats, record('c', { won: false, guessesUsed: 14, secret: 'CRANE' }));
+      stats = recordRangeGame(
+        stats,
+        record('d', { wordLength: 4, secret: 'PLAN', guessesUsed: 9 }),
+      );
+      return recordRangeGame(
+        stats,
+        record('e', { wordLength: 6, secret: 'PLANET', guessesUsed: 15 }),
+      );
+    });
+    const user = userEvent.setup();
+    renderModal();
+    const dialog = screen.getByRole('dialog', { name: 'Statistics' });
+
+    // All: played 5, won 4, 80%.
+    expect(tile('Played')).toBe('Played5');
+    expect(tile('Win %')).toBe('Win %80%');
+
+    await user.click(within(dialog).getByRole('radio', { name: '5 letters' }));
+    expect(tile('Played')).toBe('Played3');
+    expect(tile('Win %')).toBe('Win %67%');
+    expect(dialog).toHaveTextContent('Wins by guesses (1 to 14)');
+    expect(dialog.querySelectorAll('[data-has-count]')).toHaveLength(14);
+    expect(
+      within(dialog)
+        .getAllByRole('listitem')
+        .map((row) => row.textContent),
+    ).toEqual(['CRANENot found', 'STORM5/14', 'PLANT3/14']);
+
+    await user.click(within(dialog).getByRole('radio', { name: '4 letters' }));
+    expect(tile('Played')).toBe('Played1');
+    expect(dialog).toHaveTextContent('Wins by guesses (1 to 13)');
+    expect(dialog.querySelectorAll('[data-has-count]')).toHaveLength(13);
+    expect(
+      within(dialog)
+        .getAllByRole('listitem')
+        .map((row) => row.textContent),
+    ).toEqual(['PLAN9/13']);
+
+    await user.click(within(dialog).getByRole('radio', { name: '6 letters' }));
+    expect(dialog).toHaveTextContent('Wins by guesses (1 to 15)');
+    expect(
+      within(dialog)
+        .getAllByRole('listitem')
+        .map((row) => row.textContent),
+    ).toEqual(['PLANET15/15']);
+  });
+
+  it('shows zeros, not NaN, for a length with no games', async () => {
+    seed((s) => recordRangeGame(s, record('a')));
+    const user = userEvent.setup();
+    renderModal();
+    const dialog = screen.getByRole('dialog', { name: 'Statistics' });
+
+    await user.click(within(dialog).getByRole('radio', { name: '6 letters' }));
+
+    expect(tile('Played')).toBe('Played0');
+    expect(tile('Win %')).toBe('Win %0%');
+    expect(dialog.textContent).not.toContain('NaN');
   });
 
   it('keeps the reset actions after a statistics reset, while history remains', async () => {

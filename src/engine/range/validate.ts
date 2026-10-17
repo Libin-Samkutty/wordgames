@@ -1,10 +1,12 @@
 import { err, ok, type Result } from '@/lib/result';
 
+import type { WordLength } from '../types';
 import { validateGuess } from '../validate';
-import { RANGE_LENGTH } from './constants';
 import type { RangeError } from './types';
 
 export interface RangeContext {
+  /** The length of this game's words (FR-115). */
+  readonly wordLength: WordLength;
   /** The secret comes after this word (FR-116). */
   readonly lower: string;
   /** The secret comes before this word (FR-116). */
@@ -18,7 +20,7 @@ export interface RangeContext {
 /**
  * Checks a candidate guess in the FR-117 order, returning the first failure:
  *
- *  1. fewer letters than 5 → `too-short`
+ *  1. fewer letters than the game's length → `too-short`
  *  2. not in the guess list → `not-a-word`
  *  3. already guessed → `already-guessed`
  *  4. not strictly inside the range → `outside-range`
@@ -35,7 +37,7 @@ export function validateRangeGuess(
   input: string,
   context: RangeContext,
 ): Result<string, RangeError> {
-  const guess = validateGuess(input, RANGE_LENGTH, context.isAllowed);
+  const guess = validateGuess(input, context.wordLength, context.isAllowed);
   if (!guess.ok) return err(guess.error);
 
   const word = guess.value;

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { RANGE_LENGTH, guessesUsed } from '@/engine/range';
-import type { LetterState } from '@/engine';
+import type { LetterState, WordLength } from '@/engine';
+import { RANGE_LENGTHS, guessesUsed } from '@/engine/range';
 import { usePhysicalKeyboard } from '@/hooks/usePhysicalKeyboard';
 import { useSettings } from '@/state';
 import { RangeProvider, RangeStatsProvider, useRange } from '@/state/range';
 
 import { BoardSkeleton } from '../board/BoardSkeleton';
 import { DictionaryError } from '../game/DictionaryError';
+import { LengthSelector } from '../game/LengthSelector';
 import { Keyboard } from '../keyboard/Keyboard';
 import type { KeyValue } from '../keyboard/Key';
 import { HeaderIconButton } from '../layout/Header';
@@ -24,10 +25,13 @@ const SHAKE_DURATION_MS = 600;
 /** WordRange has no letter colours (FR-122), so the keyboard always gets an empty map. */
 const NO_KEY_STATES: ReadonlyMap<string, LetterState> = new Map();
 
+type Pending = { readonly kind: 'restart' } | { readonly kind: 'length'; readonly to: WordLength };
+
 /** Everything inside WordRange's own providers. */
 function RangeScreen(): React.JSX.Element {
   const {
     state,
+    length,
     dictionaryStatus,
     isGameOver,
     announcement,
@@ -35,13 +39,14 @@ function RangeScreen(): React.JSX.Element {
     removeLetter,
     submitGuess,
     restart,
+    setLength,
     retryDictionary,
   } = useRange();
   const { prefersReducedMotion } = useSettings();
 
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [isStatsOpen, setStatsOpen] = useState(false);
-  const [isConfirmOpen, setConfirmOpen] = useState(false);
+  const [pending, setPending] = useState<Pending | null>(null);
 
   const [shake, setShake] = useState(false);
   const shakeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -94,15 +99,30 @@ function RangeScreen(): React.JSX.Element {
   });
 
   const handleRestart = (): void => {
-    if (needsConfirm) setConfirmOpen(true);
+    if (needsConfirm) setPending({ kind: 'restart' });
     else restart();
   };
+
+  const handleLengthChange = (next: WordLength): void => {
+    if (next === length) return;
+    if (needsConfirm) setPending({ kind: 'length', to: next });
+    else setLength(next);
+  };
+
+  const confirmPending = (): void => {
+    if (pending?.kind === 'restart') restart();
+    else if (pending?.kind === 'length') setLength(pending.to);
+    setPending(null);
+  };
+
+  const confirmTitle =
+    pending?.kind === 'length' ? `Switch to ${String(pending.to)} letters?` : 'Start a new game?';
 
   let body: React.JSX.Element;
   if (dictionaryStatus === 'error') {
     body = <DictionaryError onRetry={retryDictionary} />;
   } else if (!isReady) {
-    body = <BoardSkeleton wordLength={RANGE_LENGTH} />;
+    body = <BoardSkeleton wordLength={length} />;
   } else {
     body = (
       <>
@@ -112,8 +132,10 @@ function RangeScreen(): React.JSX.Element {
           <RangeResultPanel
             won={state.status === 'won'}
             guessesUsed={guessesUsed(state)}
+            length={length}
             secret={state.secret}
             onPlayAgain={restart}
+            onChangeLength={setLength}
           />
         ) : null}
       </>
@@ -159,6 +181,13 @@ function RangeScreen(): React.JSX.Element {
           </svg>
         </HeaderIconButton>
 
+        <LengthSelector
+          value={length}
+          lengths={RANGE_LENGTHS}
+          disabled={!isReady}
+          onChange={handleLengthChange}
+        />
+
         <HeaderIconButton
           label="Statistics"
           onClick={() => {
@@ -195,6 +224,7 @@ function RangeScreen(): React.JSX.Element {
 
       <RangeHelpModal
         isOpen={isHelpOpen}
+        length={length}
         onClose={() => {
           setHelpOpen(false);
         }}
@@ -206,15 +236,12 @@ function RangeScreen(): React.JSX.Element {
         }}
       />
       <ConfirmDialog
-        isOpen={isConfirmOpen}
-        title="Start a new game?"
-        confirmLabel="New game"
-        onConfirm={() => {
-          restart();
-          setConfirmOpen(false);
-        }}
+        isOpen={pending !== null}
+        title={confirmTitle}
+        confirmLabel={pending?.kind === 'length' ? 'Switch' : 'New game'}
+        onConfirm={confirmPending}
         onCancel={() => {
-          setConfirmOpen(false);
+          setPending(null);
         }}
       >
         Your current game will be abandoned. It will not count towards your statistics.

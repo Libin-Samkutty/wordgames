@@ -11,7 +11,6 @@ import {
 import { loadDictionary, type Dictionary } from '@/dictionary';
 import { pickAnswer, systemRandom } from '@/engine';
 import {
-  RANGE_LENGTH,
   createRangeGame,
   guessedWords,
   isGameOver,
@@ -22,9 +21,11 @@ import {
   type RangeError,
   type RangeState,
 } from '@/engine/range';
+import type { WordLength } from '@/engine/types';
 import { now } from '@/lib/clock';
 import {
   createRangeMetaRepository,
+  createRangePrefsRepository,
   createRangeSessionRepository,
   isRangeSessionUsable,
   rememberRangeAnswer,
@@ -49,6 +50,8 @@ export interface RangeAnnouncement {
 
 export interface RangeContextValue {
   readonly state: RangeState;
+  /** The chosen word length (FR-115). It can differ from `state.wordLength` while a length loads. */
+  readonly length: WordLength;
   readonly dictionaryStatus: RangeDictionaryStatus;
   readonly isGameOver: boolean;
   readonly announcement: RangeAnnouncement;
@@ -57,6 +60,8 @@ export interface RangeContextValue {
   /** Returns false when the guess was rejected, so the view can shake. */
   readonly submitGuess: () => boolean;
   readonly restart: () => void;
+  /** Switches length: discards the saved game, loads that list and starts afresh (FR-115). */
+  readonly setLength: (length: WordLength) => void;
   readonly retryDictionary: () => void;
 }
 
@@ -71,8 +76,8 @@ const ERROR_MESSAGES: Record<RangeError, string> = {
 };
 
 /** Placeholder until the dictionary resolves and a real game starts. */
-function placeholderGame(): RangeState {
-  return createRangeGame('pending', 'PLANT');
+function placeholderGame(length: WordLength): RangeState {
+  return createRangeGame('pending', 'A'.repeat(length));
 }
 
 /** True for a game worth persisting: not the placeholder (FR-125). */
@@ -85,13 +90,15 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
   const { recordGame } = useRangeStats();
 
   // Per-game repositories (FR-67, FR-99), created once per provider instance.
+  const [prefsRepo] = useState(() => createRangePrefsRepository(reportStorageIssue));
   const [sessionRepo] = useState(() => createRangeSessionRepository(reportStorageIssue));
   const [metaRepo] = useState(() => createRangeMetaRepository(reportStorageIssue));
 
+  const [length, setLengthState] = useState<WordLength>(() => prefsRepo.read().defaultWordLength);
   const [dictionaryStatus, setDictionaryStatus] = useState<RangeDictionaryStatus>('loading');
   const [dictionary, setDictionary] = useState<Dictionary | null>(null);
   const [announcement, setAnnouncement] = useState<RangeAnnouncement>({ text: '', flip: false });
-  const [state, dispatch] = useReducer(rangeReducer, undefined, placeholderGame);
+  const [state, dispatch] = useReducer(rangeReducer, length, placeholderGame);
 
   // Reload token: bumping it re-runs the dictionary effect for Retry (EC-14).
   const [loadToken, setLoadToken] = useState(0);
@@ -105,11 +112,11 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
 
   /** Starts a fresh game, drawing a secret that is not a recent one (FR-115). */
   const startFreshGame = useCallback(
-    (dict: Dictionary): void => {
+    (dict: Dictionary, forLength: WordLength): void => {
       const meta = metaRepo.read();
-      const secret = pickAnswer(dict.answers, meta.recentAnswers, systemRandom);
+      const secret = pickAnswer(dict.answers, meta.recentAnswers[forLength], systemRandom);
 
-      metaRepo.write(rememberRangeAnswer(meta, secret));
+      metaRepo.write(rememberRangeAnswer(meta, forLength, secret));
       dispatch({ type: 'START', id: crypto.randomUUID(), secret });
     },
     [metaRepo],
@@ -119,7 +126,7 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
   useEffect(() => {
     let cancelled = false;
 
-    loadDictionary(RANGE_LENGTH)
+    loadDictionary(length)
       .then((dict) => {
         if (cancelled) return;
 
@@ -129,10 +136,13 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
         const answers = new Set(dict.answers);
         const saved = sessionRepo.read();
 
-        if (isRangeSessionUsable(saved, (word) => answers.has(word))) {
+        if (
+          saved?.wordLength === length &&
+          isRangeSessionUsable(saved, (word) => answers.has(word))
+        ) {
           dispatch({ type: 'RESTORE', state: saved });
         } else {
-          startFreshGame(dict);
+          startFreshGame(dict, length);
         }
       })
       .catch(() => {
@@ -143,7 +153,7 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
     return () => {
       cancelled = true;
     };
-  }, [loadToken, startFreshGame, sessionRepo]);
+  }, [length, loadToken, startFreshGame, sessionRepo]);
 
   // Persist the session (FR-125): debounced, plus a flush when the page is hidden.
   useEffect(() => {
@@ -213,6 +223,7 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
     if (!dictionary || state.status !== 'playing') return false;
 
     const result = validateRangeGuess(state.currentInput, {
+      wordLength: state.wordLength,
       lower: state.lower,
       upper: state.upper,
       guessed: guessedWords(state),
@@ -238,8 +249,21 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
   const restart = useCallback((): void => {
     if (!dictionary) return;
     announce('New game started.');
-    startFreshGame(dictionary);
-  }, [dictionary, startFreshGame, announce]);
+    startFreshGame(dictionary, length);
+  }, [dictionary, length, startFreshGame, announce]);
+
+  const setLength = useCallback(
+    (next: WordLength): void => {
+      // Discard the old session immediately so a mid-load refresh cannot
+      // restore a game for the length we just left.
+      sessionRepo.clear();
+      setDictionaryStatus('loading');
+      setLengthState(next);
+      // Persist the choice so the next visit opens on it (FR-115).
+      prefsRepo.write({ defaultWordLength: next });
+    },
+    [sessionRepo, prefsRepo],
+  );
 
   const retryDictionary = useCallback((): void => {
     setDictionaryStatus('loading');
@@ -249,6 +273,7 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
   const value = useMemo<RangeContextValue>(
     () => ({
       state,
+      length,
       dictionaryStatus,
       isGameOver: isGameOver(state),
       announcement,
@@ -256,16 +281,19 @@ export function RangeProvider({ children }: { children: ReactNode }): React.JSX.
       removeLetter,
       submitGuess,
       restart,
+      setLength,
       retryDictionary,
     }),
     [
       state,
+      length,
       dictionaryStatus,
       announcement,
       addLetter,
       removeLetter,
       submitGuess,
       restart,
+      setLength,
       retryDictionary,
     ],
   );

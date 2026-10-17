@@ -58,7 +58,7 @@ Added for Suite V1:
 - WordWeaver hints other than **Give up**; 6-letter WordWeaver
 - Combined cross-game statistics
 - The ideas in Appendix A: Waffle-style grid, Jotto, timed unscramble, meaning-based Hot & Cold
-- WordStack lengths other than 5, or more than four boards; WordRange lengths other than 5
+- WordStack lengths other than 5, or more than four boards
 - Numeric scores in any game except Wordwright
 
 Rationale in [`DECISIONS.md`](./DECISIONS.md).
@@ -705,34 +705,35 @@ Find a secret word by its place in the dictionary. Each guess says whether the s
 
 ### 18.1 Rules
 
-- **FR-115** Words are 5 letters. Each game allows **14 guesses**, which is enough to binary-search the 13,746-word guess list. The secret is drawn from the 5-letter answer list with its own no-repeat ring buffer (FR-4 rule).
-- **FR-116** The **range** is the open interval the secret must lie in. It starts as `AAAAA … ZZZZZ`, two sentinels that are not words. After each guess, the range narrows to the closest guesses on each side of the secret.
+- **FR-115** Words are 4, 5 or 6 letters, and 5 is the default (ADR-037). The guess limit depends on the length: **13** guesses at 4 letters, **14** at 5 and **15** at 6. Each is enough to binary-search that length's guess list (6,142, 13,746 and 24,637 words). The secret is drawn from the answer list for the chosen length, with a no-repeat ring buffer for each length (FR-4 rule). The header has the shared length selector (FR-101), and the choice is saved in WordRange's own preferences, apart from every other game's (FR-67). The header has the shared length selector (FR-101). The choice is saved in WordRange's own preferences, apart from every other game's (FR-67).
+- **FR-116** The **range** is the open interval the secret must lie in. It starts as a run of `A` to a run of `Z` as long as the word (`AAAAA … ZZZZZ` at 5 letters), two sentinels that are not words. After each guess, the range narrows to the closest guesses on each side of the secret.
 - **FR-117** A submitted guess is checked in this order. A rejected guess shakes the row, shows the toast and uses no guess.
-  1. Fewer than 5 letters → `Not enough letters`.
+  1. Fewer letters than the game's length → `Not enough letters`.
   2. Not in the guess list → `Not in word list`.
   3. Already guessed → `Already guessed`.
   4. Not strictly inside the current range → `Outside the range`.
 - **FR-118** An accepted guess that is not the secret is marked with where the secret lies: **after** it (the secret comes later alphabetically, so the guess becomes the lower bound) or **before** it (the guess becomes the upper bound).
-- **FR-119** The game is won when a guess equals the secret. It is lost after 14 guesses without it, and the result reveals the secret.
-- **FR-120** **Heat** measures the distance between the guess and the secret as positions in the sorted 5-letter guess list. Five levels, set as engine constants:
+- **FR-119** The game is won when a guess equals the secret. It is lost after the length's guess limit (FR-115) without it, and the result reveals the secret.
+- **FR-120** **Heat** measures the distance between the guess and the secret as positions in the sorted guess list for the length. Five levels, set as engine constants. The 5-letter bands are the original ones. The 4 and 6-letter bands scale them by list size over 13,746, so a band covers about the same share of its list (ADR-037):
 
-| Heat     | Distance (positions) |
-| -------- | -------------------- |
-| Burning  | 1–20                 |
-| Hot      | 21–100               |
-| Warm     | 101–500              |
-| Cold     | 501–2,000            |
-| Freezing | more than 2,000      |
+| Heat     | 4 letters     | 5 letters       | 6 letters       |
+| -------- | ------------- | --------------- | --------------- |
+| Burning  | 1–9           | 1–20            | 1–36            |
+| Hot      | 10–45         | 21–100          | 37–179          |
+| Warm     | 46–223        | 101–500         | 180–896         |
+| Cold     | 224–894       | 501–2,000       | 897–3,585       |
+| Freezing | more than 894 | more than 2,000 | more than 3,585 |
 
 ### 18.2 Interface
 
 - **FR-121** The screen shows, top to bottom: the upper-bound word, the input row with the heat level of the last guess, the lower-bound word, and a list of all guesses sorted alphabetically, each marked before or after with its heat. The heat level is always written as a word, not only shown as a colour.
 - **FR-122** The on-screen keyboard has no letter colours.
-- **FR-123** The result panel shows won or lost, guesses used, the secret, and **Play again**.
-- **FR-124** Statistics, recorded once per game: played, won, win %, current and best streak, the guess distribution for wins (buckets 1–14), and the last 50 games `{ id, playedAt, secret, guessesUsed, won }`.
+- **FR-123** The result panel shows won or lost, guesses used out of the length's limit, the secret, **Play again** and **Change length**.
+- **FR-124** Statistics, recorded once per game: played, won, win %, current and best streak, the guess distribution for wins, and the last 50 games `{ id, playedAt, wordLength, secret, guessesUsed, won }`. They are kept overall and for each length. A length's distribution has one bucket per guess it allows (13, 14 or 15), and the overall one has 15. The statistics dialog has an All / 4 / 5 / 6 switch, as WordCode does.
   - Added later (ADR-035): average guesses, average and fastest win time, the closest miss (fewest words left in the range after a loss), the share of games that reached Burning and the average guess it first did, and the most-used first guess. Each record carries `solveMs`, `firstBurningGuess`, `wordsLeft` (losses) and `opener`.
-- **FR-125** The in-progress game is saved and restored as in FR-32 and FR-65. A restore is discarded if the secret has left the answer list. Restarting with at least one guess asks for confirmation.
-- **FR-126** The How to play dialog explains the range, before and after, and the heat levels, with a three-guess example.
+- **FR-125** The in-progress game is saved and restored as in FR-32 and FR-65. A restore is discarded if the secret has left the answer list, or if the game's length is not the chosen one. Restarting, or switching length, with at least one guess asks for confirmation.
+  - A game, statistics or answer list saved before lengths existed is read as 5-letter data, so nothing is lost on upgrade (ADR-037).
+- **FR-126** The How to play dialog explains the range, before and after, and the heat levels, with a three-guess example. The word length, the guess limit and the heat distances follow the selected length. The example is always the 5-letter one, and says so.
 
 ---
 

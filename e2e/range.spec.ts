@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 /**
  * WordRange in a real browser (T-82, T-83: AC-45, AC-49, AC-50, AC-57, FR-121,
- * NFR-21). Runs on the shipped 5-letter lists.
+ * NFR-21). Runs on the shipped lists, 5 letters by default.
  *
  * The secret is random in a real game, so tests that need a known word seed a
  * saved game with the secret PLANT (a real answer). That is the same path a
@@ -106,6 +106,40 @@ test.describe('playing (FR-117, FR-118, FR-121, AC-49, AC-50)', () => {
     await expect(page.getByText('The word comes before').locator('+ span')).toHaveText('ZZZZZ');
     await expect(page.getByText('The word comes after').locator('+ span')).toHaveText('AAAAA');
     await expect(guessesLeft(page, 14)).toBeVisible();
+  });
+
+  for (const [length, guesses, upper, lower] of [
+    [4, 13, 'ZZZZ', 'AAAA'],
+    [6, 15, 'ZZZZZZ', 'AAAAAA'],
+  ] as const) {
+    test(`a ${String(length)}-letter game has ${String(guesses)} guesses and its own sentinels (ADR-037)`, async ({
+      page,
+    }) => {
+      await openRange(page);
+
+      await page.getByRole('radio', { name: `${String(length)} letters` }).click();
+
+      await expect(page.getByText('The word comes before').locator('+ span')).toHaveText(upper);
+      await expect(page.getByText('The word comes after').locator('+ span')).toHaveText(lower);
+      await expect(guessesLeft(page, guesses)).toBeVisible();
+
+      await page.keyboard.type('abcdefghij');
+      await expect(
+        page.getByRole('group', { name: `Your guess: ${'ABCDEFGHIJ'.slice(0, length)}` }),
+      ).toBeVisible();
+    });
+  }
+
+  test('the chosen length survives a reload (FR-125)', async ({ page }) => {
+    await openRange(page);
+    await page.getByRole('radio', { name: '6 letters' }).click();
+    await expect(guessesLeft(page, 15)).toBeVisible();
+
+    await page.reload();
+    await expect(guessRow(page)).toBeVisible();
+
+    await expect(page.getByRole('radio', { name: '6 letters' })).toBeChecked();
+    await expect(guessesLeft(page, 15)).toBeVisible();
   });
 
   test('guesses narrow the range, show a heat word, and a rejected guess costs nothing', async ({
@@ -347,6 +381,21 @@ test.describe('layout (FR-121, FR-59, AC-22)', () => {
       expect(overflow).toBeLessThanOrEqual(0);
     });
   }
+
+  test('a 6-letter game fits at 320 x 568 with the length picker in the header', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await openRange(page);
+    await page.getByRole('radio', { name: '6 letters' }).click();
+    await expect(guessesLeft(page, 15)).toBeVisible();
+
+    await expect(page.getByRole('button', { name: 'Enter' })).toBeInViewport();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
 
   test('the list scrolls inside its own region, not the page, at 320 x 568', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 });

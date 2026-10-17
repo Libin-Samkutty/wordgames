@@ -102,10 +102,17 @@ describe('rangeRecord (FR-124)', () => {
       secret: 'PLANT',
       guessesUsed: 2,
       won: true,
+      wordLength: 5,
       solveMs: 0,
       firstBurningGuess: 2,
       opener: 'BRAVE',
     });
+  });
+
+  it('records the length of the game', () => {
+    const game = createRangeGame('g', 'PLANET');
+
+    expect(rangeRecord(rangeReducer(game, submit('PLANET', 0)))?.wordLength).toBe(6);
   });
 
   it('records the first Burning guess, and none when no guess got that close', () => {

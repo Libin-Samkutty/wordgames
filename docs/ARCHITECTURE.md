@@ -462,19 +462,16 @@ Actions
 
 ### 3.8 WordRange engine
 
-`src/engine/range/`, T-80 to T-83. Rules in SPEC §18; rationale in ADR-030.
+`src/engine/range/`, T-80 to T-83. Rules in SPEC §18; rationale in ADR-030 and ADR-037 (lengths).
 
 ```ts
-export const RANGE_LENGTH = 5;
-export const RANGE_MAX_GUESSES = 14;
-export const LOWER_SENTINEL = 'AAAAA'; // not a word
-export const UPPER_SENTINEL = 'ZZZZZ'; // not a word
-export const HEAT_BANDS = [
-  { heat: 'burning', max: 20 },
-  { heat: 'hot', max: 100 },
-  { heat: 'warm', max: 500 },
-  { heat: 'cold', max: 2000 },
-] as const; // anything further is 'freezing' (FR-120)
+export const RANGE_LENGTHS = [4, 5, 6] as const; // DEFAULT_RANGE_LENGTH = 5
+export const RANGE_MAX_GUESSES = { 4: 13, 5: 14, 6: 15 }; // floor(log2 list size) + 1 (FR-115)
+export const lowerSentinel = (length: number) => 'A'.repeat(length); // not a word
+export const upperSentinel = (length: number) => 'Z'.repeat(length); // not a word
+export const HEAT_BANDS: Record<WordLength, readonly { heat: Heat; max: number }[]>;
+// 5 letters: burning 20, hot 100, warm 500, cold 2000. 4 and 6 scale those by list
+// size over 13,746. Anything further is 'freezing' (FR-120, ADR-037).
 export type Heat = 'burning' | 'hot' | 'warm' | 'cold' | 'freezing';
 export type RangeError = 'too-short' | 'not-a-word' | 'already-guessed' | 'outside-range';
 
@@ -486,9 +483,10 @@ interface RangeGuess {
 interface RangeState {
   readonly id: string;
   readonly secret: string;
+  readonly wordLength: WordLength; // the length of the secret
   readonly guesses: readonly RangeGuess[]; // in play order; the view sorts them
-  readonly lower: string; // starts at LOWER_SENTINEL
-  readonly upper: string; // starts at UPPER_SENTINEL
+  readonly lower: string; // starts at lowerSentinel(wordLength)
+  readonly upper: string; // starts at upperSentinel(wordLength)
   readonly currentInput: string;
   readonly status: 'playing' | 'won' | 'lost';
   readonly startedAt: number | null;
@@ -498,7 +496,7 @@ interface RangeState {
 
 ```
 Actions
-  START          { id, secret }
+  START          { id, secret }            // the game's length is the secret's length
   RESTORE        { state }                 // a validated saved game (FR-125)
   ADD_LETTER     { letter, now }
   REMOVE_LETTER
@@ -506,12 +504,12 @@ Actions
                                            // distance from listDistance()
 ```
 
-- `validateRangeGuess(input, { lower, upper, guessed, isAllowed })` returns `Result<string, RangeError>` in FR-117 order. Steps 1 and 2 call `validateGuess`; then `already-guessed`; then `outside-range` unless `lower < word < upper`. A guess equal to a bound is always an earlier guess, so it stops at `already-guessed` and never reaches the range check (EC-42, EC-43). The sentinels are not in the guess list, so typing one fails at `not-a-word`.
+- `validateRangeGuess(input, { wordLength, lower, upper, guessed, isAllowed })` returns `Result<string, RangeError>` in FR-117 order. Steps 1 and 2 call `validateGuess`; then `already-guessed`; then `outside-range` unless `lower < word < upper`. A guess equal to a bound is always an earlier guess, so it stops at `already-guessed` and never reaches the range check (EC-42, EC-43). The sentinels are not in the guess list, so typing one fails at `not-a-word`.
 - Bounds compare as plain strings. The lists are sorted uppercase A–Z, so string order is list order.
-- `listDistance(sortedGuesses, a, b)` finds both words by binary search and returns the difference of their indices. `heatOf(distance)` maps it through `HEAT_BANDS` (FR-120). Both are pure; the provider passes in the sorted guess array (§8.5).
-- `SUBMIT_GUESS` records direction by comparing the word with the secret, moves `lower` (secret after the word) or `upper` (secret before it) (FR-118), and sets `won` on the secret or `lost` at 14 guesses (FR-119).
+- `listDistance(sortedGuesses, a, b)` finds both words by binary search and returns the difference of their indices. `heatOf(distance, length)` maps it through that length's `HEAT_BANDS` (FR-120). Both are pure; the provider passes in the sorted guess array (§8.5).
+- `SUBMIT_GUESS` records direction by comparing the word with the secret, moves `lower` (secret after the word) or `upper` (secret before it) (FR-118), and sets `won` on the secret or `lost` at the length's guess limit (FR-119).
 - Selectors: `remainingGuesses`, `lastHeat`, `sortedGuesses`, `isGameOver` and the FR-124 stats record.
-- **Provider.** `RangeProvider` loads the 5-letter dictionary, draws the secret with `pickAnswer` and the ring buffer in `wordgames:v1:range:meta`, and restores a saved game whose secret is still an answer. It validates with `validateRangeGuess`, looks the distance up with `listDistance(dictionary.guessList, …)`, and words the A11Y-22 summary by scoring the guess once with the reducer before dispatching it. Statistics are one bucket set, not per mode: `distribution` has 14 entries, index 0 for a win on guess 1.
+- **Provider.** `RangeProvider` holds the chosen length (saved in `wordgames:v1:range:prefs`), loads that length's dictionary, draws the secret with `pickAnswer` and that length's ring buffer in `wordgames:v1:range:meta`, and restores a saved game whose secret is still an answer and whose length is the chosen one. `setLength` clears the saved game, as WordCode's does. It validates with `validateRangeGuess`, looks the distance up with `listDistance(dictionary.guessList, …)`, and words the A11Y-22 summary by scoring the guess once with the reducer before dispatching it. Statistics are `{ overall, perLength }`, as in WordCode: each bucket's `distribution` has one entry per guess, index 0 for a win on guess 1, so 13, 14 and 15 entries per length and 15 overall. A blob saved before lengths existed is one flat bucket, and reads as the 5-letter bucket and the overall one (ADR-037).
 - **View.** `RangeBoard` is one focusable scroll region holding the upper bound, the input row with the last heat, the lower bound and the sorted list, so the keyboard stays on screen with 13 guesses listed. The input row is a labelled group, not a grid, because there is no tile evaluation. `HeatBadge` writes the heat as a word with five pips beside it.
 - **Reuses** `validateGuess` and `pickAnswer`. There is no tile evaluation and no reveal state.
 
@@ -669,7 +667,7 @@ Each `View` module wraps its own provider pair around its view. The shell never 
 | `#/wordwright` | `StatsProvider` › `GameProvider` › Wordwright view (board, keyboard, Help/Stats modals)                                 |
 | `#/weaver`     | `WeaverStatsProvider` › `WeaverProvider` (reducer, dictionary, ladder graph, prefs) › `WeaverView`                      |
 | `#/stack`      | `StackStatsProvider` › `StackProvider` (reducer, 5-letter dictionary, mode pref) › `StackView` (boards, split keyboard) |
-| `#/range`      | `RangeStatsProvider` › `RangeProvider` (reducer, 5-letter dictionary and sorted guess list) › `RangeView`               |
+| `#/range`      | `RangeStatsProvider` › `RangeProvider` (reducer, dictionary and sorted guess list for the length) › `RangeView`         |
 | `#/code`       | `CodeStatsProvider` › `CodeProvider` (reducer incl. letter notes, dictionary, length pref) › `CodeView`                 |
 | `#/shuffle`    | `ShuffleStatsProvider` › `ShuffleProvider` (reducer, dictionary, anagram index, length pref) › `ShuffleView`            |
 
@@ -730,8 +728,8 @@ Releases R2–R5 add one set of slices per game. The persisted ones map to the k
 | WordStack prefs, meta   | `StackProvider`                        | Yes, immediate                                    | `{ mode }`; `{ recentAnswers }`, one buffer             |
 | WordStack statistics    | `StackStatsProvider` (`useReducer`)    | Yes, immediate                                    | overall + per mode + last 50 (FR-111)                   |
 | WordRange game          | `RangeProvider` (`useReducer`)         | Yes, debounced 150 ms + page hide + unmount flush | `RangeState` (§3.8)                                     |
-| WordRange meta          | `RangeProvider`                        | Yes, immediate                                    | `{ recentAnswers }`                                     |
-| WordRange statistics    | `RangeStatsProvider` (`useReducer`)    | Yes, immediate                                    | overall + last 50 (FR-124)                              |
+| WordRange meta          | `RangeProvider`                        | Yes, immediate                                    | `{ recentAnswers }` per length                          |
+| WordRange statistics    | `RangeStatsProvider` (`useReducer`)    | Yes, immediate                                    | overall + per length + last 50 (FR-124)                 |
 | WordCode game           | `CodeProvider` (`useReducer`)          | Yes, debounced 150 ms + page hide + unmount flush | `CodeState` incl. letter notes (§3.9)                   |
 | WordCode prefs, meta    | `CodeProvider`                         | Yes, immediate                                    | `{ defaultWordLength }`; `{ recentAnswers }` per length |
 | WordCode statistics     | `CodeStatsProvider` (`useReducer`)     | Yes, immediate                                    | overall + per length + last 50 (FR-134)                 |

@@ -43,6 +43,7 @@ The project was previously named Wordwright. ADR-001 to ADR-020 were written und
 | [033](#adr-033--reset-actions-live-in-each-games-statistics-dialog)                            | Reset actions live in each game's Statistics dialog  | Accepted (refines 024) |
 | [034](#adr-034--game-controls-reach-the-shell-header-through-a-portal-slot)                    | Game controls reach the header through a portal slot | Accepted (refines 021) |
 | [036](#adr-036--wordweaver-backspace-no-longer-undoes)                                         | WordWeaver: Backspace no longer undoes               | Accepted (refines 026) |
+| [037](#adr-037--wordrange-plays-4-5-and-6-letters)                                             | WordRange plays 4, 5 and 6 letters                   | Accepted (refines 030) |
 
 ---
 
@@ -802,3 +803,26 @@ This is not a plugin system. There is no runtime registration and no shared inte
 - Undo from a physical keyboard now needs the button. The help dialog says so.
 
 **Alternatives.** (a) Keep the behaviour. Rejected: it caused the accidental undo. (b) Undo on Backspace, but not on key repeat. Rejected: a separate, deliberate press still undoes by accident, and the rule is harder to explain.
+
+---
+
+## ADR-037 — WordRange plays 4, 5 and 6 letters
+
+**Context.** WordRange played 5 letters only, and the SPEC listed other lengths as out of scope. Every other game with a length picker offers 4, 5 and 6 (WordWright, WordCode), and the 4 and 6-letter lists already ship, so the data cost is zero. Two things were tuned to the 5-letter list: the 14-guess limit and the heat bands.
+
+**Decision.**
+
+- WordRange offers 4, 5 and 6 letters, with 5 the default. It uses the shared length selector, confirm-on-change flow, **Change length** button and All / length statistics switch that WordCode has.
+- The guess limit is floor(log2 N) + 1 for each list: 13, 14 and 15 for 6,142, 13,746 and 24,637 words. Halving always wins, which is the premise ADR-030 set.
+- The heat bands scale the 5-letter ones by list size over 13,746, so each band covers about the same share of its list. A shared set of absolute bands would make Freezing rare at 4 letters and the usual result at 6.
+- The game's length is the length of its secret. `RangeState` and `RangeRecord` carry `wordLength`.
+- Statistics are kept overall and per length, and the recent answers per length. Anything saved before this change reads as 5-letter data (ADR-035): a flat stats bucket becomes the 5-letter and overall buckets, with the overall distribution padded from 14 to 15 buckets. No schema version or migration is needed.
+
+**Consequences.**
+
+- Nobody loses statistics, a saved game or the no-repeat buffer on upgrade.
+- The overall distribution has 15 buckets, so for a player who has only played 5 letters the last one stays empty.
+- The worked example in the help dialog stays at 5 letters, because its distances come from the 5-letter list. The dialog says so.
+- The heat bands for 4 and 6 letters are constants and can be tuned after play-testing, as ADR-030 allows for the 5-letter ones.
+
+**Alternatives.** (a) One limit of 15 for every length. Rejected: it makes 4 and 5 letters easier than the data requires. (b) Absolute heat bands for every length. Rejected: the heat would read differently at each length. (c) Keep one flat statistics bucket and add a length field to each game. Rejected: win rate and streaks would mix lengths with different limits.

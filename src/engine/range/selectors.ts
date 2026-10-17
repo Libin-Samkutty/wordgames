@@ -13,7 +13,7 @@ export function guessesUsed(state: RangeState): number {
 }
 
 export function remainingGuesses(state: RangeState): number {
-  return Math.max(0, RANGE_MAX_GUESSES - state.guesses.length);
+  return Math.max(0, RANGE_MAX_GUESSES[state.wordLength] - state.guesses.length);
 }
 
 /** The heat of the most recent guess, or null before the first guess or after finding the word. */
@@ -50,6 +50,7 @@ export function rangeRecord(state: RangeState): RangeRecord | null {
     secret: state.secret,
     guessesUsed: state.guesses.length,
     won: state.status === 'won',
+    wordLength: state.wordLength,
     solveMs: clampDuration((state.finishedAt ?? 0) - (state.startedAt ?? 0)),
     firstBurningGuess: firstBurningGuess(state),
     ...(state.guesses[0] ? { opener: state.guesses[0].word } : {}),

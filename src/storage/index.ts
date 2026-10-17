@@ -127,6 +127,7 @@ export {
   validateRangeStats,
   type RangeMeta,
   type RangePrefs,
+  type RangeStatsBucket,
   type RangeStatsState,
 } from './rangeSchemas';
 export {
