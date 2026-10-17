@@ -201,3 +201,24 @@ export {
   shuffleHintDistribution,
   shuffleSolvePercentage,
 } from './shuffleRepositories';
+export {
+  DEFAULT_DODGE_PREFS,
+  defaultDodgeStats,
+  emptyDodgeBucket,
+  validateDodgePrefs,
+  validateDodgeSession,
+  validateDodgeStats,
+  type DodgePrefs,
+  type DodgeStatsBucket,
+  type DodgeStatsState,
+} from './dodgeSchemas';
+export {
+  createDodgePrefsRepository,
+  createDodgeSessionRepository,
+  createDodgeStatsRepository,
+  dodgeAverageGuesses,
+  dodgeWinPercentage,
+  recordDodgeGame,
+  resetDodgeHistory,
+  resetDodgeStatistics,
+} from './dodgeRepositories';

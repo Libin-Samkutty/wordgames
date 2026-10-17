@@ -2,7 +2,7 @@
 
 The project was previously named Wordwright. That name now belongs to the Wordle-style game inside the suite.
 
-Ordered, phased backlog for Wordwright V1 (Phases 0–10), Suite V1 (Phases 11–14) and the game releases R2–R5 (Phases 15–18). Every task is **independently completable**: it has a clear deliverable, explicit acceptance, and can be shipped as one commit or PR without breaking `main`.
+Ordered, phased backlog for Wordwright V1 (Phases 0–10), Suite V1 (Phases 11–14) and the game releases R2–R6 (Phases 15–19). Every task is **independently completable**: it has a clear deliverable, explicit acceptance, and can be shipped as one commit or PR without breaking `main`.
 
 **Conventions**
 
@@ -11,7 +11,7 @@ Ordered, phased backlog for Wordwright V1 (Phases 0–10), Suite V1 (Phases 11�
 - **DoD** — done when these are true, _in addition to_ the global bar: `npm run verify` passes, no console errors, docs updated if behaviour changed.
 - Phases are sequential; tasks inside a phase are mostly parallelisable unless a dependency is noted.
 
-**Progress:** 79 / 91 complete. Wordwright V1 (T-01 … T-49) is done, plus a full review pass (2026-07-26); see [`REVIEW.md`](./REVIEW.md). Suite V1 (T-50 … T-73) is built and verified in this environment; deployment and the redirect are owner steps (see the README). Releases R2–R5 (T-74 … T-91) follow Suite V1, one game per release: WordStack, WordRange, WordCode, then WordShuffle.
+**Progress:** 95 / 95 complete. Wordwright V1 (T-01 … T-49) is done, plus a full review pass (2026-07-26); see [`REVIEW.md`](./REVIEW.md). Suite V1 (T-50 … T-73) is built and verified in this environment; deployment and the redirect are owner steps (see the README). Releases R2–R5 (T-74 … T-91) follow Suite V1, one game per release: WordStack, WordRange, WordCode, then WordShuffle.
 
 ---
 
@@ -656,6 +656,32 @@ Schemas and runtime guards for `wordgames:v1:shuffle:{prefs,stats,session,meta}`
 
 ---
 
+## Phase 19 — WordDodge, release R6 (T-92 … T-95)
+
+Adds WordDodge (SPEC §21). Rationale in ADR-039.
+
+### ✅ T-92 · WordDodge engine
+
+Pure code in `src/engine/dodge/`. Lengths 4, 5 and 6 with no guess limit (FR-148). `chooseReply(guess, candidates)` groups the candidates by `evaluateGuess`, keeps the largest group, and breaks a tie by fewer hits and then the smaller pattern (FR-149). `dodgeReducer` handles typing, `SUBMIT_GUESS` (narrowing the candidates and going to `revealing`), `REVEAL_COMPLETE` (won when the reply is all green), and `GIVE_UP` (FR-152). `restoreGame` replays a saved game's guesses against the answers (FR-153).
+**Req:** FR-148, FR-149, FR-152, FR-153, NFR-19, AC-58 · **Depends:** T-74 · **DoD:** tie-break cases, a repeated-letter case and the empty-list throw are unit tests; a game narrows to one word and wins on the guess that is that word; a give up before the first guess does nothing; a replay with a changed answer list returns null; on the real lists a sensible strategy wins within 12 guesses at 4, 5 and 6 letters; 100% branch coverage and the engine purity lint cover `src/engine/dodge/**`.
+
+### ✅ T-93 · WordDodge storage and providers
+
+Schemas and runtime guards for `wordgames:v1:dodge:{prefs,stats,session}`, with no meta key. A `recordGame` reducer, idempotent by game id, with overall and per-length stats: played, won, streaks, the guesses distribution in grouped rows, average and fewest guesses, solve times, and the last 50 games (FR-155). `DodgeStatsProvider` and `DodgeProvider` in `src/state/dodge/` persist the guesses and the row being typed, replay them on restore, and record each finished game once (FR-153).
+**Req:** FR-153, FR-155, AC-56 · **Depends:** T-92 · **DoD:** unit tests for a win, a give up that ends the streak, the averages, the grouped distribution, the 50-game cap, double-record idempotency and hostile input; leaving mid-game and returning restores the rows and the words left; a game that no longer replays or is of another length is discarded; resetting WordDodge stats leaves every other game's stats byte-identical (AC-56).
+
+### ✅ T-94 · WordDodge view
+
+`DodgeView` in `src/components/dodge/`: the shared `Board` and `Keyboard` with a board that grows and scrolls to its newest row, the words-left count, **Give up**, and a length selector. **Give up**, a new game and a length change after a guess ask to confirm through `ConfirmDialog` (FR-152, FR-153). `DodgeResultPanel` with the FR-154 content and `useEnterToContinue` armed on mount.
+**Req:** FR-150, FR-151, FR-152, FR-154, US-39, AC-55 · **Depends:** T-93, T-52 · **DoD:** integration tests: a guess is coloured and the count falls; a rejected guess costs nothing; a game is won on the fourth guess with the fixture lists; give up asks and shows a word; the Enter that submits the winning guess does not start a new game and the next Enter does (AC-55).
+
+### ✅ T-95 · WordDodge help, stats, accessibility and release
+
+`DodgeHelpModal` explaining the adversary, the colours, the count and Give up (FR-156), with a decorative example. `DodgeStatsModal` with overall and per-length views, the grouped distribution, recent games, the empty state and scoped reset actions. Announce each guess after its reveal and the end of a game (A11Y-25). Add WordDodge to the catalogue. Run axe and fill the R6 addendum in `ACCEPTANCE.md`.
+**Req:** FR-155, FR-156, A11Y-25, US-39, AC-57 · **Depends:** T-94 · **DoD:** tests assert one announcement per guess after its reveal and one for the end of a game; the help dialog never opens by itself; with fixture stats every value matches a hand-computed expectation and the averages show `—` with no wins; axe reports zero serious or critical issues on WordDodge in both themes and both palettes (AC-57); Home shows the WordDodge card and `#/dodge` opens it (AC-45); every R6 row in `ACCEPTANCE.md` is ticked with evidence.
+
+---
+
 ## Dependency Summary
 
 ```
@@ -676,7 +702,7 @@ Phase 10 ──▶ T-50 ──┬──▶ Phase 11 (T-51 … T-57) ──┬─
 
 T-50 (rename) comes first. After it, Phase 11 and Phase 12 can run in parallel; T-52 and T-61 have no dependencies and can start at any time. Phase 13 needs both.
 
-Releases R2–R5:
+Releases R2–R6:
 
 ```
 Phase 14 ──▶ T-74 ──┬──▶ Phase 15 (R2 WordStack, T-75 … T-79)
@@ -685,10 +711,12 @@ Phase 14 ──▶ T-74 ──┬──▶ Phase 15 (R2 WordStack, T-75 … T-79
                     │                                    │
                     ├──▶ T-84 ───────────────────────────┴──▶ Phase 17 (R4 WordCode, T-85 … T-87)
                     │                                                      │
-                    └──▶ T-88 ─────────────────────────────────────────────┴──▶ Phase 18 (R5 WordShuffle, T-89 … T-91)
+                    ├──▶ T-88 ─────────────────────────────────────────────┴──▶ Phase 18 (R5 WordShuffle, T-89 … T-91)
+                    │                                                                          │
+                    └──▶ T-92 ─────────────────────────────────────────────────────────────────┴──▶ Phase 19 (R6 WordDodge, T-93 … T-95)
 ```
 
-T-74 (game catalogue) comes first and is part of R2. The engines T-80, T-84 and T-88 depend only on T-74, so they can be built ahead of their phase. The releases still ship in order: R2, R3, R4, R5. Each release task (T-79, T-83, T-87, T-91) adds its game to the catalogue, deploys, and fills that release's addendum in `ACCEPTANCE.md`. There are no feature flags.
+T-74 (game catalogue) comes first and is part of R2. The engines T-80, T-84, T-88 and T-92 depend only on T-74, so they can be built ahead of their phase. The releases still ship in order: R2, R3, R4, R5, R6. Each release task (T-79, T-83, T-87, T-91, T-95) adds its game to the catalogue, deploys, and fills that release's addendum in `ACCEPTANCE.md`. There are no feature flags.
 
 ## Out of Scope
 
