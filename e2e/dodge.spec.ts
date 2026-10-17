@@ -20,6 +20,12 @@ const DODGE_URL = '/#/dodge';
 const LISTS = { 4: lists4, 5: lists5, 6: lists6 } as const;
 type Length = keyof typeof LISTS;
 
+/** The words a game starts with: the answers and the shuffle list, each once, in order (ADR-042). */
+function poolOf(length: Length): string[] {
+  const { answers, shuffle } = LISTS[length];
+  return [...new Set([...answers, ...(shuffle ?? [])])].sort();
+}
+
 const OPENERS: Record<Length, string[]> = {
   4: ['BALM', 'SLOT', 'TEND', 'CRAB', 'MUSK', 'LAMP', 'SLAB', 'PLUM'],
   5: ['SLATE', 'CRANE', 'MUSIC', 'PLANT', 'FIGHT', 'SLOTH', 'PANEL', 'STORM'],
@@ -41,7 +47,7 @@ async function scan(page: Page) {
 
 /** The words a sensible player guesses to win, with the adversary playing against them. */
 function winningWords(length: Length): string[] {
-  let candidates = [...LISTS[length].answers];
+  let candidates = poolOf(length);
   const words: string[] = [];
 
   for (;;) {
@@ -72,7 +78,7 @@ interface SeedOptions {
 async function seedGame(page: Page, options: SeedOptions = {}): Promise<void> {
   const { length = 5, words = [], status = 'playing', typed = '' } = options;
   const guessSet = new Set(LISTS[length].guesses);
-  let candidates = [...LISTS[length].answers];
+  let candidates = poolOf(length);
   const guesses = words.map((word) => {
     if (!guessSet.has(word)) throw new Error(`${word} is not a ${String(length)}-letter guess`);
     const reply = chooseReply(word, candidates);
@@ -147,14 +153,14 @@ test.describe('opening and navigating (AC-45)', () => {
 });
 
 test.describe('playing (FR-149, FR-150, AC-58)', () => {
-  test('a real game opens with one empty row, 26 letter keys, 700 words and 5 letters', async ({
+  test('a real game opens with one empty row, 26 letter keys, every pool word and 5 letters', async ({
     page,
   }) => {
     await openDodge(page);
 
     await expect(board(page).getByRole('row')).toHaveCount(1);
     await expect(keyboard(page).getByRole('button')).toHaveCount(26 + 2);
-    await expect(wordsLeft(page)).toHaveText('700 words left');
+    await expect(wordsLeft(page)).toHaveText(`${String(poolOf(5).length)} words left`);
     await expect(page.getByRole('radio', { name: /^5/ })).toBeChecked();
   });
 
@@ -169,7 +175,7 @@ test.describe('playing (FR-149, FR-150, AC-58)', () => {
         .first()
         .getByRole('gridcell', { name: /position|not in word/ }),
     ).toHaveCount(5);
-    await expect(wordsLeft(page)).not.toContainText('700');
+    await expect(wordsLeft(page)).not.toHaveText(`${String(poolOf(5).length)} words left`);
   });
 
   test('a rejected guess costs nothing, and a repeat is allowed', async ({ page }) => {

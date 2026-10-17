@@ -2,7 +2,7 @@
 
 An offline suite of word games. **WordWright** is a Wordle-style game for 4, 5 and 6 letters. **WordWeaver** is a word ladder: change one letter at a time to get from one word to another. **WordStack** plays Wordle on two or four boards at once. **WordRange** finds a word by narrowing an alphabetical range. **WordCode** gives only bull and cow counts. **WordShuffle** unscrambles a word. **WordDodge** is a Wordle that never picks a word. **WordHunt** finds every word hiding in six letters. **WordHang** is Hangman. No backend, no accounts, no network calls. Everything runs in the browser and persists to LocalStorage.
 
-> **Status:** All nine games are built, 103 of 103 tasks: WordWright, WordWeaver, WordStack, WordRange, WordCode, WordShuffle, WordDodge, WordHunt and WordHang. 2,490 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
+> **Status:** All nine games are built, 103 of 103 tasks: WordWright, WordWeaver, WordStack, WordRange, WordCode, WordShuffle, WordDodge, WordHunt and WordHang. 2,500 unit and integration tests and the Playwright browser tests pass, with axe scans of every game in both themes and both palettes. See [`docs/TASKS.md`](./docs/TASKS.md) and [`docs/ACCEPTANCE.md`](./docs/ACCEPTANCE.md).
 
 ---
 

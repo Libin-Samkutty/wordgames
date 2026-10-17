@@ -48,6 +48,7 @@ The project was previously named Wordwright. ADR-001 to ADR-020 were written und
 | [039](#adr-039--worddodge-an-adversary-that-never-picks-a-word)                                | WordDodge: an adversary that never picks a word      | Accepted               |
 | [040](#adr-040--wordhunt-find-the-common-words-hiding-in-six-letters)                          | WordHunt: the common words hiding in six letters     | Accepted               |
 | [041](#adr-041--wordhang-hangman-with-six-misses-one-letter-at-a-time)                         | WordHang: Hangman with six misses                    | Accepted               |
+| [042](#adr-042--worddodge-draws-on-the-answer-and-shuffle-lists)                               | WordDodge: the answer and shuffle lists              | Accepted (refines 039) |
 
 ---
 
@@ -929,3 +930,25 @@ This is not a plugin system. There is no runtime registration and no shared inte
 - No new data, no new dependency, and no change to the shared keyboard.
 
 **Alternatives.** (a) Scale the misses by length, such as 7, 6 and 5. Rejected: the figure would need a different number of parts per length, and the measured win rates at the three lengths are close. (b) Show hearts or a counter and no drawing. Rejected: the figure is what makes the game Hangman. (c) Add a prop to the shared keyboard to hide Enter and Backspace. Rejected: its key names and its state labels are Wordle's, and a second set would be needed anyway. (d) A hint that reveals a letter. Rejected for now: it adds a rule and a statistic for a game that is already short. (e) Phrases, as some Hangman games use. Rejected: it needs a phrase list and spaces in the board.
+
+---
+
+## ADR-042 — WordDodge draws on the answer and shuffle lists
+
+**Context.** ADR-039 started WordDodge with the 700 answers of the length. A player who picks a random word that is still possible needs 4.6 to 7.1 guesses on average, and one who picks well needs 4 to 5. That is easy, because 700 words fall to a handful after two or three guesses. Absurdle uses over 2,000.
+
+**Decision.**
+
+- **The pool is the answer list plus the shuffle list**, each word once and in alphabetical order. That is 1,412, 1,844 and 1,751 words at 4, 5 and 6 letters. Both lists are filtered for fairness and the shuffle list was read by hand (ADR-038), so every candidate is a word a player knows.
+- **It is worked out when the dictionary loads.** `candidatePool(answers, shuffle)` is a pure engine function and the provider keeps the result for the session. A dictionary with no shuffle list, as a test fixture may, gives the answers alone.
+- **Nothing else changes.** The adversary, the tie-break, the save format and the statistics are as in ADR-039. A guess still costs one score per candidate, at most 1,844, so there is no delay.
+
+**Consequences.**
+
+- Measured on the shipped lists, a random-pick player needs 6.0 to 7.6 guesses on average, up from 4.6 to 7.1, and a player who picks well needs 4 to 6, up from 4 to 5. The game is harder at every length, most at 5 and 6 letters.
+- A game saved before the change was answered against 700 words. Replayed against the larger pool its first reply can differ, so it fails the replay check of FR-153 and is dropped. The player starts a new game. No statistic is lost, because only a finished game is recorded.
+- The give up shows the first candidate in alphabetical order, as before. It is now a word from the larger pool, but still a fair one.
+- The statistics chart groups wins as five or fewer, 6 to 11, and 12 or more. Typical games now fall in the middle rows, so the grouping still fits.
+- No new data, no new chunk and no change to the other games.
+
+**Alternatives.** (a) The whole guess list, 6,142 to 24,637 words. Rejected: it holds obscure and possibly offensive words, the last word can be one nobody could work out, and a give up could show it. (b) A new larger list of about 3,000 fair words per length. Rejected for now: it needs a new hand-read list and adds about 10 KB gzipped to each lists chunk. The answer and shuffle lists give a 2 to 2.6 times larger pool at no cost, and a larger list can follow if this is still too easy. (c) A Normal and a Hard pool. Rejected: more rules and statistics per mode, for a game that was simply too easy (as ADR-038 concluded for WordShuffle).

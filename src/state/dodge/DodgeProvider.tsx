@@ -17,6 +17,7 @@ import {
   type WordLength,
 } from '@/engine';
 import {
+  candidatePool,
   createDodgeGame,
   dodgeReducer,
   dodgeRecord,
@@ -74,6 +75,21 @@ export interface DodgeContextValue {
 /** Session writes are debounced; keystrokes are far more frequent than reloads. */
 const SESSION_WRITE_DEBOUNCE_MS = 150;
 
+const pools = new WeakMap<Dictionary, readonly string[]>();
+
+/**
+ * The words a game starts with for a dictionary (FR-149, ADR-042), worked out once
+ * per loaded dictionary: the answers and the shuffle list.
+ */
+function poolOf(dict: Dictionary): readonly string[] {
+  const cached = pools.get(dict);
+  if (cached) return cached;
+
+  const pool = candidatePool(dict.answers, dict.shuffle);
+  pools.set(dict, pool);
+  return pool;
+}
+
 /** Placeholder until the dictionary resolves and a real game starts. */
 function placeholderGame(length: WordLength): DodgeState {
   return createDodgeGame('pending', length, []);
@@ -117,7 +133,7 @@ export function DodgeProvider({ children }: { children: ReactNode }): React.JSX.
       type: 'START',
       id: crypto.randomUUID(),
       wordLength: forLength,
-      answers: dict.answers,
+      answers: poolOf(dict),
     });
   }, []);
 
@@ -134,7 +150,7 @@ export function DodgeProvider({ children }: { children: ReactNode }): React.JSX.
 
         const saved = sessionRepo.read();
         // A saved game that no longer replays against the answers is dropped (FR-153).
-        const restored = saved?.wordLength === length ? restoreGame(saved, dict.answers) : null;
+        const restored = saved?.wordLength === length ? restoreGame(saved, poolOf(dict)) : null;
 
         if (restored) dispatch({ type: 'RESTORE', state: restored });
         else startFreshGame(dict, length);

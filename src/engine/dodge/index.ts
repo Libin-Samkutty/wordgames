@@ -18,6 +18,7 @@ export {
   distributionIndex,
   distributionLabels,
 } from './constants';
+export { candidatePool } from './pool';
 export { createDodgeGame, dodgeReducer, restoreGame, type DodgeAction } from './reducer';
 export {
   canGiveUp,
