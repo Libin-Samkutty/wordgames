@@ -81,7 +81,7 @@ export function SettingsModal({
                 onClick={() => {
                   setTheme(value);
                 }}
-                className="min-h-9 rounded px-2.5 text-xs font-semibold text-text-muted aria-checked:bg-surface-sunken aria-checked:text-text"
+                className="min-h-11 rounded px-2.5 text-xs font-semibold text-text-muted aria-checked:bg-surface-sunken aria-checked:text-text"
               >
                 {label}
               </button>

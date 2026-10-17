@@ -695,7 +695,7 @@ Two changes after R5. Rows 19.2 to 19.4, 19.9, 19.10, 19.14 and 19.15 and rows 2
 - The 4 and 6-letter heat bands scale the 5-letter ones by list size over 13,746. A test checks each band against that ratio.
 - A saved game, statistics blob, answer buffer and preferences from before the change load as 5-letter data. Tests cover each, and a flow test restores an old game with its statistics through the real providers.
 - `e2e/range.spec.ts`: **58 passed.** The 6-letter game fits at 320 x 568 with the length selector in the header.
-- The shared length selector is 36 px tall in every game that uses it, below the 44 px of FR-58. This is not new, and no spec checks it. It is open.
+- The shared length selector, the WordStack mode selector, the statistics view switcher and the Settings choices were 36 px tall, below the 44 px of FR-58. They are now 44 px, and `e2e/range.spec.ts` checks the length selector. `src/engine/**` branch coverage is back to 100%, with tests for the finished-game records that have no start time or no guesses.
 
 **WordShuffle (ADR-038)**
 
@@ -703,7 +703,7 @@ Two changes after R5. Rows 19.2 to 19.4, 19.9, 19.10, 19.14 and 19.15 and rows 2
 - Over the whole real pool, fewer than 5% of scrambles keep a letter in the target's place. Reshuffle keeps the same rule, never lands on a word, and works from the letters not locked by a hint.
 - The clock reads 0:00 until the first letter, ticks once a second, stops at the solve or give up, and keeps counting after leaving and returning. `e2e/shuffle.spec.ts`: **68 passed**, with the layouts at 320 px and 740 x 360 landscape unchanged.
 - The lists chunks grew by 1.5, 2.4 and 3.5 KB gzipped (20.6, 53.5 and 76.3 KB), against a limit of 15 KB each. The entry bundle is **79.1 KB gzipped**.
-- Unit and integration: **83 files, 2,027 tests, all passing.** `src/engine/**` branch coverage is 99.02%, the same shortfall as before this work (selectors in the code, range and stack engines). Every WordShuffle engine file is at 100%.
+- Unit and integration: **83 files, 2,027 tests, all passing.** `src/engine/**` branch coverage is 100% after the follow-up that added the missing selector tests.
 
 ## Sign-off
 

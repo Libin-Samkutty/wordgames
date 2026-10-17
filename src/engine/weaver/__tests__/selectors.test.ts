@@ -183,6 +183,12 @@ describe('weaverRecord (FR-92)', () => {
   it('falls back to 0 if a finished state has no finish time', () => {
     expect(weaverRecord({ ...solvedInPar(), finishedAt: null })?.playedAt).toBe(0);
   });
+
+  it('falls back to 0 solve time if a finished game has no start time', () => {
+    const state = { ...solvedInPar(), startedAt: null, finishedAt: null };
+
+    expect(weaverRecord(state)?.solveMs).toBe(0);
+  });
 });
 
 describe('ladderRows (FR-88, A11Y-16)', () => {
